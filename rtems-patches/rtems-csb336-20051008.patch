@@ -1,0 +1,1569 @@
+Index: rtems/c/src/lib/libbsp/arm/csb336/times
+===================================================================
+--- rtems/c/src/lib/libbsp/arm/csb336/times	(revision 42)
++++ rtems/c/src/lib/libbsp/arm/csb336/times	(working copy)
+@@ -18,155 +18,155 @@
+ 
+                                              
+ == ====================================================================  ===
+- 1 rtems_semaphore_create                                                16
+- 1 rtems_semaphore_delete                                                17
+- 1 rtems_semaphore_obtain: available                                     2
+- 1 rtems_semaphore_obtain: not available -- NO_WAIT                      2
+- 1 rtems_semaphore_release: no waiting tasks                             5
++ 1 rtems_semaphore_create                                                15
++ 1 rtems_semaphore_delete                                                15
++ 1 rtems_semaphore_obtain: available                                     0
++ 1 rtems_semaphore_obtain: not available -- NO_WAIT                      0
++ 1 rtems_semaphore_release: no waiting tasks                             0
+ 
+- 2 rtems_semaphore_obtain: not available -- caller blocks                20
++ 2 rtems_semaphore_obtain: not available -- caller blocks                12
+ 
+- 3 rtems_semaphore_release: task readied -- preempts caller              16
++ 3 rtems_semaphore_release: task readied -- preempts caller              11
+ 
+- 4 rtems_task_restart: blocked task -- preempts caller                   48
+- 4 rtems_task_restart: ready task -- preempts caller                     36
+- 4 rtems_semaphore_release: task readied -- returns to caller            9
+- 4 rtems_task_create                                                     33
+- 4 rtems_task_start                                                      12
+- 4 rtems_task_restart: suspended task -- returns to caller               14
+- 4 rtems_task_delete: suspended task                                     31
+- 4 rtems_task_restart: ready task -- returns to caller                   14
+- 4 rtems_task_restart: blocked task -- returns to caller                 19
+- 4 rtems_task_delete: blocked task                                       32
++ 4 rtems_task_restart: blocked task -- preempts caller                   38
++ 4 rtems_task_restart: ready task -- preempts caller                     29
++ 4 rtems_semaphore_release: task readied -- returns to caller            5
++ 4 rtems_task_create                                                     24
++ 4 rtems_task_start                                                      8
++ 4 rtems_task_restart: suspended task -- returns to caller               9
++ 4 rtems_task_delete: suspended task                                     20
++ 4 rtems_task_restart: ready task -- returns to caller                   10
++ 4 rtems_task_restart: blocked task -- returns to caller                 11
++ 4 rtems_task_delete: blocked task                                       21
+ 
+- 5 rtems_task_suspend: calling task                                      14
+- 5 rtems_task_resume: task readied -- preempts caller                    12
++ 5 rtems_task_suspend: calling task                                      9
++ 5 rtems_task_resume: task readied -- preempts caller                    8
+ 
+- 6 rtems_task_restart: calling task                                      14
+- 6 rtems_task_suspend: returns to caller                                 6
+- 6 rtems_task_resume: task readied -- returns to caller                  6
+- 6 rtems_task_delete: ready task                                         32
++ 6 rtems_task_restart: calling task                                      8
++ 6 rtems_task_suspend: returns to caller                                 3
++ 6 rtems_task_resume: task readied -- returns to caller                  3
++ 6 rtems_task_delete: ready task                                         22
+ 
+- 7 rtems_task_restart: suspended task -- preempts caller                 24
++ 7 rtems_task_restart: suspended task -- preempts caller                 14
+ 
+- 8 rtems_task_set_priority: obtain current priority                      4
+- 8 rtems_task_set_priority: returns to caller                            8
+- 8 rtems_task_mode: obtain current mode                                  2
+- 8 rtems_task_mode: no reschedule                                        2
+- 8 rtems_task_mode: reschedule -- returns to caller                      4
+- 8 rtems_task_mode: reschedule -- preempts caller                        19
+- 8 rtems_task_set_note                                                   4
+- 8 rtems_task_get_note                                                   4
+- 8 rtems_clock_set                                                       9
++ 8 rtems_task_set_priority: obtain current priority                      1
++ 8 rtems_task_set_priority: returns to caller                            3
++ 8 rtems_task_mode: obtain current mode                                  0
++ 8 rtems_task_mode: no reschedule                                        0
++ 8 rtems_task_mode: reschedule -- returns to caller                      3
++ 8 rtems_task_mode: reschedule -- preempts caller                        13
++ 8 rtems_task_set_note                                                   1
++ 8 rtems_task_get_note                                                   1
++ 8 rtems_clock_set                                                       4
+  8 rtems_clock_get                                                       0
+ 
+- 9 rtems_message_queue_create                                            54
+- 9 rtems_message_queue_send: no waiting tasks                            8
+- 9 rtems_message_queue_urgent: no waiting tasks                          8
+- 9 rtems_message_queue_receive: available                                7
+- 9 rtems_message_queue_flush: no messages flushed                        4
+- 9 rtems_message_queue_flush: messages flushed                           5
+- 9 rtems_message_queue_delete                                            21
++ 9 rtems_message_queue_create                                            38
++ 9 rtems_message_queue_send: no waiting tasks                            4
++ 9 rtems_message_queue_urgent: no waiting tasks                          4
++ 9 rtems_message_queue_receive: available                                4
++ 9 rtems_message_queue_flush: no messages flushed                        2
++ 9 rtems_message_queue_flush: messages flushed                           3
++ 9 rtems_message_queue_delete                                            19
+ 
+-10 rtems_message_queue_receive: not available -- NO_WAIT                 4
+-10 rtems_message_queue_receive: not available -- caller blocks           20
++10 rtems_message_queue_receive: not available -- NO_WAIT                 2
++10 rtems_message_queue_receive: not available -- caller blocks           12
+ 
+-11 rtems_message_queue_send: task readied -- preempts caller             18
++11 rtems_message_queue_send: task readied -- preempts caller             13
+ 
+-12 rtems_message_queue_send: task readied -- returns to caller           11
++12 rtems_message_queue_send: task readied -- returns to caller           7
+ 
+-13 rtems_message_queue_urgent: task readied -- preempts caller           19
++13 rtems_message_queue_urgent: task readied -- preempts caller           13
+ 
+-14 rtems_message_queue_urgent: task readied -- returns to caller 11
++14 rtems_message_queue_urgent: task readied -- returns to caller         7
+ 
+ 15 rtems_event_receive: obtain current events                            0
+-15 rtems_event_receive: not available -- NO_WAIT                         3
+-15 rtems_event_receive: not available -- caller blocks                   17
+-15 rtems_event_send: no task readied                                     3
+-15 rtems_event_receive: available                                        5
+-15 rtems_event_send: task readied -- returns to caller                   10
++15 rtems_event_receive: not available -- NO_WAIT                         1
++15 rtems_event_receive: not available -- caller blocks                   11
++15 rtems_event_send: no task readied                                     1
++15 rtems_event_receive: available                                        3
++15 rtems_event_send: task readied -- returns to caller                   7
+ 
+-16 rtems_event_send: task readied -- preempts caller                     16
++16 rtems_event_send: task readied -- preempts caller                     12
+ 
+-17 rtems_task_set_priority: preempts caller                              19
++17 rtems_task_set_priority: preempts caller                              13
+ 
+-18 rtems_task_delete: calling task                                       41
++18 rtems_task_delete: calling task                                       26
+ 
+-19 rtems_signal_catch                                                    6
+-19 rtems_signal_send: returns to caller                                  15
+-19 rtems_signal_send: signal to self                                     25
+-19 exit ASR overhead: returns to calling task                            11
+-19 exit ASR overhead: returns to preempting task                         12
++19 rtems_signal_catch                                                    5
++19 rtems_signal_send: returns to caller                                  12
++19 rtems_signal_send: signal to self                                     19
++19 exit ASR overhead: returns to calling task                            7
++19 exit ASR overhead: returns to preempting task                         10
+ 
+-20 rtems_partition_create                                                22
+-20 rtems_region_create                                                   30
+-20 rtems_partition_get_buffer: available                                 10
+-20 rtems_partition_get_buffer: not available                             4
+-20 rtems_partition_return_buffer                                         9
+-20 rtems_partition_delete                                                10
+-20 rtems_region_get_segment: available                                   15
+-20 rtems_region_get_segment: not available -- NO_WAIT                    16
+-20 rtems_region_return_segment: no waiting tasks                         13
+-20 rtems_region_get_segment: not available -- caller blocks              47
+-20 rtems_region_return_segment: task readied -- preempts caller 45                                                          
+-20 rtems_region_return_segment: task readied -- returns to caller 25
+-20 rtems_region_delete                                                   23
+-20 rtems_io_initialize                                                   1
++20 rtems_partition_create                                                21
++20 rtems_region_create                                                   33
++20 rtems_partition_get_buffer: available                                 9
++20 rtems_partition_get_buffer: not available                             3
++20 rtems_partition_return_buffer                                         8
++20 rtems_partition_delete                                                8
++20 rtems_region_get_segment: available                                   7
++20 rtems_region_get_segment: not available -- NO_WAIT                    7
++20 rtems_region_return_segment: no waiting tasks                         6
++20 rtems_region_get_segment: not available -- caller blocks              36
++20 rtems_region_return_segment: task readied -- preempts caller          33                                                 
++20 rtems_region_return_segment: task readied -- returns to caller        13
++20 rtems_region_delete                                                   18
++20 rtems_io_initialize                                                   0
+ 20 rtems_io_open                                                         0
+ 20 rtems_io_close                                                        0
+ 20 rtems_io_read                                                         0
+ 20 rtems_io_write                                                        0
+ 20 rtems_io_control                                                      0
+ 
+-21 rtems_task_ident                                                      39
+-21 rtems_message_queue_ident                                             38
+-21 rtems_semaphore_ident                                                 43
+-21 rtems_partition_ident                                                 38
+-21 rtems_region_ident                                                    38
+-21 rtems_port_ident                                                      37
+-21 rtems_timer_ident                                                     38
+-21 rtems_rate_monotonic_ident                                            38
++21 rtems_task_ident                                                      8
++21 rtems_message_queue_ident                                             8
++21 rtems_semaphore_ident                                                 9
++21 rtems_partition_ident                                                 8
++21 rtems_region_ident                                                    8
++21 rtems_port_ident                                                      8
++21 rtems_timer_ident                                                     8
++21 rtems_rate_monotonic_ident                                            8
+ 
+ 22 rtems_message_queue_broadcast: task readied -- returns to caller      27
+-22 rtems_message_queue_broadcast: no waiting tasks                       6
+-22 rtems_message_queue_broadcast: task readied -- preempts caller        22
++22 rtems_message_queue_broadcast: no waiting tasks                       2
++22 rtems_message_queue_broadcast: task readied -- preempts caller        16
+ 
+-23 rtems_timer_create                                                    4
+-23 rtems_timer_fire_after: inactive                                      7
+-23 rtems_timer_fire_after: active                                        7
+-23 rtems_timer_cancel: active                                            4
+-23 rtems_timer_cancel: inactive                                          3
+-23 rtems_timer_reset: inactive                                           6
+-23 rtems_timer_reset: active                                             7
+-23 rtems_timer_fire_when: inactive                                       9
+-23 rtems_timer_fire_when: active                                         9
+-23 rtems_timer_delete: active                                            5
+-23 rtems_timer_delete: inactive                                          4
+-23 rtems_task_wake_when                                                  21
++23 rtems_timer_create                                                    3
++23 rtems_timer_fire_after: inactive                                      4
++23 rtems_timer_fire_after: active                                        4
++23 rtems_timer_cancel: active                                            2
++23 rtems_timer_cancel: inactive                                          1
++23 rtems_timer_reset: inactive                                           3
++23 rtems_timer_reset: active                                             3
++23 rtems_timer_fire_when: inactive                                       4
++23 rtems_timer_fire_when: active                                         4
++23 rtems_timer_delete: active                                            3
++23 rtems_timer_delete: inactive                                          3
++23 rtems_task_wake_when                                                  12
+ 
+-24 rtems_task_wake_after: yield -- returns to caller                     2
+-24 rtems_task_wake_after: yields -- preempts caller                      12
++24 rtems_task_wake_after: yield -- returns to caller                     1
++24 rtems_task_wake_after: yields -- preempts caller                      9
+ 
+-25 rtems_clock_tick                                                      13
++25 rtems_clock_tick                                                      10
+ 
+-26 _ISR_Disable                                                           3
++26 _ISR_Disable                                                          3
+ 26 _ISR_Flash                                                            1
+ 26 _ISR_Enable                                                           0
+ 26 _Thread_Disable_dispatch                                              1
+ 26 _Thread_Enable_dispatch                                               3
+ 26 _Thread_Set_state                                                     6
+-26 _Thread_Disptach (NO FP)                                              13
+-26 context switch: no floating point contexts                            10
++26 _Thread_Disptach (NO FP)                                              9
++26 context switch: no floating point contexts                            7
+ 26 context switch: self                                                  1
+ 26 context switch: to another task                                       2
+ 26 fp context switch: restore 1st FP task -                              NA
+ 26 fp context switch: save idle, restore initialized -                   NA
+ 26 fp context switch: save idle, restore idle -                          NA
+ 26 fp context switch: save initialized, restore initialized -            NA
+-26 _Thread_Resume                                                        9
+-26 _Thread_Unblock                                                       8
+-26 _Thread_Ready                                                         5
+-26 _Thread_Get                                                           1
++26 _Thread_Resume                                                        8
++26 _Thread_Unblock                                                       7
++26 _Thread_Ready                                                         4
++26 _Thread_Get                                                           0
+ 26 _Semaphore_Get                                                        0
+ 26 _Thread_Get: invalid id                                               0
+ 
+@@ -175,15 +175,15 @@
+ 27 interrupt entry overhead: returns to nested interrupt                 0
+ 27 interrupt exit overhead: returns to nested interrupt                  0
+ 
+-28 rtems_port_create                                                     13
+-28 rtems_port_external_to_internal                                       3
+-28 rtems_port_internal_to_external                                       3
+-28 rtems_port_delete                                                     11
++28 rtems_port_create                                                     10
++28 rtems_port_external_to_internal                                       1
++28 rtems_port_internal_to_external                                       1
++28 rtems_port_delete                                                     8
+ 
+-29 rtems_rate_monotonic_create                                           13
+-29 rtems_rate_monotonic_period: initiate period -- returns to caller     24
+-29 rtems_rate_monotonic_period: obtain status                            5
+-29 rtems_rate_monotonic_cancel                                           15
++29 rtems_rate_monotonic_create                                           12
++29 rtems_rate_monotonic_period: initiate period -- returns to caller     17
++29 rtems_rate_monotonic_period: obtain status                            3
++29 rtems_rate_monotonic_cancel                                           12
+ 29 rtems_rate_monotonic_delete: inactive                                 12
+-29 rtems_rate_monotonic_delete: active                                   7
+-29 rtems_rate_monotonic_period: conclude periods -- caller blocks        13
++29 rtems_rate_monotonic_delete: active                                   4
++29 rtems_rate_monotonic_period: conclude periods -- caller blocks        9
+Index: rtems/c/src/lib/libbsp/arm/csb336/console/uart.c
+===================================================================
+--- rtems/c/src/lib/libbsp/arm/csb336/console/uart.c	(revision 42)
++++ rtems/c/src/lib/libbsp/arm/csb336/console/uart.c	(working copy)
+@@ -1,262 +1,453 @@
+ /*
+- *  console driver for MC9328XML UARTs
++ * Console driver for MC9328XML UARTs.
+  *
+- *  This driver uses the shared console driver in 
+- *  ...../libbsp/shared/console.c
++ * Written Jay Monkman <jtm@lopingdog.com>
++ * Copyright (c) 2005 by Loping Dog Embedded Systems
+  *
+- *  If you want the driver to be interrupt driven, you 
+- *  need to write the ISR, and in the ISR insert the
+- *  chars into termios's queue.
++ * The license and distribution terms for this file may be
++ * found in the file LICENSE in this distribution or at
++ *    http://www.rtems.com/license
+  *
+- *  Copyright (c) 2004 Cogent Computer Systems
+- *  Written by Jay Monkman <jtm@lopingdog.com>
+- *
+- *  The license and distribution terms for this file may be
+- *  found in the file LICENSE in this distribution or at
+- *
+- *  http://www.OARcorp.com/rtems/license.html.
+- *
+- *
+- *  $Id$
+-*/
+-#include <bsp.h>                /* Must be before libio.h */
++ * $Id:$
++ */
++#include <bsp.h>
+ #include <rtems/libio.h>
++#include <libchip/sersupp.h>
++#include <rtems/error.h>
++#include <rtems/bspIo.h>
+ #include <termios.h>
+-#include <rtems/bspIo.h>
+-
+-/* Put the CPU (or UART) specific header file #include here */
++#include <irq.h>
+ #include <mc9328mxl.h>
+-#include <libchip/serial.h>
+-#include <libchip/sersupp.h>
+ 
++
++/* Define this to use interrupt driver UART driver */
++#define USE_INTERRUPTS 1
++
+ /* How many serial ports? */
+ #define NUM_DEVS       2
++#define poll_write(c)  imx_uart_poll_write_char(0, c)
++#define poll_read()  imx_uart_poll_read_char(0)
+ 
+-int     uart_poll_read(int minor);
++static int imx_uart_first_open(int, int, void *);
++static int imx_uart_last_close(int, int, void *);
++static int imx_uart_poll_read(int);
++static int imx_uart_set_attrs(int, const struct termios *);
++static void imx_uart_init(int minor);
++static void imx_uart_set_baud(int, int);
++static int imx_uart_poll_write(int, const char *, int);
+ 
+-int dbg_dly;
++#if defined(USE_INTERRUPTS) 
++static void imx_uart_tx_isr(rtems_irq_hdl_param);
++static void imx_uart_rx_isr(rtems_irq_hdl_param);
++static void imx_uart_isr_on(const rtems_irq_connect_data *irq);
++static void imx_uart_isr_off(const rtems_irq_connect_data *irq);
++static int imx_uart_isr_is_on(const rtems_irq_connect_data *irq);
++static int imx_uart_intr_write(int, const char *, int);
++#endif
+ 
+-/* static function prototypes */
+-static int     uart_first_open(int major, int minor, void *arg);
+-static int     uart_last_close(int major, int minor, void *arg);
+-static int     uart_read(int minor);
+-static int     uart_write(int minor, const char *buf, int len);
+-static void    uart_init(int minor);
+-static void    uart_write_polled(int minor, char c);
+-static int     uart_set_attributes(int minor, const struct termios *t);
+ 
+-/* These are used by code in console.c */
+-unsigned long Console_Port_Count = NUM_DEVS;
+-console_data  Console_Port_Data[NUM_DEVS];
+ 
+-/* rtems console uses the following minor number */
+-rtems_device_minor_number  Console_Port_Minor = 0;
+-
+-/* Pointers to functions for handling the UART. */
+-console_fns uart_fns = 
+-{ 
+-    libchip_serial_default_probe,
+-    uart_first_open,
+-    uart_last_close,
+-    uart_read,
+-    uart_write,
+-    uart_init,
+-    uart_write_polled,   /* not used in this driver */
+-    uart_set_attributes,
+-    FALSE      /* TRUE if interrupt driven, FALSE if not. */
++/* TERMIOS callbacks */
++#if defined(USE_INTERRUPTS) 
++rtems_termios_callbacks imx_uart_cbacks = {
++    .firstOpen            = imx_uart_first_open,
++    .lastClose            = imx_uart_last_close,
++    .pollRead             = NULL,
++    .write                = imx_uart_intr_write,
++    .setAttributes        = imx_uart_set_attrs,
++    .stopRemoteTx         = NULL,
++    .startRemoteTx        = NULL,
++    .outputUsesInterrupts = 1,
+ };
++#else 
++rtems_termios_callbacks imx_uart_cbacks = {
++    .firstOpen            = imx_uart_first_open,
++    .lastClose            = imx_uart_last_close,
++    .pollRead             = imx_uart_poll_read,
++    .write                = imx_uart_poll_write,
++    .setAttributes        = imx_uart_set_attrs,
++    .stopRemoteTx         = NULL,
++    .startRemoteTx        = NULL,
++    .outputUsesInterrupts = 0,
++};
++#endif
+ 
+-/* 
+- * There's one item in array for each UART.
+- *
+- * Some of these fields are marked "NOT USED". They are not used
+- * by console.c, but may be used by drivers in libchip
+- *
+- */
+-console_tbl Console_Port_Tbl[] = {
+-    {
+-        "/dev/com0",                      /* sDeviceName */
+-        SERIAL_CUSTOM,                    /* deviceType */
+-        &uart_fns,                        /* pDeviceFns */
+-        NULL,                             /* deviceProbe */
+-        NULL,                             /* pDeviceFlow */
+-        0,                                /* ulMargin - NOT USED */
+-        0,                                /* ulHysteresis - NOT USED */
+-        NULL,                             /* pDeviceParams */
+-        0,                                /* ulCtrlPort1  - NOT USED */
+-        0,                                /* ulCtrlPort2  - NOT USED */
+-        0,                                /* ulDataPort  - NOT USED */
+-        NULL,                             /* getRegister - NOT USED */
+-        NULL,                             /* setRegister - NOT USED */
+-        NULL,                             /* getData - NOT USED */
+-        NULL,                             /* setData - NOT USED */
+-        0,                                /* ulClock - NOT USED */
+-        0                                 /* ulIntVector - NOT USED */
+-    },
+-    {
+-        "/dev/com1",                      /* sDeviceName */
+-        SERIAL_CUSTOM,                    /* deviceType */
+-        &uart_fns,                        /* pDeviceFns */
+-        NULL,                             /* deviceProbe */
+-        NULL,                             /* pDeviceFlow */
+-        0,                                /* ulMargin - NOT USED */
+-        0,                                /* ulHysteresis - NOT USED */
+-        NULL,                             /* pDeviceParams */
+-        0,                                /* ulCtrlPort1  - NOT USED */
+-        0,                                /* ulCtrlPort2  - NOT USED */
+-        0,                                /* ulDataPort  - NOT USED */
+-        NULL,                             /* getRegister - NOT USED */
+-        NULL,                             /* setRegister - NOT USED */
+-        NULL,                             /* getData - NOT USED */
+-        NULL,                             /* setData - NOT USED */
+-        0,                                /* ulClock - NOT USED */
+-        0                                 /* ulIntVector - NOT USED */
++#if defined(USE_INTERRUPTS) 
++static rtems_irq_connect_data imx_uart_tx_isr_data[NUM_DEVS];
++static rtems_irq_connect_data imx_uart_rx_isr_data[NUM_DEVS];
++#endif
++
++typedef struct {
++    int minor;
++    mc9328mxl_uart_regs_t * regs;
++    volatile const char *buf;
++    volatile int len;
++    volatile int idx;
++    void *tty;
++} imx_uart_data_t;
++
++static imx_uart_data_t imx_uart_data[NUM_DEVS];
++
++rtems_device_driver console_initialize(
++    rtems_device_major_number  major,
++    rtems_device_minor_number  minor,
++    void                      *arg
++)
++{
++    rtems_status_code status;
++    int i;
++
++    for (i = 0; i < NUM_DEVS; i++) {
++        imx_uart_init(i);
+     }
+-};
+ 
+-/*********************************************************************/
+-/* Functions called via termios callbacks (i.e. the ones in uart_fns */
+-/*********************************************************************/
++    rtems_termios_initialize();
+ 
+-/* 
+- * This is called the first time each device is opened. If the driver 
+- * is interrupt driven, you should enable interrupts here. Otherwise, 
+- * it's probably safe to do nothing.
+- *
+- * Since micromonitor already set up the UART, we do nothing.
+- */
+-static int uart_first_open(int major, int minor, void *arg) 
+-{
+-    return 0;
++    /* /dev/console and /dev/tty0 are the same */
++    status = rtems_io_register_name("/dev/console", major, 0);
++    if (status != RTEMS_SUCCESSFUL) {
++        rtems_panic("%s:%d Error registering /dev/console :: %d\n",
++                    __FUNCTION__, __LINE__, status);
++    }
++
++    status = rtems_io_register_name("/dev/tty0", major, 0);
++    if (status != RTEMS_SUCCESSFUL) {
++        rtems_panic("%s:%d Error registering /dev/tty0 :: %d\n",
++                    __FUNCTION__, __LINE__, status);
++    }
++
++    status = rtems_io_register_name("/dev/tty1", major, 1);
++    if (status != RTEMS_SUCCESSFUL) {
++        rtems_panic("%s:%d Error registering /dev/tty1 :: %d\n",
++                    __FUNCTION__, __LINE__, status);
++    }
++    return RTEMS_SUCCESSFUL;
+ }
+ 
++rtems_device_driver console_open(
++    rtems_device_major_number major,
++    rtems_device_minor_number minor,
++    void                    * arg
++)
++{
++    rtems_status_code rc;
+ 
+-/* 
+- * This is called the last time each device is closed. If the driver 
+- * is interrupt driven, you should disable interrupts here. Otherwise, 
+- * it's probably safe to do nothing.
+- */
+-static int uart_last_close(int major, int minor, void *arg) 
++    if (minor > (NUM_DEVS - 1)) {
++        return RTEMS_INVALID_NUMBER;
++    }
++
++    rc = rtems_termios_open(major, minor, arg, &imx_uart_cbacks);
++
++    return rc;
++}
++ 
++rtems_device_driver console_close(
++    rtems_device_major_number major,
++    rtems_device_minor_number minor,
++    void                    * arg
++)
+ {
+-    return 0;
++    return rtems_termios_close(arg);
+ }
++ 
++rtems_device_driver console_read(
++    rtems_device_major_number major,
++    rtems_device_minor_number minor,
++    void                    * arg
++)
++{
++  return rtems_termios_read(arg);
++}
++ 
++rtems_device_driver console_write(
++    rtems_device_major_number major,
++    rtems_device_minor_number minor,
++    void                    * arg
++)
++{
++  return rtems_termios_write(arg);
++}
++ 
++rtems_device_driver console_control(
++    rtems_device_major_number major,
++    rtems_device_minor_number minor,
++    void                    * arg
++)
++{
++  return rtems_termios_ioctl(arg);
++}
+ 
+-
+-/*
+- * Read one character from UART.
+- *
+- * Return -1 if there's no data, otherwise return
+- * the character in lowest 8 bits of returned int.
+- */
+-static int uart_read(int minor) 
++static void imx_uart_init(int minor)
+ {
+-    char c;
++    imx_uart_data[minor].minor = minor;
++    imx_uart_data[minor].buf   = NULL;
++    imx_uart_data[minor].len   = 0;
++    imx_uart_data[minor].idx   = 0;
+ 
+     if (minor == 0) {
+-        if (MC9328MXL_UART1_SR2 & MC9328MXL_UART_SR2_RDR) {
+-            c = MC9328MXL_UART1_RXD & MC9328MXL_UART_RXD_CHARMASK;
+-            return c;
+-        } else {
+-            return -1;
+-        }
++#if defined(USE_INTERRUPTS) 
++        imx_uart_tx_isr_data[minor].name = BSP_INT_UART1_TX;
++        imx_uart_rx_isr_data[minor].name = BSP_INT_UART1_RX;
++#endif
++        imx_uart_data[minor].regs = 
++            (mc9328mxl_uart_regs_t *) MC9328MXL_UART1_BASE;
+     } else if (minor == 1) {
+-        if (MC9328MXL_UART2_SR2 & MC9328MXL_UART_SR2_RDR) {
+-            c = MC9328MXL_UART2_RXD & MC9328MXL_UART_RXD_CHARMASK;
+-            return c;
+-        } else {
+-            return -1;
+-        }
++#if defined(USE_INTERRUPTS) 
++        imx_uart_tx_isr_data[minor].name = BSP_INT_UART2_TX;
++        imx_uart_rx_isr_data[minor].name = BSP_INT_UART2_RX;
++#endif
++        imx_uart_data[minor].regs = 
++            (mc9328mxl_uart_regs_t *) MC9328MXL_UART2_BASE;
+     } else {
+-        printk("Unknown console minor number: %d\n", minor);
+-        return -1;
++        rtems_panic("%s:%d Unknown UART minor number %d\n", 
++                    __FUNCTION__, __LINE__, minor); 
+     }
+ 
++#if defined(USE_INTERRUPTS) 
++    imx_uart_tx_isr_data[minor].hdl    = imx_uart_tx_isr;
++    imx_uart_tx_isr_data[minor].handle = &imx_uart_data[minor];
++    imx_uart_tx_isr_data[minor].on     = imx_uart_isr_on;
++    imx_uart_tx_isr_data[minor].off    = imx_uart_isr_off;
++    imx_uart_tx_isr_data[minor].isOn   = imx_uart_isr_is_on;
++
++    imx_uart_rx_isr_data[minor].hdl    = imx_uart_rx_isr;
++    imx_uart_rx_isr_data[minor].handle = &imx_uart_data[minor];
++    imx_uart_rx_isr_data[minor].on     = imx_uart_isr_on;
++    imx_uart_rx_isr_data[minor].off    = imx_uart_isr_off;
++    imx_uart_rx_isr_data[minor].isOn   = imx_uart_isr_is_on;
++#endif
++
++    imx_uart_data[minor].regs->cr1 = (
++        MC9328MXL_UART_CR1_UARTCLKEN |
++        MC9328MXL_UART_CR1_UARTEN);
++
++    imx_uart_data[minor].regs->cr2 = (
++        MC9328MXL_UART_CR2_IRTS |
++        MC9328MXL_UART_CR2_WS   |
++        MC9328MXL_UART_CR2_TXEN |
++        MC9328MXL_UART_CR2_RXEN |
++        MC9328MXL_UART_CR2_SRST);
++
++    imx_uart_data[minor].regs->cr3 = 0;
++
++    imx_uart_data[minor].regs->cr4 = 0;
++
++    imx_uart_data[minor].regs->fcr = (
++        MC9328MXL_UART_FCR_TXTL(32) | 
++        MC9328MXL_UART_FCR_RFDIV_1 | 
++        MC9328MXL_UART_FCR_RXTL(1));
++
++    imx_uart_set_baud(minor, 38400);
++
+ }
+ 
++static int imx_uart_first_open(int major, int minor, void *arg)
++{
++    rtems_libio_open_close_args_t *args = arg;
+ 
+-/* 
+- * Write buffer to UART 
+- *
+- * return 1 on success, -1 on error
+- */
+-static int uart_write(int minor, const char *buf, int len)
++    imx_uart_data[minor].tty   = args->iop->data1;
++    
++#if defined(USE_INTERRUPTS) 
++    BSP_install_rtems_irq_handler(&imx_uart_tx_isr_data[minor]);
++    BSP_install_rtems_irq_handler(&imx_uart_rx_isr_data[minor]);
++
++    imx_uart_data[minor].regs->cr1 |= MC9328MXL_UART_CR1_RRDYEN;
++#endif
++
++    return 0;
++}
++
++static int imx_uart_last_close(int major, int minor, void *arg)
+ {
+-    int i;
++#if defined(USE_INTERRUPTS) 
++    BSP_remove_rtems_irq_handler(&imx_uart_tx_isr_data[minor]);
++    BSP_remove_rtems_irq_handler(&imx_uart_rx_isr_data[minor]);
++#endif
+ 
+-    if (minor == 0) {
+-        for (i = 0; i < len; i++) {
+-            /* Wait for fifo to have room */
+-            while(!(MC9328MXL_UART1_SR2 & MC9328MXL_UART_SR2_TXDC)) {
+-                continue;
+-            }
+-            
+-            MC9328MXL_UART1_TXD = (char) buf[i];
+-        }
+-    } else if (minor == 1) {
+-        for (i = 0; i < len; i++) {
+-            /* Wait for fifo to have room */
+-            while(!(MC9328MXL_UART2_SR2 & MC9328MXL_UART_SR2_TXDC)) {
+-                continue;
+-            }
+-            
+-            MC9328MXL_UART2_TXD = (char) buf[i];
+-        }
++    return 0;
++}
++
++static int imx_uart_poll_read(int minor) 
++{
++    if (imx_uart_data[minor].regs->sr2 & MC9328MXL_UART_SR2_RDR) {
++        return imx_uart_data[minor].regs->rxd & 0xff;
+     } else {
+-        printk("Unknown console minor number: %d\n", minor);
+         return -1;
+     }
+-    
+-    return 1;
+ }
+ 
+ 
+-/* Set up the UART. */
+-static void uart_init(int minor)
++static int imx_uart_poll_write(int minor, const char *buf, int len) 
+ {
+-        /* leave the debug sio port as setup by umon */
++    int i;
++    for (i = 0; i < len; i++) {
++        /* Wait for there to be room in the fifo */
++        while (!(imx_uart_data[minor].regs->sr2 & MC9328MXL_UART_SR2_TXDC)) {
++            continue;
++        }
++
++        imx_uart_data[minor].regs->txd = buf[i];
++    }
++    return 1;
++
+ }
+ 
+-/* I'm not sure this is needed for the shared console driver. */
+-static void    uart_write_polled(int minor, char c)
++#if defined(USE_INTERRUPTS) 
++static int imx_uart_intr_write(int minor, const char *buf, int len)
+ {
+-    uart_write(minor, &c, 1);
++    imx_uart_data[minor].buf = buf;
++    imx_uart_data[minor].len = len;
++    imx_uart_data[minor].idx = 0;
++        
++    imx_uart_data[minor].regs->cr1 |= MC9328MXL_UART_CR1_TXMPTYEN;
++
++    return 1;
+ }
++#endif
+ 
++    
+ /* This is for setting baud rate, bits, etc. */
+-static int     uart_set_attributes(int minor, const struct termios *t) 
++static int imx_uart_set_attrs(int minor, const struct termios *t) 
+ {
++    int baud;
++
++    baud = termios_baud_to_number(t->c_cflag & CBAUD);
++    imx_uart_set_baud(minor, baud);
++
+     return 0;
+ }
+ 
+-/***********************************************************************/
++#if defined(USE_INTERRUPTS) 
++static void imx_uart_isr_on(const rtems_irq_connect_data *irq)
++{
++    MC9328MXL_AITC_INTENNUM = irq->name;
++}
++static void imx_uart_isr_off(const rtems_irq_connect_data *irq)
++{
++    MC9328MXL_AITC_INTDISNUM = irq->name;
++}
++static int imx_uart_isr_is_on(const rtems_irq_connect_data *irq)
++{
++    int irq_num = (int)irq->name;
++    if (irq_num < 32) {
++        return MC9328MXL_AITC_INTENABLEL & (1 << irq_num);
++    } else {
++        return MC9328MXL_AITC_INTENABLEH & (1 << (irq_num - 32));
++    }
++}
++
++static void imx_uart_rx_isr(rtems_irq_hdl_param param)
++{
++    imx_uart_data_t *uart_data = param;
++    char buf[32];
++    int i=0;
++
++    while (uart_data->regs->sr2 & MC9328MXL_UART_SR2_RDR) {
++        buf[i] = uart_data->regs->rxd & 0xff;
++        i++;
++    }
++
++    rtems_termios_enqueue_raw_characters(uart_data->tty, buf, i);
++}
++
++static void imx_uart_tx_isr(rtems_irq_hdl_param param)
++{
++    imx_uart_data_t *uart_data = param;
++    int len;
++    int minor = uart_data->minor;
++
++
++    if (uart_data->idx < uart_data->len) {
++        while ( (uart_data->regs->sr1 & MC9328MXL_UART_SR1_TRDY) &&
++                (uart_data->idx < uart_data->len)) {
++            uart_data->regs->txd = uart_data->buf[uart_data->idx];
++            uart_data->idx++;
++        }
++    } else {
++        len = uart_data->len;
++        uart_data->len = 0;
++        imx_uart_data[minor].regs->cr1 &= ~MC9328MXL_UART_CR1_TXMPTYEN;
++        rtems_termios_dequeue_characters(uart_data->tty, len);
++    }
++}
++#endif
++
+ /*
+- * The following functions are not used by TERMIOS, but other RTEMS
+- * functions use them instead.
++ * Set the UART's baud rate. The calculation is:
++ *   (baud * 16) / ref_freq  = num/demom
++ *
++ *   ref_freq = perclk1 / RFDIV[2:0]
++ *   BIR = num - 1
++ *   BMR = demom - 1
++ *
++ * Setting 'num' to 16 yields this equation:
++ *    demom = ref_freq / baud
+  */
+-/***********************************************************************/
++static void imx_uart_set_baud(int minor, int baud)
++{
++    unsigned int perclk1;
++    unsigned int denom;
++    unsigned int ref_freq = 0;
++    uint32_t fcr;
++
++    perclk1 = get_perclk1_freq();
++    fcr = imx_uart_data[minor].regs->fcr;
++
++    switch(fcr & MC9328MXL_UART_FCR_RFDIV_MASK) {
++    case MC9328MXL_UART_FCR_RFDIV_1:  ref_freq = perclk1/1; break;
++    case MC9328MXL_UART_FCR_RFDIV_2:  ref_freq = perclk1/2; break;
++    case MC9328MXL_UART_FCR_RFDIV_3:  ref_freq = perclk1/3; break;
++    case MC9328MXL_UART_FCR_RFDIV_4:  ref_freq = perclk1/4; break;
++    case MC9328MXL_UART_FCR_RFDIV_5:  ref_freq = perclk1/5; break;
++    case MC9328MXL_UART_FCR_RFDIV_6:  ref_freq = perclk1/6; break;
++    case MC9328MXL_UART_FCR_RFDIV_7:  ref_freq = perclk1/7; break;
++    default:
++        rtems_panic("%s:%d Unknown RFDIV: 0x%x", 
++                    __FUNCTION__, __LINE__,
++                    fcr & MC9328MXL_UART_FCR_RFDIV_MASK);
++        break;
++    }
++    
++    denom = ref_freq / baud;
++
++    imx_uart_data[minor].regs->bir = 0xf;
++    imx_uart_data[minor].regs->bmr = denom;
++}
++
++
+ /* 
+- * Read from UART. This is used in the exit code, and can't
+- * rely on interrupts.
+-*/
+-int uart_poll_read(int minor)
++ * Polled, non-blocking read from UART
++ */
++int imx_uart_poll_read_char(int minor)
+ {
+-    return uart_read(minor);
++    return imx_uart_poll_read(minor);
+ }
+ 
++/* 
++ * Polled, blocking write from UART
++ */
++void  imx_uart_poll_write_char(int minor, char c)
++{
++    imx_uart_poll_write(minor, &c, 1);
++}
+ 
+ /*
+- * Write a character to the console. This is used by printk() and 
+- * maybe other low level functions. It should not use interrupts or any
+- * RTEMS system calls. It needs to be very simple
++ * Functions for printk() and friends.
+  */
+-static void _BSP_put_char( char c ) {
+-    uart_write_polled(0, c);
++void _BSP_output_char(char c)
++{
++    poll_write(c);
+     if (c == '\n') {
+-        uart_write_polled(0, '\r');
++        poll_write('\r');
+     }
+ }
++BSP_output_char_function_type BSP_output_char = _BSP_output_char;
+ 
+-BSP_output_char_function_type BSP_output_char = _BSP_put_char;
+ 
++char _BSP_poll_char()
++{
++    return poll_read();
++}
++BSP_polling_getchar_function_type BSP_poll_char = _BSP_poll_char;
+ 
+ 
+Index: rtems/c/src/lib/libbsp/arm/csb336/startup/bspstart.c
+===================================================================
+--- rtems/c/src/lib/libbsp/arm/csb336/startup/bspstart.c	(revision 42)
++++ rtems/c/src/lib/libbsp/arm/csb336/startup/bspstart.c	(working copy)
+@@ -86,9 +86,25 @@
+ /*   Since RTEMS is not configured, no RTEMS functions can be called.     */
+ /*                                                                        */
+ /**************************************************************************/
++void mmu_set_cpu_async_mode(void);
+ void bsp_start_default( void )
+ {
++    int i;
+ 
++    /* Set the MCU prescaler to divide by 1 */
++    MC9328MXL_PLL_CSCR &= ~MC9328MXL_PLL_CSCR_PRESC;
++
++    /* Enable the MCU PLL */
++    MC9328MXL_PLL_CSCR |= MC9328MXL_PLL_CSCR_MPEN;
++
++    /* Delay to allow time for PLL to get going */
++    for (i = 0; i < 100; i++) {
++        asm volatile ("nop\n");
++    }
++
++    /* Set the CPU to asynchrous clock mode, so it uses its fastest clock */
++    mmu_set_cpu_async_mode();
++
+     /* disable interrupts */
+     MC9328MXL_AITC_INTENABLEL = 0;
+     MC9328MXL_AITC_INTENABLEH = 0;
+@@ -153,12 +169,12 @@
+ /* Calcuate the frequency for perclk1 */
+ int get_perclk1_freq(void)
+ {
+-    int fin;
+-    int fpll;
+-    int pd;
+-    int mfd;
+-    int mfi;
+-    int mfn;
++    unsigned int fin;
++    unsigned int fpll;
++    unsigned int pd;
++    unsigned int mfd;
++    unsigned int mfi;
++    unsigned int mfn;
+     uint32_t reg;
+     int perclk1;
+ 
+@@ -187,13 +203,14 @@
+     printk("mfd = %d\n", mfd);
+     printk("mfi = %d\n", mfi);
+     printk("mfn = %d\n", mfn);
+-    printk("(fin * mfi) / (pd + 1) = %d\n", (fin * mfi) / (pd + 1));
+-    printk("(fin * mfn) / ((pd + 1) * (mfd + 1)) = %d\n",
+-           (fin * mfn) / ((pd + 1) * (mfd + 1)));
++    printk("rounded (fin * mfi) / (pd + 1) = %d\n", (fin * mfi) / (pd + 1));
++    printk("rounded (fin * mfn) / ((pd + 1) * (mfd + 1)) = %d\n",
++           ((long long)fin * mfn) / ((pd + 1) * (mfd + 1)));
+ #endif
+ 
+-    fpll = 2 * ( ((fin * mfi) / (pd + 1)) +
+-                 ((fin * mfn) / ((pd + 1) * (mfd + 1))) );
++    fpll = 2 * ( ((fin * mfi  + (pd + 1) / 2) / (pd + 1)) +
++                 (((long long)fin * mfn + ((pd + 1) * (mfd + 1)) / 2) / 
++		 ((pd + 1) * (mfd + 1))) );
+ 
+     /* calculate the output of the PERCLK1 divider */
+     reg = MC9328MXL_PLL_PCDR;
+Index: rtems/c/src/lib/libbsp/arm/csb336/startup/linkcmds
+===================================================================
+--- rtems/c/src/lib/libbsp/arm/csb336/startup/linkcmds	(revision 42)
++++ rtems/c/src/lib/libbsp/arm/csb336/startup/linkcmds	(working copy)
+@@ -75,9 +75,6 @@
+     rtems_vector_table = .;
+     . += (8 * 4);                     /* 8 ARM interrupts */
+ 	
+-    bsp_vector_table = .;
+-    . += (64 * 4);                    /* 64 MC9328MXL interrupts */
+-
+     . = ALIGN (0x100);
+ 
+ 
+Index: rtems/c/src/lib/libbsp/arm/csb336/startup/exit.c
+===================================================================
+--- rtems/c/src/lib/libbsp/arm/csb336/startup/exit.c	(revision 42)
++++ rtems/c/src/lib/libbsp/arm/csb336/startup/exit.c	(working copy)
+@@ -29,7 +29,7 @@
+    */
+   printk("\n");
+   printk(line);
+-  while (uart_poll_read(0) < 0) continue;
++  while (BSP_poll_char() < 0) continue;
+ 
+   bsp_reset();
+ 
+Index: rtems/c/src/lib/libbsp/arm/csb336/Makefile.am
+===================================================================
+--- rtems/c/src/lib/libbsp/arm/csb336/Makefile.am	(revision 42)
++++ rtems/c/src/lib/libbsp/arm/csb336/Makefile.am	(working copy)
+@@ -35,7 +35,7 @@
+ startup_rel_LDFLAGS = $(RTEMS_RELLDFLAGS)
+ 
+ noinst_PROGRAMS += console.rel
+-console_rel_SOURCES = console/uart.c ../../shared/console.c
++console_rel_SOURCES = console/uart.c
+ console_rel_CPPFLAGS = $(AM_CPPFLAGS)
+ console_rel_LDFLAGS = $(RTEMS_RELLDFLAGS)
+ 
+Index: rtems/c/src/lib/libbsp/arm/csb336/network/network.c
+===================================================================
+--- rtems/c/src/lib/libbsp/arm/csb336/network/network.c	(revision 42)
++++ rtems/c/src/lib/libbsp/arm/csb336/network/network.c	(working copy)
+@@ -41,20 +41,20 @@
+ /* RTEMS event used to start transmit daemon. */
+ #define START_TRANSMIT_EVENT    RTEMS_EVENT_2
+ 
+-static rtems_isr enet_isr(rtems_vector_number vector);
++static void enet_isr(rtems_irq_hdl_param);
+ static void enet_isr_on(const rtems_irq_connect_data *unused);
+ static void enet_isr_off(const rtems_irq_connect_data *unused);
+ static int enet_isr_is_on(const rtems_irq_connect_data *irq);
+ 
+ /* Replace the first value with the clock's interrupt name. */
+-rtems_irq_connect_data mc9328mxl_enet_isr_data = {BSP_INT_GPIO_PORTA,
+-                                                  (rtems_irq_hdl)enet_isr,
+-                                                  enet_isr_on,
+-                                                  enet_isr_off,
+-                                                  enet_isr_is_on,
+-                                                  3,    /* unused for ARM */
+-                                                  0 };  /* unused for ARM */
+-
++rtems_irq_connect_data mc9328mxl_enet_isr_data = {
++    .name    = BSP_INT_GPIO_PORTA,
++    .hdl     = (rtems_irq_hdl)enet_isr,
++    .handle  = (void *)BSP_INT_GPIO_PORTA,
++    .on      = enet_isr_on,
++    .off     = enet_isr_off,
++    .isOn    = enet_isr_is_on,
++};
+ typedef struct {
+   unsigned long rx_packets;        /* total packets received         */
+   unsigned long tx_packets;        /* total packets transmitted      */
+@@ -102,7 +102,8 @@
+ void mc9328mxl_enet_sendpacket (struct ifnet *ifp, struct mbuf *m);
+ void mc9328mxl_enet_rx_task(void *arg);
+ void mc9328mxl_enet_stats(mc9328mxl_enet_softc_t *sc);
+-static int mc9328mxl_enet_ioctl(struct ifnet *ifp, int command, caddr_t data);
++static int mc9328mxl_enet_ioctl(struct ifnet *ifp, 
++                                unsigned long command, caddr_t data);
+ 
+ 
+ int rtems_mc9328mxl_enet_attach (
+@@ -631,7 +632,7 @@
+ 
+ /*  Driver ioctl handler */
+ static int
+-mc9328mxl_enet_ioctl (struct ifnet *ifp, int command, caddr_t data)
++mc9328mxl_enet_ioctl (struct ifnet *ifp, unsigned long command, caddr_t data)
+ {
+     mc9328mxl_enet_softc_t *sc = ifp->if_softc;
+     int error = 0;
+@@ -678,7 +679,7 @@
+ }
+ 
+ /* interrupt handler */
+-rtems_isr enet_isr (rtems_vector_number v)
++static void enet_isr(rtems_irq_hdl_param unused)
+ {
+     uint16_t int_reg;
+ 
+Index: rtems/c/src/lib/libbsp/arm/shared/irq/irq_init.c
+===================================================================
+--- rtems/c/src/lib/libbsp/arm/shared/irq/irq_init.c	(revision 42)
++++ rtems/c/src/lib/libbsp/arm/shared/irq/irq_init.c	(working copy)
+@@ -30,21 +30,14 @@
+ void  rtems_irq_mngt_init()
+ {
+     int 			i;
+-    long			*vectorTable;
+     rtems_interrupt_level       level;
+ 
+-    vectorTable = (long *) VECTOR_TABLE;
+-
+     _CPU_ISR_Disable(level);
+ 
+     /* First, connect the ISR_Handler for IRQ and FIQ interrupts */
+     _CPU_ISR_install_vector(ARM_EXCEPTION_IRQ, _ISR_Handler, NULL);
+     _CPU_ISR_install_vector(ARM_EXCEPTION_FIQ, _ISR_Handler, NULL);
+ 
+-     /* Initialize the vector table contents with default handler */
+-    for (i=0; i<BSP_MAX_INT; i++)
+-      *(vectorTable + i) = (long)(default_int_handler);
+-
+     /* Initialize the INT at the BSP level */
+     BSP_rtems_irq_mngt_init();
+ }
+Index: rtems/c/src/lib/libbsp/arm/edb7312/irq/bsp_irq_init.c
+===================================================================
+--- rtems/c/src/lib/libbsp/arm/edb7312/irq/bsp_irq_init.c	(revision 42)
++++ rtems/c/src/lib/libbsp/arm/edb7312/irq/bsp_irq_init.c	(working copy)
+@@ -22,7 +22,16 @@
+ void BSP_rtems_irq_mngt_init()
+ {
+ 	long int_stat;
++        long *vectorTable;
++        int i;
+ 
++        vectorTable = (long *) VECTOR_TABLE;
++
++        /* Initialize the vector table contents with default handler */
++        for (i=0; i<BSP_MAX_INT; i++) {
++            *(vectorTable + i) = (long)(default_int_handler);
++        }
++
+ 	/* mask all interrupts */
+ 	*EP7312_INTMR1 = 0x0;
+ 	*EP7312_INTMR2 = 0x0;
+Index: rtems/c/src/lib/libbsp/arm/gba/irq/bsp_irq_init.c
+===================================================================
+--- rtems/c/src/lib/libbsp/arm/gba/irq/bsp_irq_init.c	(revision 42)
++++ rtems/c/src/lib/libbsp/arm/gba/irq/bsp_irq_init.c	(working copy)
+@@ -29,6 +29,16 @@
+  */
+ void BSP_rtems_irq_mngt_init(void)
+ {
++  long *vectorTable;
++  int i;
++
++  vectorTable = (long *) VECTOR_TABLE;
++    
++  /* Initialize the vector table contents with default handler */
++  for (i=0; i<BSP_MAX_INT; i++) {
++      *(vectorTable + i) = (long)(default_int_handler);
++  }
++
+   /* clear all interrupt status flags */
+   GBA_REG_IF = 0xffff;
+   /* disable all interrupts */
+Index: rtems/c/src/lib/libcpu/arm/mc9328mxl/include/mc9328mxl.h
+===================================================================
+--- rtems/c/src/lib/libcpu/arm/mc9328mxl/include/mc9328mxl.h	(revision 42)
++++ rtems/c/src/lib/libcpu/arm/mc9328mxl/include/mc9328mxl.h	(working copy)
+@@ -131,6 +131,33 @@
+ #define MC9328MXL_UART2_MPR4  (*((volatile uint32_t *)((MC9328MXL_UART2_BASE) + 0xcc)))
+ #define MC9328MXL_UART2_TS    (*((volatile uint32_t *)((MC9328MXL_UART2_BASE) + 0xd0)))
+ 
++typedef struct {
++    volatile uint32_t rxd;
++    volatile uint32_t _res0[15];
++    volatile uint32_t txd;
++    volatile uint32_t _res1[15];
++    volatile uint32_t cr1;
++    volatile uint32_t cr2;
++    volatile uint32_t cr3;
++    volatile uint32_t cr4;
++    volatile uint32_t fcr;
++    volatile uint32_t sr1;
++    volatile uint32_t sr2;
++    volatile uint32_t esc;
++    volatile uint32_t tim;
++    volatile uint32_t bir;
++    volatile uint32_t bmr;
++    volatile uint32_t brc;
++    volatile uint32_t ipr1;
++    volatile uint32_t ipr2;
++    volatile uint32_t ipr3;
++    volatile uint32_t ipr4;
++    volatile uint32_t mpr1;
++    volatile uint32_t mpr2;
++    volatile uint32_t mpr3;
++    volatile uint32_t mpr4;
++    volatile uint32_t ts;
++} mc9328mxl_uart_regs_t;
+ 
+ #define MC9328MXL_UART_RXD_CHARRDY    (bit(15))
+ #define MC9328MXL_UART_RXD_ERR        (bit(14))
+@@ -205,6 +232,17 @@
+ #define MC9328MXL_UART_CR4_OREN       (bit(1))
+ #define MC9328MXL_UART_CR4_DREN       (bit(0))
+ 
++#define MC9328MXL_UART_FCR_TXTL(x)    (((x) & 0x3f) << 10)
++#define MC9328MXL_UART_FCR_RFDIV_1    (5 << 7)
++#define MC9328MXL_UART_FCR_RFDIV_2    (4 << 7)
++#define MC9328MXL_UART_FCR_RFDIV_3    (3 << 7)
++#define MC9328MXL_UART_FCR_RFDIV_4    (2 << 7)
++#define MC9328MXL_UART_FCR_RFDIV_5    (1 << 7)
++#define MC9328MXL_UART_FCR_RFDIV_6    (0 << 7)
++#define MC9328MXL_UART_FCR_RFDIV_7    (6 << 7)
++#define MC9328MXL_UART_FCR_RFDIV_MASK (7 << 7)
++#define MC9328MXL_UART_FCR_RXTL(x)    (((x) & 0x3f) << 0)
++
+ #define MC9328MXL_UART_SR1_PARERR     (bit(15))
+ #define MC9328MXL_UART_SR1_RTSS       (bit(14))
+ #define MC9328MXL_UART_SR1_TRDY       (bit(13))
+Index: rtems/c/src/lib/libcpu/arm/mc9328mxl/clock/clockdrv.c
+===================================================================
+--- rtems/c/src/lib/libcpu/arm/mc9328mxl/clock/clockdrv.c	(revision 42)
++++ rtems/c/src/lib/libcpu/arm/mc9328mxl/clock/clockdrv.c	(working copy)
+@@ -28,13 +28,14 @@
+ static int clock_isr_is_on(const rtems_irq_connect_data *irq);
+ 
+ /* Replace the first value with the clock's interrupt name. */
+-rtems_irq_connect_data clock_isr_data = {BSP_INT_TIMER1,
+-                                         (rtems_irq_hdl)Clock_isr,
+-                                         clock_isr_on,
+-                                         clock_isr_off,
+-                                         clock_isr_is_on,
+-                                         3,     /* unused for ARM cpus */
+-                                         0 };   /* unused for ARM cpus */
++rtems_irq_connect_data clock_isr_data = {
++    .name   = BSP_INT_TIMER1,
++    .hdl    = (rtems_irq_hdl)Clock_isr,
++    .handle = (void *)BSP_INT_TIMER1,
++    .on     = clock_isr_on,
++    .off    = clock_isr_off,
++    .isOn   = clock_isr_is_on,
++};
+ 
+ /* If you follow the code, this is never used, so any value 
+  * should work
+@@ -82,7 +83,7 @@
+         int cnt; \
+         freq = get_perclk1_freq(); \
+         printk("perclk1 freq is %d\n", freq); \
+-        cnt = ((freq / 1000) * BSP_Configuration.microseconds_per_tick) / 1000;\
++        cnt = ((long long)freq * BSP_Configuration.microseconds_per_tick + 500000) / 1000000;\
+         printk("cnt freq is %d\n", cnt); \
+         MC9328MXL_TMR1_TCMP = cnt; \
+         /* use PERCLK1 as input, enable timer */ \
+Index: rtems/c/src/lib/libcpu/arm/mc9328mxl/irq/bsp_irq_asm.S
+===================================================================
+--- rtems/c/src/lib/libcpu/arm/mc9328mxl/irq/bsp_irq_asm.S	(revision 42)
++++ rtems/c/src/lib/libcpu/arm/mc9328mxl/irq/bsp_irq_asm.S	(working copy)
+@@ -31,13 +31,15 @@
+ 
+   /* find the ISR's address based on the vector */	
+   ldr   r0, =bsp_vector_table
+-  ldr	r0, [r0, r1, LSL #2]	/* Read the address */
++  mov   r1, r1, LSL #3          /* Shift vector to get offset into table */
++  add   r1, r0, r1              /* r1 has address of vector entry */
++  ldr   r0, [r1, #4]            /* Get the data pointer */
++  ldr	r1, [r1]	        /* Get the vector */
+ 
+-
+   stmdb	  sp!,{lr}
+   ldr     lr, =IRQ_return         /* prepare the return from handler  */
+ 
+-  mov     pc, r0		/* EXECUTE INT HANDLER */
++  mov     pc, r1		/* EXECUTE INT HANDLER */
+ 
+ IRQ_return:
+   ldmia sp!,{lr}
+Index: rtems/c/src/lib/libcpu/arm/mc9328mxl/irq/irq.h
+===================================================================
+--- rtems/c/src/lib/libcpu/arm/mc9328mxl/irq/irq.h	(revision 42)
++++ rtems/c/src/lib/libcpu/arm/mc9328mxl/irq/irq.h	(working copy)
+@@ -15,6 +15,8 @@
+ #ifndef __IRQ_H__
+ #define __IRQ_H__
+ 
++#include <rtems/irq.h>
++
+ #ifdef __cplusplus
+ extern "C" {
+ #endif
+@@ -34,7 +36,7 @@
+  * Constants
+  **********************************************************************/
+ 
+-/* possible interrupt sources on the AT91RM9200 */
++/* possible interrupt sources on the MC9328MXL */
+ #define BSP_INT_UART3_PFERR       0 
+ #define BSP_INT_UART3_RTS         1     
+ #define BSP_INT_UART3_DTR         2     
+@@ -101,64 +103,21 @@
+ #define BSP_INT_WDT              63
+ #define BSP_MAX_INT              64
+               
+-typedef unsigned char  rtems_irq_level;
+-typedef unsigned char  rtems_irq_trigger;
++typedef struct {
++    rtems_irq_hdl       vector;
++    rtems_irq_hdl_param data;
++} mc9328mxl_irq_info_t;
+ 
+-typedef unsigned int rtems_irq_number;
+-struct  __rtems_irq_connect_data__;     /* forward declaratiuon */
+ 
+-typedef void (*rtems_irq_hdl)       (void);
+-typedef void (*rtems_irq_enable)    (const struct __rtems_irq_connect_data__*);
+-typedef void (*rtems_irq_disable)   (const struct __rtems_irq_connect_data__*);
+-typedef int  (*rtems_irq_is_enabled)(const struct __rtems_irq_connect_data__*);
+ 
+-extern rtems_irq_hdl bsp_vector_table[BSP_MAX_INT];
+-#define VECTOR_TABLE bsp_vector_table
+-  											   
+-typedef struct __rtems_irq_connect_data__ {
+-    /* IRQ line */
+-    rtems_irq_number              name;
++extern mc9328mxl_irq_info_t bsp_vector_table[BSP_MAX_INT];
+ 
+-    /* Handler */
+-    rtems_irq_hdl                 hdl;
+-
+-    /* function for enabling interrupts at device level. */
+-    rtems_irq_enable              on;
+-
+-    /* function for disabling interrupts at device level. */
+-    rtems_irq_disable             off;
+-
+-    /* Function to test if interrupt is enabled */
+-    rtems_irq_is_enabled        isOn;
+-
+-    /* priority level of interrupt */
+-    rtems_irq_level               irqLevel;
+-
+-    /* Trigger method (rising/falling edge or high/low level) */
+-    rtems_irq_trigger             irqTrigger;
+-} rtems_irq_connect_data;
+-
+ /*
+  * function to initialize the interrupt for a specific BSP
+  */
+ void BSP_rtems_irq_mngt_init();
+ 
+ 
+-/*
+- * function to connect a particular irq handler.
+- */
+-int BSP_install_rtems_irq_handler       (const rtems_irq_connect_data*);
+-
+-/*
+- * function to get the current RTEMS irq handler for ptr->name. 
+- */
+-int BSP_get_current_rtems_irq_handler   (rtems_irq_connect_data* ptr);
+-
+-/*
+- * function to disconnect the RTEMS irq handler for ptr->name.
+- */
+-int BSP_remove_rtems_irq_handler        (const rtems_irq_connect_data*);
+-
+ #endif /* __asm__ */
+ 
+ #ifdef __cplusplus
+Index: rtems/c/src/lib/libcpu/arm/mc9328mxl/irq/bsp_irq_init.c
+===================================================================
+--- rtems/c/src/lib/libcpu/arm/mc9328mxl/irq/bsp_irq_init.c	(revision 42)
++++ rtems/c/src/lib/libcpu/arm/mc9328mxl/irq/bsp_irq_init.c	(working copy)
+@@ -23,10 +23,11 @@
+  */
+ void BSP_rtems_irq_mngt_init()
+ {
+-#if 0
+-    /* disable all interrupts */
+-    AIC_CTL_REG(AIC_IDCR) = 0xffffffff;
+-#endif
++    int i;
+ 
++    for (i = 0; i < BSP_MAX_INT; i++) {
++        bsp_vector_table[i].vector = default_int_handler;
++        bsp_vector_table[i].data   = NULL;
++    }
+ }
+ 
+Index: rtems/c/src/lib/libcpu/arm/mc9328mxl/irq/irq.c
+===================================================================
+--- rtems/c/src/lib/libcpu/arm/mc9328mxl/irq/irq.c	(revision 42)
++++ rtems/c/src/lib/libcpu/arm/mc9328mxl/irq/irq.c	(working copy)
+@@ -16,6 +16,8 @@
+ #include <rtems/score/apiext.h>
+ #include <mc9328mxl.h>
+ 
++mc9328mxl_irq_info_t bsp_vector_table[BSP_MAX_INT];
++
+ /*
+  * This function check that the value given for the irq line
+  * is valid.
+@@ -36,9 +38,6 @@
+ int BSP_install_rtems_irq_handler  (const rtems_irq_connect_data* irq)
+ {
+     rtems_interrupt_level level;
+-    rtems_irq_hdl *bsp_tbl;
+-
+-    bsp_tbl = (rtems_irq_hdl *)&bsp_vector_table;
+     
+     if (!isValidInterrupt(irq->name)) {
+       return 0;
+@@ -47,8 +46,8 @@
+     /*
+      * Check if default handler is actually connected. If not issue an error.
+      */
+-    if (bsp_tbl[irq->name] != default_int_handler) {
+-      return 0;
++    if (bsp_vector_table[irq->name].vector != default_int_handler) {
++        return 0;
+     }
+ 
+     _CPU_ISR_Disable(level);
+@@ -56,7 +55,8 @@
+     /*
+      * store the new handler
+      */
+-    bsp_tbl[irq->name] = irq->hdl;
++    bsp_vector_table[irq->name].vector = irq->hdl;
++    bsp_vector_table[irq->name].data = irq->handle;
+ 
+     /*
+      * Enable interrupt on device
+@@ -80,18 +80,15 @@
+ int BSP_remove_rtems_irq_handler  (const rtems_irq_connect_data* irq)
+ {
+     rtems_interrupt_level level;
+-    rtems_irq_hdl *bsp_tbl;
+ 
+-    bsp_tbl = (rtems_irq_hdl *)&bsp_vector_table;
+-  
+     if (!isValidInterrupt(irq->name)) {
+       return 0;
+     }
+     /*
+      * Check if the handler is actually connected. If not issue an error.
+      */
+-    if (bsp_tbl[irq->name] != irq->hdl) {
+-      return 0;
++    if (bsp_vector_table[irq->name].vector != irq->hdl) {
++        return 0;
+     }
+ 
+     _CPU_ISR_Disable(level);
+@@ -106,8 +103,8 @@
+     /*
+      * restore the default irq value
+      */
+-    bsp_tbl[irq->name] = default_int_handler;
+-    
++    bsp_vector_table[irq->name].vector = default_int_handler;
++    bsp_vector_table[irq->name].data = NULL;
+ 
+     _CPU_ISR_Enable(level);
+ 
+Index: rtems/c/src/lib/libcpu/arm/shared/arm920/mmu.c
+===================================================================
+--- rtems/c/src/lib/libcpu/arm/shared/arm920/mmu.c	(revision 42)
++++ rtems/c/src/lib/libcpu/arm/shared/arm920/mmu.c	(working copy)
+@@ -151,7 +151,7 @@
+ static inline uint32_t mmu_get_ctrl(void)
+ {
+     uint32_t val;
+-    asm volatile ("msr 15, 0, %0, cr1, cr0\n" : "=r" (val));
++    asm volatile ("mrc 15, 0, %0, cr1, cr0\n" : "=r" (val));
+     return val;
+ }
+ 
+@@ -240,3 +240,13 @@
+         base[i] = MMU_SET_LVL1_INVAL;
+     }
+ }
++
++
++void mmu_set_cpu_async_mode(void)
++{
++    uint32_t reg;
++    reg = mmu_get_ctrl();
++    reg |= 0xc0000000;
++    mmu_set_ctrl(reg);
++}
++    
+Index: rtems/c/src/lib/libcpu/arm/at91rm9200/irq/bsp_irq_init.c
+===================================================================
+--- rtems/c/src/lib/libcpu/arm/at91rm9200/irq/bsp_irq_init.c	(revision 42)
++++ rtems/c/src/lib/libcpu/arm/at91rm9200/irq/bsp_irq_init.c	(working copy)
+@@ -23,6 +23,16 @@
+  */
+ void BSP_rtems_irq_mngt_init()
+ {
++    long *vectorTable;
++    int i;
++
++    vectorTable = (long *) VECTOR_TABLE;
++
++    /* Initialize the vector table contents with default handler */
++    for (i=0; i<BSP_MAX_INT; i++) {
++        *(vectorTable + i) = (long)(default_int_handler);
++    }
++
+     /* disable all interrupts */
+     AIC_CTL_REG(AIC_IDCR) = 0xffffffff;
+ }
+Index: rtems/c/src/lib/libcpu/arm/s3c2400/irq/bsp_irq_init.c
+===================================================================
+--- rtems/c/src/lib/libcpu/arm/s3c2400/irq/bsp_irq_init.c	(revision 42)
++++ rtems/c/src/lib/libcpu/arm/s3c2400/irq/bsp_irq_init.c	(working copy)
+@@ -20,6 +20,16 @@
+ 
+ void BSP_rtems_irq_mngt_init() 
+ {
++    long *vectorTable;
++    int i;
++
++    vectorTable = (long *) VECTOR_TABLE;
++
++    /* Initialize the vector table contents with default handler */
++    for (i=0; i<BSP_MAX_INT; i++) {
++        *(vectorTable + i) = (long)(default_int_handler);
++    }
++
+     /*
+      * Here is the code to initialize the INT for
+      * the specified BSP
+Index: rtems/make/custom/csb336.cfg
+===================================================================
+--- rtems/make/custom/csb336.cfg	(revision 42)
++++ rtems/make/custom/csb336.cfg	(working copy)
+@@ -22,12 +22,12 @@
+ # -O4 is ok for RTEMS
+ # NOTE2: some level of -O may be actually required by inline assembler (at least
+ # -O2 so far.
+-CFLAGS_OPTIMIZE_V=-O3
++CFLAGS_OPTIMIZE_V=-O3 -g
+ #CFLAGS_OPTIMIZE_V=-O4 -mmultiple -mstring -mstrict-align
+ 
+ # debug flags: typically none, but at least -O1 is required due to this
+ # BSP using inlined code
+-CFLAGS_DEBUG_V = -O1
++CFLAGS_DEBUG_V = -O1 -g
+ #CFLAGS_DEBUG_V = -O1 -mmultiple -mstring -mstrict-align
+ 
+ 

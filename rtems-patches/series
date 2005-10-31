@@ -1,3 +1,8 @@
+rtems-csb336-20051008-asyncmclk.patch
+rtems-csb336-20051008-other.patch
+rtems-csb336-20051008-uart.patch
+rtems-dosfs-fix1.patch
+rtems-inttypes-wcs-disable-fix.patch
 rtems-clone-mrm332-to-mo376.patch
 rtems-update-mrm332-to-mo376.patch
 rtems-mo376-add-to-configs.patch

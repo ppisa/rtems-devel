@@ -1,0 +1,31 @@
+Index: rtems/c/src/lib/libbsp/arm/csb336/startup/bspstart.c
+===================================================================
+--- rtems/c/src/lib/libbsp/arm/csb336/startup/bspstart.c	(revision 42)
++++ rtems/c/src/lib/libbsp/arm/csb336/startup/bspstart.c	(working copy)
+@@ -86,9 +86,25 @@
+ /*   Since RTEMS is not configured, no RTEMS functions can be called.     */
+ /*                                                                        */
+ /**************************************************************************/
++void mmu_set_cpu_async_mode(void);
+ void bsp_start_default( void )
+ {
++    int i;
+ 
++    /* Set the MCU prescaler to divide by 1 */
++    MC9328MXL_PLL_CSCR &= ~MC9328MXL_PLL_CSCR_PRESC;
++
++    /* Enable the MCU PLL */
++    MC9328MXL_PLL_CSCR |= MC9328MXL_PLL_CSCR_MPEN;
++
++    /* Delay to allow time for PLL to get going */
++    for (i = 0; i < 100; i++) {
++        asm volatile ("nop\n");
++    }
++
++    /* Set the CPU to asynchrous clock mode, so it uses its fastest clock */
++    mmu_set_cpu_async_mode();
++
+     /* disable interrupts */
+     MC9328MXL_AITC_INTENABLEL = 0;
+     MC9328MXL_AITC_INTENABLEH = 0;
+--
