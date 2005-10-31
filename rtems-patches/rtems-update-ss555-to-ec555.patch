@@ -1,0 +1,127 @@
+Index: rtems-051009/c/src/lib/libbsp/powerpc/ec555/ChangeLog
+===================================================================
+--- rtems.orig/c/src/lib/libbsp/powerpc/ec555/ChangeLog
++++ rtems/c/src/lib/libbsp/powerpc/ec555/ChangeLog
+@@ -1,3 +1,8 @@
++2005-10-30	Pavel Pisa <pisa@cmp.felk.cvut.cz>
++
++	* EC555 BSP for Wuerz-elektronik EC555 board started
++	as clone of SS555 BSP.
++
+ 2005-05-26	Ralf Corsepius <ralf.corsepius@rtems.org>
+ 
+ 	* include/bsp.h: New header guard.
+Index: rtems-051009/c/src/lib/libbsp/powerpc/ec555/README
+===================================================================
+--- rtems.orig/c/src/lib/libbsp/powerpc/ec555/README
++++ rtems/c/src/lib/libbsp/powerpc/ec555/README
+@@ -2,9 +2,9 @@
+ #  $Id: README,v 1.1 2004/04/12 21:52:13 joel Exp $
+ #
+ 
+-This is a README file for the Intec SS555 of RTEMS 4.6.0
++This is a README file for the Wuerz-elektronik EC555 of RTEMS 4.6.0
+ 
+-The SS555 port was sponsored by Defence Research and Development 
++The EC555 port was sponsored by Defence Research and Development 
+ Canada - Suffield, and is Copyright (C) 2004, Real-Time Systems Inc.
+ 
+ Please send any comments, improvements, or bug reports to:
+@@ -16,8 +16,8 @@ querbach@realtime.bc.ca
+ Summary
+ -------
+ 
+-BSP NAME:           ss555
+-BOARD:              Intec Automation Inc. SS555
++BSP NAME:           EC555
++BOARD:              Wuerz-elektronik EC555
+ BUS:                None 
+ CPU FAMILY:         PowerPC
+ CPU:                PowerPC MPC555
+@@ -88,7 +88,7 @@ RAM:            512k 2-1-1-1 burst SRAM
+ Installation
+ ------------
+ 
+-The ss555 port uses the Intec SS555's external RAM in two different ways,
++The EC555 port uses the Wuerz-elektronik EC555's external RAM in two different ways,
+ depending on whether or not it is built for debugging by giving the
+ VARIANT=DEBUG switch to make:
+ 
+@@ -112,7 +112,7 @@ Console driver
+ 
+ This BSP includes an termios-capable asynchronous serial line driver that
+ supports SCI1 and SCI2. The RTEMS console is selected at configuration time
+-with the CONSOLE_MINOR variable (see .../ss555/configure.ac).  We default to
++with the CONSOLE_MINOR variable (see .../ec555/configure.ac).  We default to
+ SCI2 for the console, since SCI1 has some extra features which may be
+ desired for application use.
+ 
+@@ -123,7 +123,7 @@ The BSP console supports three different
+   3. interrupt-driven I/O with termios support.
+      
+ The mode of operation of the serial driver is determined at configure time in
+-part by the value of the UARTS_IO_MODE variable (see .../ss555/configure.ac).
++part by the value of the UARTS_IO_MODE variable (see .../ec555/configure.ac).
+ 
+   0 - polled I/O.
+   1 - interrupt-driven I/O.
+@@ -208,7 +208,7 @@ from the Debian distribution.
+ Test Configuration
+ ------------------
+ 
+-Board:                Intec SS555 v1.1
++Board:                Wuerz-elektronik EC555 v1.1
+ CPU:                  Motorola MPC555LFMZP40, mask 1K83H
+ Clock Speed:          Crystal 4.0 MHz, CPU 40.0 MHz
+ RAM:                  512K bytes of 2-1-1-1 Burst SRAM
+@@ -244,7 +244,7 @@ Timing tests:
+   OPERATION_COUNT=20 at configuration time.
+ 
+   To run tm27 (the interrupt latency timer test), short CN5-48 to CN5-50 on
+-  the SS555 board.
++  the EC555 board.
+ 
+   All tests run cleanly, except for tm26, which gives a "PANIC 12" after it
+   exits.  This doesn't seem to cause a problem otherwise.
+Index: rtems-051009/c/src/lib/libbsp/powerpc/ec555/configure.ac
+===================================================================
+--- rtems.orig/c/src/lib/libbsp/powerpc/ec555/configure.ac
++++ rtems/c/src/lib/libbsp/powerpc/ec555/configure.ac
+@@ -3,7 +3,7 @@
+ ## $Id: configure.ac,v 1.5 2005/02/16 10:13:09 ralf Exp $
+ 
+ AC_PREREQ(2.59)
+-AC_INIT([rtems-c-src-lib-libbsp-powerpc-mbx5xx],[_RTEMS_VERSION],[rtems-bugs@rtems.com])
++AC_INIT([rtems-c-src-lib-libbsp-powerpc-ec5xx],[_RTEMS_VERSION],[rtems-bugs@rtems.com])
+ AC_CONFIG_SRCDIR([bsp_specs])
+ RTEMS_TOP(../../../../../..)
+ 
+Index: rtems-051009/make/custom/ec555.cfg
+===================================================================
+--- rtems.orig/make/custom/ec555.cfg
++++ rtems/make/custom/ec555.cfg
+@@ -1,5 +1,5 @@
+ #
+-#  Config file for an Intec Automation SS555 MPC555-based card
++#  Config file for an Wuerz-elektronik EC555 MPC555-based card
+ #
+ #  This file is derived from:
+ #
+@@ -15,7 +15,7 @@ GCC_CPU_MODEL=505
+ RTEMS_CPU_MODEL=mpc555
+ 
+ # This is the actual bsp directory used during the build process.
+-RTEMS_BSP_FAMILY=ss555
++RTEMS_BSP_FAMILY=ec555
+ 
+ #  This contains the compiler options necessary to select the CPU model
+ #  and (hopefully) optimize for it.
+@@ -34,7 +34,7 @@ CFLAGS_OPTIMIZE_V=-O4 -fno-keep-inline-f
+ CXXFLAGS_OPTIMIZE_V=-O4
+ 
+ define make-exe
+-	$(LINK.c) $(AM_CFLAGS) $(AM_LDFLAGS) $(SS555_LDFLAGS) \
++	$(LINK.c) $(AM_CFLAGS) $(AM_LDFLAGS) $(EC555_LDFLAGS) \
+ 	    -o $(basename $@)_sym.exe $(LINK_OBJS) $(LINK_LIBS)
+ 	$(NM) -g -n $(basename $@)_sym.exe > $(basename $@).nm
+ 	cp $(basename $@)_sym.exe $(basename $@).exe 

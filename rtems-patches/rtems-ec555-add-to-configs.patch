@@ -1,0 +1,13 @@
+Index: rtems-051009/c/src/lib/libbsp/powerpc/acinclude.m4
+===================================================================
+--- rtems.orig/c/src/lib/libbsp/powerpc/acinclude.m4
++++ rtems/c/src/lib/libbsp/powerpc/acinclude.m4
+@@ -2,6 +2,8 @@
+ AC_DEFUN([RTEMS_CHECK_BSPDIR],
+ [
+   case "$1" in
++  ec555 )
++    AC_CONFIG_SUBDIRS([ec555]);;
+   ep1a )
+     AC_CONFIG_SUBDIRS([ep1a]);;
+   gen405 )
