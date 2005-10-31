@@ -1,0 +1,375 @@
+Index: rtems-051009/c/src/lib/libbsp/m68k/mo376/start/start.S
+===================================================================
+--- rtems.orig/c/src/lib/libbsp/m68k/mo376/start/start.S
++++ rtems/c/src/lib/libbsp/m68k/mo376/start/start.S
+@@ -2,7 +2,7 @@
+  *  $Id
+  */
+ 
+-#include "mrm332.h"
++#include "mo376.h"
+ #include <rtems/asm.h>
+ #include <rtems/m68k/sim.h>
+ 
+Index: rtems-051009/c/src/lib/libbsp/m68k/mo376/include/bsp.h
+===================================================================
+--- rtems.orig/c/src/lib/libbsp/m68k/mo376/include/bsp.h
++++ rtems/c/src/lib/libbsp/m68k/mo376/include/bsp.h
+@@ -26,7 +26,7 @@ extern "C" {
+ #include <rtems/clockdrv.h>
+ #include <rtems/console.h>
+ #include <rtems/iosupp.h>
+-#include <mrm332.h>
++#include <mo376.h>
+ #include <rtems/m68k/sim.h>
+ #include <rtems/m68k/qsm.h>
+ 
+Index: rtems-051009/c/src/lib/libbsp/m68k/mo376/ChangeLog
+===================================================================
+--- rtems.orig/c/src/lib/libbsp/m68k/mo376/ChangeLog
++++ rtems/c/src/lib/libbsp/m68k/mo376/ChangeLog
+@@ -2,6 +2,11 @@
+ 
+ 	* include/bsp.h: New header guard.
+ 
++2005-04-08	Pavel Pisa <pisa@cmp.felk.cvut.cz>
++
++	* MO376 BSP for PiKRON's MO_CPU1/MO_CPU2 board started
++	as clone of MRM332 BSP.
++
+ 2005-01-07	Ralf Corsepius <ralf.corsepius@rtems.org>
+ 
+ 	* Makefile.am: Eliminate CFLAGS_OPTIMIZE_V.
+Index: rtems-051009/c/src/lib/libbsp/m68k/mo376/clock/ckinit.c
+===================================================================
+--- rtems.orig/c/src/lib/libbsp/m68k/mo376/clock/ckinit.c
++++ rtems/c/src/lib/libbsp/m68k/mo376/clock/ckinit.c
+@@ -20,7 +20,7 @@
+ #include <stdlib.h>
+ #include <bsp.h>
+ #include <rtems/libio.h>
+-#include <mrm332.h>
++#include <mo376.h>
+ 
+ #define CLOCK_VECTOR   MRM_PIV
+ 
+Index: rtems-051009/c/src/lib/libbsp/m68k/mo376/configure.ac
+===================================================================
+--- rtems.orig/c/src/lib/libbsp/m68k/mo376/configure.ac
++++ rtems/c/src/lib/libbsp/m68k/mo376/configure.ac
+@@ -3,7 +3,7 @@
+ ## $Id: configure.ac,v 1.14 2004/09/24 06:32:09 ralf Exp $
+ 
+ AC_PREREQ(2.59)
+-AC_INIT([rtems-c-src-lib-libbsp-m68k-mrm332],[_RTEMS_VERSION],[rtems-bugs@rtems.com])
++AC_INIT([rtems-c-src-lib-libbsp-m68k-mo376],[_RTEMS_VERSION],[rtems-bugs@rtems.com])
+ AC_CONFIG_SRCDIR([bsp_specs])
+ RTEMS_TOP(../../../../../..)
+ 
+Index: rtems-051009/c/src/lib/libbsp/m68k/mo376/README
+===================================================================
+--- rtems.orig/c/src/lib/libbsp/m68k/mo376/README
++++ rtems/c/src/lib/libbsp/m68k/mo376/README
+@@ -2,23 +2,24 @@
+ #  $Id: README,v 1.1 2001/05/25 16:28:46 joel Exp $
+ #
+ 
+-Description: mrm332
++Description: mo376
+ ============
+-CPU: MC68332 @16 or 25MHz
+-RAM: 32k or 512k
+-ROM: 512k flash
++CPU: MC68376 @21MHz
++RAM: 1MiB or 2MiB
++ROM: 1MiB or 2MiB flash
+ 
+-   The Mini RoboMind is a small board based on the 68332 microcontroller
+-designed and build by Mark Castelluccio.  For details, see:
++   The mo376 BSP supports MO_CPU1/MO_CPU2 boards developed by PiKRON company.
++The design documentation conforms open-source mind of board authors
++and can be found on the company pages
+ 
+-        http://www.robominds.com
++        http://www.pikron.com/en/main_frame_mo_cpu1.html
+ 
+-   This BSP was ported from the efi332 BSP by Matt Cross (profesor@gweep.net),
+-the efi332 BSP was written by John S Gwynne.
++  This BSP has been cloned from Mini RoboMind BSP written for small board based
++on the 68332 microcontroller designed and build by Mark Castelluccio
++
++   The mrm332 BSP was ported from the efi332 BSP by Matt Cross (profesor@gweep.net),
++the efi332 was written by John S Gwynne.
+ 
+ TODO:
+ =====
+-- integrate the interrupt driven stdin/stdout into RTEMS to (a) reduce
+-  the interrupt priority and (2) to prevent it from blocking.
+-- add a timer driver for the tmtest set.
+ 
+Index: rtems-051009/c/src/lib/libbsp/m68k/mo376/Makefile.am
+===================================================================
+--- rtems.orig/c/src/lib/libbsp/m68k/mo376/Makefile.am
++++ rtems/c/src/lib/libbsp/m68k/mo376/Makefile.am
+@@ -17,7 +17,7 @@ DISTCLEANFILES = include/bspopts.h
+ 
+ noinst_PROGRAMS =
+ 
+-include_HEADERS += include/mrm332.h
++include_HEADERS += include/mo376.h
+ nodist_include_HEADERS += ../../shared/include/coverhd.h
+ 
+ EXTRA_DIST = times
+@@ -97,9 +97,9 @@ $(PROJECT_INCLUDE)/bspopts.h: include/bs
+ 	$(INSTALL_DATA) $< $(PROJECT_INCLUDE)/bspopts.h
+ PREINSTALL_FILES += $(PROJECT_INCLUDE)/bspopts.h
+ 
+-$(PROJECT_INCLUDE)/mrm332.h: include/mrm332.h $(PROJECT_INCLUDE)/$(dirstamp)
+-	$(INSTALL_DATA) $< $(PROJECT_INCLUDE)/mrm332.h
+-PREINSTALL_FILES += $(PROJECT_INCLUDE)/mrm332.h
++$(PROJECT_INCLUDE)/mo376.h: include/mo376.h $(PROJECT_INCLUDE)/$(dirstamp)
++	$(INSTALL_DATA) $< $(PROJECT_INCLUDE)/mo376.h
++PREINSTALL_FILES += $(PROJECT_INCLUDE)/mo376.h
+ 
+ $(PROJECT_INCLUDE)/coverhd.h: ../../shared/include/coverhd.h $(PROJECT_INCLUDE)/$(dirstamp)
+ 	$(INSTALL_DATA) $< $(PROJECT_INCLUDE)/coverhd.h
+Index: rtems-051009/c/src/lib/libbsp/m68k/mo376/console/sci.c
+===================================================================
+--- rtems.orig/c/src/lib/libbsp/m68k/mo376/console/sci.c
++++ rtems/c/src/lib/libbsp/m68k/mo376/console/sci.c
+@@ -129,7 +129,7 @@
+ 
+ // system clock definitions, i dont have documentation on this...
+ 
+-#if 0 // Not needed, this is provided in mrm332.h
++#if 0 // Not needed, this is provided in mo376.h
+ #define XTAL            32768.0		        // crystal frequency in Hz
+ #define NUMB_W          0			        // system clock parameters
+ #define NUMB_X          1
+@@ -1238,7 +1238,7 @@ static void SciSetBaud(uint32_t   rate)
+ 
+     // calculate the register value as a float and convert to an int
+     // set baud rate - you must define the system clock constant
+-    // see mrm332.h for an example
++    // see mo376.h for an example
+ 
+     value = ( (uint16_t) ( SYS_CLOCK / rate / 32.0 + 0.5 ) & 0x1fff );
+ 
+Index: rtems-051009/c/src/lib/libbsp/m68k/mo376/startup/start_c.c
+===================================================================
+--- rtems.orig/c/src/lib/libbsp/m68k/mo376/startup/start_c.c
++++ rtems/c/src/lib/libbsp/m68k/mo376/startup/start_c.c
+@@ -2,7 +2,7 @@
+  *  $Id
+  */
+ 
+-#include <mrm332.h>
++#include <mo376.h>
+ #include <rtems/m68k/sim.h>
+ #define __START_C__
+ #include "bsp.h"
+Index: rtems-051009/c/src/lib/libbsp/m68k/mo376/times
+===================================================================
+--- rtems.orig/c/src/lib/libbsp/m68k/mo376/times
++++ rtems/c/src/lib/libbsp/m68k/mo376/times
+@@ -1,5 +1,5 @@
+ #
+-#  Timing Test Suite Results for the MRM332 BSP
++#  Timing Test Suite Results for the MO376 BSP
+ #
+ #  $Id: times,v 1.2 2004/01/07 21:13:50 joel Exp $
+ #
+@@ -8,9 +8,9 @@ NOTE:  This BSP is user submitted and no
+ 
+ TBD: MATT - update this with real times!
+ 
+-Board:                MRM332 
++Board:                MO376 
+ CPU:                  68332
+-Clock Speed:          20 Mhz
++Clock Speed:          21 Mhz
+ Memory Configuration: SRAM, DRAM, cache, etc
+ Wait States:          
+ 
+Index: rtems-051009/c/src/lib/libbsp/m68k/mo376/include/mo376.h
+===================================================================
+--- /dev/null
++++ rtems/c/src/lib/libbsp/m68k/mo376/include/mo376.h
+@@ -0,0 +1,70 @@
++/*  mo376.h
++ *
++ *  $Id: mo376.h,v 1.5 2004/04/21 16:01:35 ralf Exp $
++ */
++
++#ifndef _MO376_H_
++#define _MO376_H_
++
++/* SIM_MM (SIM Module Mapping) determines the location of the control
++   register block. When MM=0, register addresses range fom 0x7ff000 to
++   0x7FFFFF. When MM=1, register addresses range from 0xfff000 to
++   0xffffff. */
++#define SIM_MM 1
++
++/* Interrupt related definitions */
++#define SIM_IARB 15
++#define QSM_IARB 10
++
++#define MRM_PIV 64
++#define ISRL_PIT 4		/* zero disables PIT */
++
++#define EFI_QIVR 66		/* 66=>SCI and 67=>QSPI interrupt */
++#define ISRL_QSPI 0
++
++#define EFI_SPINT 24		/* spurious interrupt */
++#define EFI_INT1 25		/* CTS interrupt */
++#define ISRL_SCI 6
++
++/* System Clock definitions */
++#define XTAL 32768.0		/* crystal frequency in Hz */
++
++#if 0
++/* Default MRM clock rate (8.388688 MHz) set by CPU32: */
++#define MRM_W 0			/* system clock parameters */
++#define MRM_X 0
++#define MRM_Y 0x3f
++#endif
++
++#if 1
++/* 16.77722 MHz: */
++#define MRM_W 1			/* system clock parameters */
++#define MRM_X 1
++#define MRM_Y 0x0f
++#endif
++
++#if 0
++/* 25.16582 MHz: */
++#define MRM_W 1			/* system clock parameters */
++#define MRM_X 1
++#define MRM_Y 0x17
++#endif
++
++#define SYS_CLOCK (XTAL*4.0*(MRM_Y+1)*(1 << (2*MRM_W+MRM_X)))
++#define SCI_BAUD 19200		/* RS232 Baud Rate */
++
++/* macros/functions */
++
++#ifndef ASM
++
++/*
++ *  This prototype really should have the noreturn attribute but
++ *  that causes a warning. Not sure how to fix that.
++ */
++/*   static void reboot(void) __attribute__ ((noreturn)); */
++static void reboot(void);
++__inline__ static void reboot() {asm("trap #15; .word 0x0063");}
++
++#endif /* ASM */
++
++#endif /* _MRM_H_ */
+Index: rtems-051009/c/src/lib/libbsp/m68k/mo376/include/mrm332.h
+===================================================================
+--- rtems.orig/c/src/lib/libbsp/m68k/mo376/include/mrm332.h
++++ /dev/null
+@@ -1,70 +0,0 @@
+-/*  mrm332.h
+- *
+- *  $Id: mrm332.h,v 1.5 2004/04/21 16:01:35 ralf Exp $
+- */
+-
+-#ifndef _MRM332_H_
+-#define _MRM332_H_
+-
+-/* SIM_MM (SIM Module Mapping) determines the location of the control
+-   register block. When MM=0, register addresses range fom 0x7ff000 to
+-   0x7FFFFF. When MM=1, register addresses range from 0xfff000 to
+-   0xffffff. */
+-#define SIM_MM 1
+-
+-/* Interrupt related definitions */
+-#define SIM_IARB 15
+-#define QSM_IARB 10
+-
+-#define MRM_PIV 64
+-#define ISRL_PIT 4		/* zero disables PIT */
+-
+-#define EFI_QIVR 66		/* 66=>SCI and 67=>QSPI interrupt */
+-#define ISRL_QSPI 0
+-
+-#define EFI_SPINT 24		/* spurious interrupt */
+-#define EFI_INT1 25		/* CTS interrupt */
+-#define ISRL_SCI 6
+-
+-/* System Clock definitions */
+-#define XTAL 32768.0		/* crystal frequency in Hz */
+-
+-#if 0
+-/* Default MRM clock rate (8.388688 MHz) set by CPU32: */
+-#define MRM_W 0			/* system clock parameters */
+-#define MRM_X 0
+-#define MRM_Y 0x3f
+-#endif
+-
+-#if 1
+-/* 16.77722 MHz: */
+-#define MRM_W 1			/* system clock parameters */
+-#define MRM_X 1
+-#define MRM_Y 0x0f
+-#endif
+-
+-#if 0
+-/* 25.16582 MHz: */
+-#define MRM_W 1			/* system clock parameters */
+-#define MRM_X 1
+-#define MRM_Y 0x17
+-#endif
+-
+-#define SYS_CLOCK (XTAL*4.0*(MRM_Y+1)*(1 << (2*MRM_W+MRM_X)))
+-#define SCI_BAUD 19200		/* RS232 Baud Rate */
+-
+-/* macros/functions */
+-
+-#ifndef ASM
+-
+-/*
+- *  This prototype really should have the noreturn attribute but
+- *  that causes a warning. Not sure how to fix that.
+- */
+-/*   static void reboot(void) __attribute__ ((noreturn)); */
+-static void reboot(void);
+-__inline__ static void reboot() {asm("trap #15; .word 0x0063");}
+-
+-#endif /* ASM */
+-
+-#endif /* _MRM_H_ */
+Index: rtems-051009/make/custom/mo376.cfg
+===================================================================
+--- rtems.orig/make/custom/mo376.cfg
++++ rtems/make/custom/mo376.cfg
+@@ -1,7 +1,7 @@
+ #
+-#  Config file for the mrm332 BSP
++#  Config file for the mo376 BSP
+ #
+-#  $Id: mrm332.cfg,v 1.8 2004/02/04 16:50:30 ralf Exp $
++#  $Id: mo376.cfg,v 1.8 2004/02/04 16:50:30 ralf Exp $
+ #
+ 
+ include $(RTEMS_ROOT)/make/custom/default.cfg
+@@ -10,7 +10,7 @@ RTEMS_CPU=m68k
+ RTEMS_CPU_MODEL=m68332
+ 
+ # This is the actual bsp directory used during the build process.
+-RTEMS_BSP_FAMILY=mrm332
++RTEMS_BSP_FAMILY=mo376
+ 
+ #  This contains the compiler options necessary to select the CPU model
+ #  and (hopefully) optimize for it. 
+@@ -26,7 +26,7 @@ CFLAGS_OPTIMIZE_V=-O4 -fomit-frame-point
+ ifeq ($(MRM_IN_ROM),yes)
+ # Build a rommable image - move the .data section after the .text section
+ # in the image.
+-CPU_CFLAGS += -qnolinkcmds -T $(exec_prefix)/mrm332/lib/linkcmds_ROM
++CPU_CFLAGS += -qnolinkcmds -T $(exec_prefix)/mo376/lib/linkcmds_ROM
+ 
+ #  This is a good way to get debug information.  The output file is large
+ #  though and greatly slows the build process so only do this if needed.
