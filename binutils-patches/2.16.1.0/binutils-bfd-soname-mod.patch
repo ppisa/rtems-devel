@@ -1,0 +1,26 @@
+Index: binutils-2.16.1/bfd/configure
+===================================================================
+--- binutils-2.16.1.orig/bfd/configure
++++ binutils-2.16.1/bfd/configure
+@@ -2834,7 +2834,7 @@ fi
+ 
+ # Define the identity of the package.
+  PACKAGE=bfd
+- VERSION=2.16.1
++ VERSION=2.16.1.0
+ 
+ 
+ cat >>confdefs.h <<_ACEOF
+Index: binutils-2.16.1/bfd/configure.in
+===================================================================
+--- binutils-2.16.1.orig/bfd/configure.in
++++ binutils-2.16.1/bfd/configure.in
+@@ -8,7 +8,7 @@ AC_CONFIG_SRCDIR([libbfd.c])
+ AC_CANONICAL_TARGET
+ AC_ISC_POSIX
+ 
+-AM_INIT_AUTOMAKE(bfd, 2.16.1)
++AM_INIT_AUTOMAKE(bfd, 2.16.1.0)
+ 
+ dnl These must be called before AM_PROG_LIBTOOL, because it may want
+ dnl to call AC_CHECK_PROG.
