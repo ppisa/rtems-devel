@@ -1,6 +1,7 @@
-rtems-csb336-20051008-asyncmclk.patch
 rtems-csb336-20051008-other.patch
 rtems-csb336-20051008-uart.patch
+rtems-m9328-pimx1-mapping-change.patch
+rtems-m9328-pimx1-baud-19200.patch
 rtems-dosfs-fix1.patch
 rtems-inttypes-wcs-disable-fix.patch
 rtems-clone-mrm332-to-mo376.patch

@@ -1,0 +1,26 @@
+Index: rtems-051009/c/src/lib/libbsp/arm/csb336/console/uart.c
+===================================================================
+--- rtems.orig/c/src/lib/libbsp/arm/csb336/console/uart.c
++++ rtems/c/src/lib/libbsp/arm/csb336/console/uart.c
+@@ -237,7 +237,7 @@ static void imx_uart_init(int minor)
+         MC9328MXL_UART_FCR_RFDIV_1 |
+         MC9328MXL_UART_FCR_RXTL(1));
+ 
+-    imx_uart_set_baud(minor, 38400);
++    imx_uart_set_baud(minor, 19200);
+ 
+ }
+ 
+Index: rtems-051009/cpukit/libcsupport/src/termios.c
+===================================================================
+--- rtems.orig/cpukit/libcsupport/src/termios.c
++++ rtems/cpukit/libcsupport/src/termios.c
+@@ -271,7 +271,7 @@ rtems_termios_open (
+ 		 */
+ 		tty->termios.c_iflag = BRKINT | ICRNL | IXON | IMAXBEL;
+ 		tty->termios.c_oflag = OPOST | ONLCR | XTABS;
+-		tty->termios.c_cflag = B9600 | CS8 | CREAD | CLOCAL;
++		tty->termios.c_cflag = B19200 | CS8 | CREAD | CLOCAL;
+ 		tty->termios.c_lflag = ISIG | ICANON | IEXTEN | ECHO | ECHOK | ECHOE | ECHOCTL;
+ 
+ 		tty->termios.c_cc[VINTR] = '\003';
