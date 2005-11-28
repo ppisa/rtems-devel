@@ -1,0 +1,15 @@
+default_CONFIG += CONFIG_OC_BUILD4RTEMS=y
+default_CONFIG += CONFIG_OC_GDBSTUB=n
+
+bin_PROGRAMS = appfoo
+
+#lib_LIBRARIES = 
+
+#include_HEADERS = 
+
+appfoo_SOURCES += init.c task_1.c
+
+#appfoo_EMBEDTARFILES = rootfs
+
+lib_LOADLIBES += bar
+

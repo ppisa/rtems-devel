@@ -1,0 +1,248 @@
+Description of OCERA Make System for CAN Components (OMK)
+=========================================================
+
+Important notice:
+This make system uses features found in recent versions of GNU Make
+program. If you encounter problems with package building,
+check, that you use correct version of Make program.
+The Make older than version 3.80, could not be used.
+Even Make version 3.80 has annoying bug which causes
+building fail with misleading message "virtual memory exhausted".
+Please, upgrade to last version of Make (3.81beta1).
+You can take it from GNU CVS or from our local copy
+
+http://cmp.felk.cvut.cz/~pisa/can/make-3.81beta1.tar.gz
+
+
+There is list of features which we want to solve with our makesystem:
+ - central Makefile.rules for most of subcomponents and components
+  (our CAN framework includes more libraries common with our other projects,
+   we need to separate some utility libraries etc.)
+ - the rules in more spread Makefiles are way to the hell,
+  (update for different kernel, RT-Linux etc would be nightmare in other case)
+ - make system should allow to freely move with cross-dependant components
+   without need to update users of moved component
+  (I hate somethink like -I../../sched/rtlshwq/include in CAN makefiles
+   for example. Component could be renamed to different name or version
+   could be added to name and all Makefiles in CAN would require to
+   be updated)
+ - make system should be able to compile mutually cross-dependant libraries
+   and should ensure, that change in one component sources or headers
+   would result in relink or rebuild in components linked against that library
+   or including modified header file
+ - make system has to enable compilation out of OCERA full source tree
+  (we would lost many users of particular components in other case)
+ - compile should be able to do all above work without need to install
+   any files before successful finish of build.
+ - because we use some libraries for RT-Linux build and userspace
+   build, we need to solve how to compile from same sources to both targets.
+ - the build system should allow to call make for particular source
+   subdirectory. Time of recursive make through all subdirectories is
+   unacceptable.
+ - make system should enable to build out of sources tree
+  (else clean or working with CVS sandbox gets fussy and simultaneous
+   multiple targets gets problematic)
+ - it would be good, if there would be possibility to make from read-only
+   media sources
+ - make system should store results of build in some separate directory
+   structure to simple install and testing
+ - Makefiles in sources directories should be simple
+
+There is probably only one alternative fully supporting above requirements
+and it is GNU Autoheader...Automake...Autoconf... system.
+But it is complicated and requires big amount of support files.
+It would be acceptable if it could be easily used for OCERA framework.
+But there are important show stopper for that system:
+ - it would require deep revision of all OCERA CVS contents and agreement
+   on this would be problematic
+ - this system is not well prepared for dual compilation for Linux
+   and RT-Linux sub-targets. It would mean many changes in default
+   autoconf setup to support this. Probably simplest way would be
+   to rebuild GCC tool chain for something like i586-elf-rtlinux.
+   This would require even more space for OCERA development.
+
+The problem calls for same solution, which would have minimal impact
+on other components and would be elegant and would be maintainable
+and small, because our main goal is components development and not
+make systems development.
+
+There is result of our trial. It is OMK make system.
+The Makefile and Makefile.omk files should be in all source
+directories. Common Makefile.rules file is required in the toplevel
+sources directory. Alternatively this file could be moved
+to link tree pointing into readonly media or can be anywhere
+else if MAKERULES_DIR and SOURCES_DIR are specified.
+
+Syntax of Makefile.omk files is for usual cases compatible
+to Automake's Makefile.am descriptions. There are specific targets
+for RT-Linux and Linux kernel related stuff
+
+Makefile.omk user defined variables
+# SUBDIRS          .. list of subdirectories intended for make from actual directory
+# lib_LIBRARIES    .. list of the user-space libraries
+# shared_LIBRARIES .. list of the user-space shared libraries
+# kernel_LIBRARIES .. list of the kernel-space libraries
+# rtlinux_LIBRARIES.. list of the RT-Linux kernel-space libraries
+# include_HEADERS  .. list of the user-space header files
+# nobase_include_HEADERS .. headers copied even with directory part
+# kernel_HEADERS   .. list of the kernel-space  header files
+# rtlinux_HEADERS  .. list of the RT-Linux kernel-space  header files
+# bin_PROGRAMS     .. list of the require binary programs
+# utils_PROGRAMS   .. list of the development utility programs
+# kernel_MODULES   .. list of the kernel side modules/applications
+# rtlinux_MODULES  .. list of RT-Linux the kernel side modules/applications
+# xxx_SOURCES      .. list of specific target sources
+# INCLUDES         .. additional include directories and defines for user-space
+# kernel_INCLUDES  .. additional include directories and defines for kernel-space
+# rtlinux_INCLUDES .. additional include directories and defines for RT-Linux
+# default_CONFIG   .. list of default config assignments CONFIG_XXX=y/n ...
+
+The Makefile is same for all sources directories and is only 14 lines long.
+It is there only for convenience reasons to enable call "make" from
+local directory. It contains code which locates Makefile.rules in actual
+or any parent directory. With standard BASH environment it works such way,
+that if you get into sources directory over symbolic links, it is able to
+unwind yours steps back => you can make links to readonly media component
+directories, copy Makefile.rules, Makefile and toplevel Makefile.omk,
+adjust Makefile.omk to contain only required components and then call
+make in top or even directories after crossing from your tree
+to readonly media.
+
+The system compiles all files out of source directories.
+The actual version of system is adapted even for OCERA tree mode
+if OCERA_DIR variable is defined in Makefile.rules
+
+There are next predefined directory name components,
+which can be adapted if required
+
+BUILD_DIR_NAME = _build
+	prefix of directory, where temporary build files are stored
+COMPILED_DIR_NAME = _compiled
+	prefix of directory, where final compilation results are stored
+GROUP_DIR_NAME = yyy
+	this is used for separation of build sub-trees in OCERA environment
+	where more Makefile.rules is spread in the tree
+
+Next directories are used:
+
+KERN_BUILD_DIR   := $(MAKERULES_DIR)/$(BUILD_DIR_NAME)/kern
+        directory to store intermediate files for kernel-space targets
+USER_BUILD_DIR   := $(MAKERULES_DIR)/$(BUILD_DIR_NAME)/user
+        directory to store intermediate files for user-space targets
+
+USER_INCLUDE_DIR := $(MAKERULES_DIR)/$(COMPILED_DIR_NAME)/include
+        directory to store exported include files which should be installed later
+        on user-space include path
+USER_LIB_DIR     := $(MAKERULES_DIR)/$(COMPILED_DIR_NAME)/lib
+        same for user-pace libraries
+USER_UTILS_DIR   := $(MAKERULES_DIR)/$(COMPILED_DIR_NAME)/bin-utils
+        utilities for testing, which would not probably be installed
+USER_BIN_DIR     := $(MAKERULES_DIR)/$(COMPILED_DIR_NAME)/bin
+        binaries, which should go into directory on standard system PATH
+        (/usr/local/bin, /usr/bin or $(prefix)/bin)
+
+KERN_INCLUDE_DIR := $(MAKERULES_DIR)/$(COMPILED_DIR_NAME)/include-kern
+        directory to store exported include files which should be installed later
+        on kernel-space include path
+KERN_LIB_DIR     := $(MAKERULES_DIR)/$(COMPILED_DIR_NAME)/lib-kern
+        same for kernel-pace libraries
+KERN_MODULES_DIR := $(MAKERULES_DIR)/$(COMPILED_DIR_NAME)/modules
+        builded modules for Linux kernel or RT-Linux system
+
+There is more recursive passes through directories to enable
+mutual dependant libraries and binaries to compile.
+Next passes are defined
+
+default-config .. generates config.omk-default or xxx-default configuration file
+check-dir      .. checks and creates required build directories
+include-pass   .. copyes header files to USER_INCLUDE_DIR and KERN_INCLUDE_DIR
+library-pass   .. builds objects in USER_BUILD_DIR/<relative path> and creates
+                  libraries in USER_LIB_DIR
+binary-pass and utils-pass .. links respective binaries
+                in USER_{BIN,UTILS}_DIR directory. If some object file is missing
+                it compiles it in  USER_BUILD_DIR/<relative path>
+kernel-lib-pass .. builds libraries for kernel space targets
+kernel-pass    .. builds kernel modules
+
+The amount of passes is relatively high and consumes some time.
+But only other way to support all required features is to assemble
+one big toplevel Makefile, which would contain all components
+and targets cross-dependencies.
+
+Drawbacks of designed make system
+ - the system is not as fast as we would like
+ - it lacks Autoconf and configure extensive support for many systems
+   from UNIX to DOS and WINDOWS
+ - it does not contain support for checking existence of target libraries
+   and functionalities as GNU Autoconf
+ - it is heavily dependant on GNU MAKE program. But it would not be big
+   problem, because even many commercial applications distribute GNU
+   MAKE with them to be able to work in non-friendly systems
+ - the key drawback is dependence on recent MAKE version 3.80 and better
+   and even version 3.80 of MAKE has important bug, which has been
+   corrected in newer sources
+
+The last point is critical. I have not noticed it first, because
+I use Slackware-9.2 and it contains latest released version 
+of MAKE (version 3.80).
+The problem appears when I have tried to build bigger libraries.
+There is bug in version 3.80, which results in misleading
+error "Virtual memory exhausted". It is known bug with ID 1517
+
+    * long prerequisite inside eval(call()) => vm exhausted, Paul D. Smith
+
+I have optimized some rules to not push memory to the edge,
+but there could be still issues with 3.80 version.
+
+I have downloaded latest MAKE CVS sources. The compilation required
+separate lookup and download for .po files and full Autoheader... cycle.
+I have put together package similar to release. Only ./configure --prefix=...
+and make is required. CVS sources contains version 3.81beta1.
+You can download prepared sources archive from
+
+  http://cmp.felk.cvut.cz/~pisa/can/make-3.81beta1.tar.gz
+
+The archive contains even "make" binary build by me, which should work
+on other Linux distributions as well. 
+Older version of MAKE (3.79.x released about year 2000) found
+on Mandrake and RedHat are not sufficient and do not support eval feature.
+I do not expect, that Debian would be more up-to-date or contain fixes
+to MAKE vm exhausted bug.
+
+The local CTU archive with our CAN components prepared for inclusion
+into OCERA SF CVS could be found in my "can" directory
+
+  http://cmp.felk.cvut.cz/~pisa/can/ocera-can-031212.tar.gz
+
+The code should build for user-space with new make on most of Linux distros
+when make is updated.
+
+If you want to test compile for RT-Linux targets, line
+
+#RTL_DIR := /home/cvs/ocera/ocera-build/kernel/rtlinux
+
+in "Makefile.rules" has to be activated and updated
+to point RT-Linux directory containing "rtl.mk".
+There is only one library ("ulutrtl") and test utility compiled for RT-Linux
+("can/utils/ulut/ul_rtlchk.c").
+
+The next line ,if enabled, controls compilation in OCERA project tree
+
+#OCERA_DIR := $(shell ( cd -L $(MAKERULES_DIR)/../../.. ; pwd -L ) )
+
+The LinCAN driver has been updated to compile out of source directories.
+
+Please, check, if you could compile CAN package and help us with integration
+into OCERA SF CVS. Send your comments and objections. 
+
+The OMK system has been adapted to support actual OCERA configuration process.
+I am not happy with ocera.mk mix of defines and poor two or three rules,
+but OMK is able to overcome that.
+
+The OMK system has integrated rules (default-config) to build default configuration
+file. The file is named "config.omk-default" for the stand-alone compilation.
+The name corresponds to OCERA config + "-default" if OCERA_DIR is defined.
+This file contains statements from all default_CONFIG lines in all Makefile.omk.
+The file should be used for building of own "config.omk" file, or as list
+for all options if Kconfig is used.
+

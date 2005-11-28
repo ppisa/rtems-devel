@@ -1,0 +1,5 @@
+lib_LIBRARIES = bar
+
+include_HEADERS = bar.h
+
+bar_SOURCES = function1.c function2.c
