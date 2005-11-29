@@ -1,9 +1,9 @@
 #  Makefile.rules - OCERA make framework common project rules
 #                   This version is adapted for RTEMS build
-#   
+#
 #  (C) Copyright 2003 by Pavel Pisa - OCERA team member
 #
-#  The uLan driver is distributed under the Gnu General Public License. 
+#  The uLan driver is distributed under the Gnu General Public License.
 #  See file COPYING for details.
 #
 #
@@ -32,7 +32,7 @@ include $(CONFIG.CC)
 
 BUILD_DIR_NAME = _build/$(RTEMS_BSP)
 COMPILED_DIR_NAME = _compiled/$(RTEMS_BSP)
-GROUP_DIR_NAME = 
+GROUP_DIR_NAME =
 
 
 # We need to ensure definition of sources directory first
@@ -70,7 +70,7 @@ export SOURCES_DIR MAKERULES_DIR RELATIVE_DIR
 export CONFIG_FILE OMK_SERIALIZE_INCLUDED OMK_VERBOSE OMK_SILENT
 
 #CFLAGS += -ggdb
-#CFLAGS += -O2 
+#CFLAGS += -O2
 #CFLAGS += -Wall
 #CXXFLAGS += -ggdb
 #CXXFLAGS += -O2
@@ -86,8 +86,8 @@ CPPFLAGS  += $(CONFIG_OMK_DEFINES)
 #CFLAGS    += $(AM_CFLAGS)
 #CXXFLAGS  += $(AM_CXXFLAGS)
 #LDFLAGS   += $(CFLAGS) $(AM_CFLAGS) $(LD_PATHS:%=-L%)
- 
-LOADLIBES += -L$(USER_LIB_DIR) 
+
+LOADLIBES += -L$(USER_LIB_DIR)
 
 LOADLIBES += $(lib_LOADLIBES:%=-l%)
 
@@ -116,7 +116,7 @@ USER_OBJS_DIR = $(USER_BUILD_DIR)/$(RELATIVE_DIR)
 .PHONY: default dep subdirs clean cleandepend default-config
 .PHONY: check-make-ver check-dir include-pass library-pass binary-pass utils-pass
 .PHONY: default-config-pass
-.PHONY: check-dir-local include-pass-local library-pass-local binary-pass-local 
+.PHONY: check-dir-local include-pass-local library-pass-local binary-pass-local
 .PHONY: utils-pass-local default-config-pass-local
 
 # Some support to serialize some targets for parallel make
@@ -356,7 +356,8 @@ endef
 
 
 
-library-pass-local: $(lib_LIBRARIES:%=$(USER_LIB_DIR)/lib%.a) $(shared_LIBRARIES:%=$(USER_LIB_DIR)/lib%.so)
+library-pass-local: $(addprefix $(USER_INCLUDE_DIR)/,$(cmetric_include_HEADERS)) \
+		    $(lib_LIBRARIES:%=$(USER_LIB_DIR)/lib%.a) $(shared_LIBRARIES:%=$(USER_LIB_DIR)/lib%.so)
 
 binary-pass-local: $(bin_PROGRAMS:%=$(USER_BIN_DIR)/%)
 
@@ -369,7 +370,7 @@ $(foreach cmetrh,$(cmetric_include_HEADERS),$(eval $(call COMPILE_c_o_template,\
 		$($(basename $(notdir $(cmetrh)))_CMETRIC_SOURCES:%.c=%.o),)))
 $(foreach cmetrh,$(cmetric_include_HEADERS),$(eval $(call CMETRIC_o_h_template,\
 		$($(basename $(notdir $(cmetrh)))_CMETRIC_SOURCES:%.c=%.o),\
-		$(cmetrh:%=$(USER_INCLUDE_DIR)/%))))
+		$(addprefix $(USER_INCLUDE_DIR)/,$(cmetrh)))))
 
 GEN_HEADERS+=$(cmetric_include_HEADERS:%=$(USER_INCLUDE_DIR)/%)
 
@@ -411,7 +412,7 @@ dep clean install check-dir include-pass default-config-pass:
 
 
 dep-local:
-	
+
 check-dir-local:
 	@$(call mkdir_def,$(USER_OBJS_DIR))
 	@$(call mkdir_def,$(USER_INCLUDE_DIR))
@@ -488,7 +489,6 @@ clean-local:
 	       $(USER_OBJS_DIR)/*.d \
 	       $(USER_OBJS_DIR)/*.map \
 	       $(LOCAL_CONFIG_H:%=$(USER_OBJS_DIR)/%) \
-	       $(cmetric_include_HEADERS:%=$(USER_INCLUDE_DIR)/%) \
 	       $(tar_EMBEDFILES:%=$(USER_OBJS_DIR)/%_tarfile)
-	       
+
 
