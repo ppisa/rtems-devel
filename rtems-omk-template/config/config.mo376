@@ -1,0 +1,4 @@
+# EC555 BSP for Wuerz-elektronik EC555 board
+# This file should be symlinked as config.target into project
+# Makefile.rules directory
+RTEMS_MAKEFILE_PATH=/opt/rtems/m68k-rtems/mo376
