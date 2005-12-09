@@ -1,0 +1,143 @@
+Index: rtems-051009/cpukit/score/cpu/arm/cpu.c
+===================================================================
+--- rtems-051009.orig/cpukit/score/cpu/arm/cpu.c
++++ rtems-051009/cpukit/score/cpu/arm/cpu.c
+@@ -124,9 +124,9 @@ void _defaultExcHandler (CPU_Exception_f
+ {
+     printk("\n\r");
+     printk("----------------------------------------------------------\n\r");
+-#if 0
++#if 1
+     printk("Exception 0x%x caught at PC 0x%x by thread %d\n",
+-           ctx->register_pc, ctx->register_lr - 4,
++           ctx->register_ip, ctx->register_lr - 4,
+            _Thread_Executing->Object.id);
+ #endif
+     printk("----------------------------------------------------------\n\r");
+@@ -221,6 +221,47 @@ void rtems_exception_init_mngt()
+ #define SET_REG(r, ctx, v)   (((uint32_t   *)ctx)[r] = v)
+ #define GET_OFFSET(insn)     (insn & 0xfff)
+ 
++char *_print_full_context_mode2txt[0x20]={
++        [0x10]="user",  /* User */
++	[0x11]="fiq",   /* FIQ - Fast Interrupt Request */
++	[0x12]="irq",   /* IRQ - Interrupt Request */
++	[0x13]="super", /* Supervisor */
++	[0x17]="abort", /* Abort */
++	[0x1b]="undef", /* Undefined */
++	[0x1f]="system" /* System */
++    };
++
++void _print_full_context(uint32_t spsr)
++{
++    char *mode;
++    uint32_t prev_sp,prev_lr,cpsr,tmp;
++    int i;
++
++    printk("active thread thread 0x%08x\n", _Thread_Executing->Object.id);
++
++    mode=_print_full_context_mode2txt[spsr&0x1f];
++    if(!mode) mode="unknown";
++
++    asm volatile ("	MRS  %[cpsr], cpsr \n"
++              "	ORR  %[tmp], %[spsr], #0xc0 \n"
++              "	MSR  cpsr_c, %[tmp] \n"
++              "	MOV  %[prev_sp], sp \n"
++              "	MOV  %[prev_lr], lr \n"
++              "	MSR  cpsr_c, %[cpsr] \n"
++              : [prev_sp] "=&r" (prev_sp), [prev_lr] "=&r" (prev_lr),
++		[cpsr] "=&r" (cpsr), [tmp] "=&r" (tmp)
++              : [spsr] "r" (spsr)
++	      : "cc");
++
++    printk("Previous sp=0x%08x lr=0x%08x and actual cpsr=%08x\n", prev_sp, prev_lr, cpsr);
++
++    for(i=0;i<48;){
++        printk(" 0x%08x",((uint32_t*)prev_sp)[i++]);
++        if((i%6) == 0)
++            printk("\n");
++    }
++
++}
+ 
+ /* This function is supposed to figure out what caused the 
+  * data abort, do that, then return.
+@@ -229,8 +270,10 @@ void rtems_exception_init_mngt()
+  */
+ 
+ void do_data_abort(uint32_t   insn, uint32_t   spsr, 
+-                   CPU_Exception_frame *ctx)
++                    Context_Control *ctx)
+ {
++    /* Clarify, which type is correct, CPU_Exception_frame or Context_Control */
++
+     uint8_t    decode;
+     uint8_t    insn_type;
+ 
+@@ -268,6 +311,7 @@ void do_data_abort(uint32_t   insn, uint
+     case INSN_LDR:
+         printk("\n\nINSN_LDR\n");
+ 
++#if 0
+         rn = GET_RN(insn);
+         rd = GET_RD(insn);
+ 
+@@ -299,6 +343,8 @@ void do_data_abort(uint32_t   insn, uint
+                 break;
+             }
+         }
++#endif
++
+         break;
+     case INSN_LDRB:
+         printk("\n\nINSN_LDRB\n");
+@@ -311,6 +357,8 @@ void do_data_abort(uint32_t   insn, uint
+     printk("data_abort at address 0x%x, instruction: 0x%x,   spsr = 0x%x\n",
+            ctx->register_lr - 8, insn, spsr);
+ 
++    _print_full_context(spsr);
++
+     /* disable interrupts, wait forever */
+     _CPU_ISR_Disable(tmp);
+     while(1) {
+Index: rtems-051009/cpukit/score/cpu/arm/cpu_asm.S
+===================================================================
+--- rtems-051009.orig/cpukit/score/cpu/arm/cpu_asm.S
++++ rtems-051009/cpukit/score/cpu/arm/cpu_asm.S
+@@ -134,21 +134,31 @@ _go_back_2:
+ 	ldr     lr,  [r13, #REG_LR]
+ 	add     r13,r13,#SIZE_REGS
+ 	subs	pc,r14,#4			/* return */
++
++#define ABORT_REGS_OFFS 32-REG_R4
++#define ABORT_SIZE_REGS SIZE_REGS+ABORT_REGS_OFFS
+ 	
+ 	.globl _exc_data_abort
+ _exc_data_abort:
+-	sub	sp, sp, #SIZE_REGS		/* reserve register frame */
+-	stmia	sp, {r0-r12}
++	sub	sp, sp, #ABORT_SIZE_REGS	/* reserve register frame */
++	stmia	sp, {r0-r11}
++	add	sp, sp, #ABORT_REGS_OFFS	/* the Context_Control structure starts by CPSR, R4, ... */
++
++	str	ip, [sp, #REG_PC]		/* store R12 (ip) somewhere, oh hackery, hackery, hack */
+ 	str	lr, [sp, #REG_LR]
++
+ 	mov	r1, lr
+ 	ldr	r0, [r1, #-8]			/* r0 = bad instruction */
+ 	mrs	r1, spsr			/* r1 = spsr */
+-	mov	r2, r13				/* r2 = exception frame */
++	mov	r2, r13				/* r2 = exception frame of Context_Control type */
+ 	bl	do_data_abort
+ 	
+ 	ldr	lr, [sp, #REG_LR]
+-	ldmia	sp, {r0-r12}
+-	add	sp, sp, #SIZE_REGS
++	ldr	ip, [sp, #REG_PC]		/* restore R12 (ip) */
++
++	sub	sp, sp, #ABORT_REGS_OFFS
++	ldmia	sp, {r0-r11}
++	add	sp, sp, #ABORT_SIZE_REGS
+ 
+ 	subs	pc, r14, #4			/* return to the instruction */
+ 						/* _AFTER_ the aborted one */
