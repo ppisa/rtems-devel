@@ -13,3 +13,4 @@ rtems-ec555-add-to-configs.patch
 rtems-update-ss555-to-ec555.patch
 rtems-update-ss555-to-ec555-cpld-remove.patch
 rtems-arm-more-abort-info.patch
+rtems-csb336-undef-stack.patch

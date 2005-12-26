@@ -1,0 +1,43 @@
+Index: rtems-051009/c/src/lib/libbsp/arm/csb336/start/start.S
+===================================================================
+--- rtems-051009.orig/c/src/lib/libbsp/arm/csb336/start/start.S
++++ rtems-051009/c/src/lib/libbsp/arm/csb336/start/start.S
+@@ -72,6 +72,13 @@ _bss_init:        
+         ldr     sp, =_abt_stack
+         add     sp, sp, r1
+         
++        /* Enter UNDEF mode and set up the UNDEF stack pointer */
++        mov     r0, #(PSR_MODE_UNDEF | PSR_I | PSR_F)     /* No interrupts */
++        msr     cpsr, r0
++        ldr     r1, =_undef_stack_size
++        ldr     sp, =_undef_stack
++        add     sp, sp, r1
++        
+         /* Set up the SVC stack pointer last and stay in SVC mode */
+         mov     r0, #(PSR_MODE_SVC | PSR_I | PSR_F)     /* No interrupts */
+         msr     cpsr, r0
+Index: rtems-051009/c/src/lib/libbsp/arm/csb336/startup/linkcmds
+===================================================================
+--- rtems-051009.orig/c/src/lib/libbsp/arm/csb336/startup/linkcmds
++++ rtems-051009/c/src/lib/libbsp/arm/csb336/startup/linkcmds
+@@ -33,7 +33,8 @@ _sdram_size = DEFINED(_sdram_size) ? _sd
+ 
+ _irq_stack_size = DEFINED(_irq_stack_size) ? _irq_stack_size : 0x1000;
+ _fiq_stack_size = DEFINED(_fiq_stack_size) ? _fiq_stack_size : 0x400;
+-_abt_stack_size = DEFINED(_abt_stack_size) ? _abt_stack_size : 0x100;
++_abt_stack_size = DEFINED(_abt_stack_size) ? _abt_stack_size : 0x400;
++_undef_stack_size = DEFINED(_undef_stack_size) ? _undef_stack_size : 0x400;
+ _svc_stack_size = DEFINED(_svc_stack_size) ? _svc_stack_size : 0x1000;
+ 
+ 
+@@ -167,6 +168,10 @@ SECTIONS
+ 	. += _abt_stack_size;
+ 
+ 	. = ALIGN (256);
++	_undef_stack = .;
++	. += _undef_stack_size;
++
++	. = ALIGN (256);
+ 	_irq_stack = .;
+ 	. += _irq_stack_size;
+ 
