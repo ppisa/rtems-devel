@@ -1,4 +1,4 @@
-Index: rtems-051009/c/src/lib/libbsp/powerpc/ec555/.cvsignore
+Index: rtems/c/src/lib/libbsp/powerpc/ec555/.cvsignore
 ===================================================================
 --- /dev/null
 +++ rtems/c/src/lib/libbsp/powerpc/ec555/.cvsignore
@@ -17,7 +17,7 @@ Index: rtems-051009/c/src/lib/libbsp/powerpc/ec555/.cvsignore
 +Makefile.in
 +missing
 +mkinstalldirs
-Index: rtems-051009/c/src/lib/libbsp/powerpc/ec555/ChangeLog
+Index: rtems/c/src/lib/libbsp/powerpc/ec555/ChangeLog
 ===================================================================
 --- /dev/null
 +++ rtems/c/src/lib/libbsp/powerpc/ec555/ChangeLog
@@ -119,7 +119,7 @@ Index: rtems-051009/c/src/lib/libbsp/powerpc/ec555/ChangeLog
 +	startup/iss555.c, startup/linkcmds, startup/start.S,
 +	wrapup/.cvsignore, wrapup/Makefile.am: New files.
 +
-Index: rtems-051009/c/src/lib/libbsp/powerpc/ec555/Makefile.am
+Index: rtems/c/src/lib/libbsp/powerpc/ec555/Makefile.am
 ===================================================================
 --- /dev/null
 +++ rtems/c/src/lib/libbsp/powerpc/ec555/Makefile.am
@@ -240,7 +240,7 @@ Index: rtems-051009/c/src/lib/libbsp/powerpc/ec555/Makefile.am
 +
 +include $(top_srcdir)/../../../../automake/subdirs.am
 +include $(top_srcdir)/../../../../automake/local.am
-Index: rtems-051009/c/src/lib/libbsp/powerpc/ec555/README
+Index: rtems/c/src/lib/libbsp/powerpc/ec555/README
 ===================================================================
 --- /dev/null
 +++ rtems/c/src/lib/libbsp/powerpc/ec555/README
@@ -507,7 +507,7 @@ Index: rtems-051009/c/src/lib/libbsp/powerpc/ec555/README
 +    - The loopback, fileio, unilimited, and pppd tests fail due to memory
 +      limitations.
 +    - The paranoia program dies on a floating-point assist exception.
-Index: rtems-051009/c/src/lib/libbsp/powerpc/ec555/bsp_specs
+Index: rtems/c/src/lib/libbsp/powerpc/ec555/bsp_specs
 ===================================================================
 --- /dev/null
 +++ rtems/c/src/lib/libbsp/powerpc/ec555/bsp_specs
@@ -532,7 +532,7 @@ Index: rtems-051009/c/src/lib/libbsp/powerpc/ec555/bsp_specs
 +*link:
 +%{!qrtems: %(old_link)} %{qrtems: -dc -dp -u __vectors -N -u start -e start}
 +
-Index: rtems-051009/c/src/lib/libbsp/powerpc/ec555/clock/p_clock.c
+Index: rtems/c/src/lib/libbsp/powerpc/ec555/clock/p_clock.c
 ===================================================================
 --- /dev/null
 +++ rtems/c/src/lib/libbsp/powerpc/ec555/clock/p_clock.c
@@ -606,7 +606,7 @@ Index: rtems-051009/c/src/lib/libbsp/powerpc/ec555/clock/p_clock.c
 +
 +  return BSP_install_rtems_irq_handler (&clockIrqData);
 +}
-Index: rtems-051009/c/src/lib/libbsp/powerpc/ec555/configure.ac
+Index: rtems/c/src/lib/libbsp/powerpc/ec555/configure.ac
 ===================================================================
 --- /dev/null
 +++ rtems/c/src/lib/libbsp/powerpc/ec555/configure.ac
@@ -663,7 +663,7 @@ Index: rtems-051009/c/src/lib/libbsp/powerpc/ec555/configure.ac
 +RTEMS_PPC_EXCEPTIONS
 +
 +AC_OUTPUT
-Index: rtems-051009/c/src/lib/libbsp/powerpc/ec555/console/console.c
+Index: rtems/c/src/lib/libbsp/powerpc/ec555/console/console.c
 ===================================================================
 --- /dev/null
 +++ rtems/c/src/lib/libbsp/powerpc/ec555/console/console.c
@@ -1036,7 +1036,7 @@ Index: rtems-051009/c/src/lib/libbsp/powerpc/ec555/console/console.c
 +    return RTEMS_SUCCESSFUL;
 +  #endif
 +}
-Index: rtems-051009/c/src/lib/libbsp/powerpc/ec555/include/.cvsignore
+Index: rtems/c/src/lib/libbsp/powerpc/ec555/include/.cvsignore
 ===================================================================
 --- /dev/null
 +++ rtems/c/src/lib/libbsp/powerpc/ec555/include/.cvsignore
@@ -1045,7 +1045,7 @@ Index: rtems-051009/c/src/lib/libbsp/powerpc/ec555/include/.cvsignore
 +bspopts.h.in
 +stamp-h
 +stamp-h.in
-Index: rtems-051009/c/src/lib/libbsp/powerpc/ec555/include/bsp.h
+Index: rtems/c/src/lib/libbsp/powerpc/ec555/include/bsp.h
 ===================================================================
 --- /dev/null
 +++ rtems/c/src/lib/libbsp/powerpc/ec555/include/bsp.h
@@ -1165,7 +1165,7 @@ Index: rtems-051009/c/src/lib/libbsp/powerpc/ec555/include/bsp.h
 +
 +#endif
 +/* end of include file */
-Index: rtems-051009/c/src/lib/libbsp/powerpc/ec555/include/coverhd.h
+Index: rtems/c/src/lib/libbsp/powerpc/ec555/include/coverhd.h
 ===================================================================
 --- /dev/null
 +++ rtems/c/src/lib/libbsp/powerpc/ec555/include/coverhd.h
@@ -1287,7 +1287,7 @@ Index: rtems-051009/c/src/lib/libbsp/powerpc/ec555/include/coverhd.h
 +
 +#endif
 +/* end of include file */
-Index: rtems-051009/c/src/lib/libbsp/powerpc/ec555/include/tm27.h
+Index: rtems/c/src/lib/libbsp/powerpc/ec555/include/tm27.h
 ===================================================================
 --- /dev/null
 +++ rtems/c/src/lib/libbsp/powerpc/ec555/include/tm27.h
@@ -1346,7 +1346,7 @@ Index: rtems-051009/c/src/lib/libbsp/powerpc/ec555/include/tm27.h
 +}
 +
 +#endif
-Index: rtems-051009/c/src/lib/libbsp/powerpc/ec555/irq/irq.h
+Index: rtems/c/src/lib/libbsp/powerpc/ec555/irq/irq.h
 ===================================================================
 --- /dev/null
 +++ rtems/c/src/lib/libbsp/powerpc/ec555/irq/irq.h
@@ -1406,7 +1406,7 @@ Index: rtems-051009/c/src/lib/libbsp/powerpc/ec555/irq/irq.h
 +#endif /* ASM */
 +
 +#endif /* LIBBSP_POWERPC_SS555_IRQ_IRQ_H */
-Index: rtems-051009/c/src/lib/libbsp/powerpc/ec555/startup/bspstart.c
+Index: rtems/c/src/lib/libbsp/powerpc/ec555/startup/bspstart.c
 ===================================================================
 --- /dev/null
 +++ rtems/c/src/lib/libbsp/powerpc/ec555/startup/bspstart.c
@@ -1612,7 +1612,7 @@ Index: rtems-051009/c/src/lib/libbsp/powerpc/ec555/startup/bspstart.c
 +   */
 +  BSP_rtems_irq_mng_init(0);
 +}
-Index: rtems-051009/c/src/lib/libbsp/powerpc/ec555/startup/iss555.c
+Index: rtems/c/src/lib/libbsp/powerpc/ec555/startup/iss555.c
 ===================================================================
 --- /dev/null
 +++ rtems/c/src/lib/libbsp/powerpc/ec555/startup/iss555.c
@@ -1765,7 +1765,7 @@ Index: rtems-051009/c/src/lib/libbsp/powerpc/ec555/startup/iss555.c
 +  msr |= MSR_IP;		/* set prefix for exception relocation */
 +  _CPU_MSR_SET(msr);
 +}
-Index: rtems-051009/c/src/lib/libbsp/powerpc/ec555/startup/linkcmds
+Index: rtems/c/src/lib/libbsp/powerpc/ec555/startup/linkcmds
 ===================================================================
 --- /dev/null
 +++ rtems/c/src/lib/libbsp/powerpc/ec555/startup/linkcmds
@@ -2090,7 +2090,7 @@ Index: rtems-051009/c/src/lib/libbsp/powerpc/ec555/startup/linkcmds
 +  .debug_varnames  0 : { *(.debug_varnames) }
 +  /* These must appear regardless of  .  */
 +}
-Index: rtems-051009/c/src/lib/libbsp/powerpc/ec555/startup/start.S
+Index: rtems/c/src/lib/libbsp/powerpc/ec555/startup/start.S
 ===================================================================
 --- /dev/null
 +++ rtems/c/src/lib/libbsp/powerpc/ec555/startup/start.S
@@ -2506,7 +2506,7 @@ Index: rtems-051009/c/src/lib/libbsp/powerpc/ec555/startup/start.S
 +	blr			/* return */
 +
 +.L_text_e:
-Index: rtems-051009/c/src/lib/libbsp/powerpc/ec555/startup/tm27supp.c
+Index: rtems/c/src/lib/libbsp/powerpc/ec555/startup/tm27supp.c
 ===================================================================
 --- /dev/null
 +++ rtems/c/src/lib/libbsp/powerpc/ec555/startup/tm27supp.c
@@ -2540,7 +2540,7 @@ Index: rtems-051009/c/src/lib/libbsp/powerpc/ec555/startup/tm27supp.c
 +  (rtems_irq_is_enabled)tm27IsOn					
 +};
 +
-Index: rtems-051009/c/src/lib/libbsp/powerpc/ec555/times
+Index: rtems/c/src/lib/libbsp/powerpc/ec555/times
 ===================================================================
 --- /dev/null
 +++ rtems/c/src/lib/libbsp/powerpc/ec555/times
@@ -2734,3 +2734,57 @@ Index: rtems-051009/c/src/lib/libbsp/powerpc/ec555/times
 +   rtems_rate_monotonic_delete: inactive                                18
 +   rtems_rate_monotonic_delete: active                                  20
 +   rtems_rate_monotonic_period: conclude periods -- caller blocks       36
+Index: rtems/make/custom/ec555.cfg
+===================================================================
+--- /dev/null
++++ rtems/make/custom/ec555.cfg
+@@ -0,0 +1,49 @@
++#
++#  Config file for an Intec Automation SS555 MPC555-based card
++#
++#  This file is derived from:
++#
++#  Config file for a PowerPC MPC860-based MBX821-001 card.
++#  Config file for a PowerPC 403 based helas403 card
++#  Config file for MPC860 based Ethernet Comm Board
++#
++
++include $(RTEMS_ROOT)/make/custom/default.cfg
++
++RTEMS_CPU=powerpc
++GCC_CPU_MODEL=505
++RTEMS_CPU_MODEL=mpc555
++
++# This is the actual bsp directory used during the build process.
++RTEMS_BSP_FAMILY=ss555
++
++#  This contains the compiler options necessary to select the CPU model
++#  and (hopefully) optimize for it.
++#
++CPU_CFLAGS = -mcpu=$(GCC_CPU_MODEL) -D$(RTEMS_CPU_MODEL) -D$(RTEMS_BSP_FAMILY)
++
++# Debugging flags:  If we debug with optimization on, single-stepping
++# sometimes looks a little odd, but there won't be any surprises later.
++CFLAGS_DEBUG_V += -O4 -ggdb
++CXXFLAGS_DEBUG_V += -O4 -ggdb
++
++# optimize flag: typically -O, could use -O4 or -fast
++# -O4 is ok for RTEMS
++# NOTE: some level of -O may be actually required by inline assembler
++CFLAGS_OPTIMIZE_V=-O4 -fno-keep-inline-functions
++CXXFLAGS_OPTIMIZE_V=-O4
++
++define make-exe
++	$(LINK.c) $(AM_CFLAGS) $(AM_LDFLAGS) $(SS555_LDFLAGS) \
++	    -o $(basename $@)_sym.exe $(LINK_OBJS) $(LINK_LIBS)
++	$(NM) -g -n $(basename $@)_sym.exe > $(basename $@).nm
++	cp $(basename $@)_sym.exe $(basename $@).exe 
++	$(STRIP) $(basename $@).exe
++	$(SIZE) $(basename $@)_sym.exe
++endef
++
++# Miscellaneous additions go here
++
++# Override default start file
++START_BASE=
++
