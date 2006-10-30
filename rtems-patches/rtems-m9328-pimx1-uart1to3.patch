@@ -1,0 +1,133 @@
+Index: rtems-060602/c/src/lib/libbsp/arm/csb336/console/uart.c
+===================================================================
+--- rtems-060602.orig/c/src/lib/libbsp/arm/csb336/console/uart.c
++++ rtems-060602/c/src/lib/libbsp/arm/csb336/console/uart.c
+@@ -24,6 +24,13 @@
+ /* Define this to use interrupt driver UART driver */
+ #define USE_INTERRUPTS 1
+ 
++/* Define this to use interrupt driver UART driver */
++#define WITH_IRDA_UART1TO3 1
++
++#ifdef WITH_IRDA_UART1TO3
++int bsp_uart1_switched_to_3 = 0;
++#endif /*WITH_IRDA_UART1TO3*/
++
+ /* How many serial ports? */
+ #define NUM_DEVS       2
+ #define poll_write(c)  imx_uart_poll_write_char(0, c)
+@@ -185,6 +192,41 @@ static void imx_uart_init(int minor)
+     imx_uart_data[minor].len   = 0;
+     imx_uart_data[minor].idx   = 0;
+ 
++#ifdef WITH_IRDA_UART1TO3
++    if (minor == 0) {
++        if((MC9328MXL_GPIOC_SSR & (1<<9))==0)
++            bsp_uart1_switched_to_3 = 1;
++    }
++
++    if ((minor == 0) && bsp_uart1_switched_to_3)  {
++	/* GPIO port C */
++        rtems_interrupt_level flags;
++	unsigned long mask;
++	unsigned long iconfa2_clr;
++	unsigned long ocr2_set;
++	unsigned long ocr2_clr;
++	unsigned long ddir_set;
++	mask = (1<<31) | (1<<30);	/* RxD and TxD */
++	ddir_set = (1<<30);
++	iconfa2_clr = (1<<31) | (1<<30);
++	ocr2_set = (1<<28);
++	ocr2_clr =(1<<29);
++        rtems_interrupt_disable(flags);
++	MC9328MXL_GPIOC_ICONFA2 &=~ iconfa2_clr;
++	MC9328MXL_GPIOC_OCR2 |=  ocr2_set;
++	MC9328MXL_GPIOC_OCR2 &=~ ocr2_clr;
++	MC9328MXL_GPIOC_GIUS |= mask ;	/* GIUS_C */
++	MC9328MXL_GPIOC_DDIR |= ddir_set;
++	MC9328MXL_PLL_GCCR |= MC9328MXL_PLL_GCCR_UART3_CLK_EN;
++        rtems_interrupt_enable(flags);
++#if defined(USE_INTERRUPTS)
++        imx_uart_tx_isr_data[minor].name = BSP_INT_UART3_TX;
++        imx_uart_rx_isr_data[minor].name = BSP_INT_UART3_RX;
++#endif
++        imx_uart_data[minor].regs =
++            (mc9328mxl_uart_regs_t *) MC9328MXL_UART3_BASE;
++    } else
++#endif /*WITH_IRDA_UART1TO3*/
+     if (minor == 0) {
+ #if defined(USE_INTERRUPTS) 
+         imx_uart_tx_isr_data[minor].name = BSP_INT_UART1_TX;
+Index: rtems-060602/c/src/lib/libcpu/arm/mc9328mxl/include/mc9328mxl.h
+===================================================================
+--- rtems-060602.orig/c/src/lib/libcpu/arm/mc9328mxl/include/mc9328mxl.h
++++ rtems-060602/c/src/lib/libcpu/arm/mc9328mxl/include/mc9328mxl.h
+@@ -31,6 +31,7 @@
+ #define MC9328MXL_LCDC_BASE     0x00205000
+ #define MC9328MXL_UART1_BASE    0x00206000
+ #define MC9328MXL_UART2_BASE    0x00207000
++#define MC9328MXL_UART3_BASE    0x0020A000
+ #define MC9328MXL_PWM_BASE      0x00208000
+ #define MC9328MXL_DMAC_BASE     0x00209000
+ #define MC9328MXL_USBD_BASE     0x00212000
+@@ -131,6 +132,30 @@
+ #define MC9328MXL_UART2_MPR4  (*((volatile uint32_t *)((MC9328MXL_UART2_BASE) + 0xcc)))
+ #define MC9328MXL_UART2_TS    (*((volatile uint32_t *)((MC9328MXL_UART2_BASE) + 0xd0)))
+ 
++#define MC9328MXL_UART3_RXD   (*((volatile uint32_t *)((MC9328MXL_UART3_BASE) + 0x00)))
++#define MC9328MXL_UART3_TXD   (*((volatile uint32_t *)((MC9328MXL_UART3_BASE) + 0x40)))
++#define MC9328MXL_UART3_CR1   (*((volatile uint32_t *)((MC9328MXL_UART3_BASE) + 0x80)))
++#define MC9328MXL_UART3_CR2   (*((volatile uint32_t *)((MC9328MXL_UART3_BASE) + 0x84)))
++#define MC9328MXL_UART3_CR3   (*((volatile uint32_t *)((MC9328MXL_UART3_BASE) + 0x88)))
++#define MC9328MXL_UART3_CR4   (*((volatile uint32_t *)((MC9328MXL_UART3_BASE) + 0x8c)))
++#define MC9328MXL_UART3_FCR   (*((volatile uint32_t *)((MC9328MXL_UART3_BASE) + 0x90)))
++#define MC9328MXL_UART3_SR1   (*((volatile uint32_t *)((MC9328MXL_UART3_BASE) + 0x94)))
++#define MC9328MXL_UART3_SR2   (*((volatile uint32_t *)((MC9328MXL_UART3_BASE) + 0x98)))
++#define MC9328MXL_UART3_ESC   (*((volatile uint32_t *)((MC9328MXL_UART3_BASE) + 0x9c)))
++#define MC9328MXL_UART3_TIM   (*((volatile uint32_t *)((MC9328MXL_UART3_BASE) + 0xa0)))
++#define MC9328MXL_UART3_BIR   (*((volatile uint32_t *)((MC9328MXL_UART3_BASE) + 0xa4)))
++#define MC9328MXL_UART3_BMR   (*((volatile uint32_t *)((MC9328MXL_UART3_BASE) + 0xa8)))
++#define MC9328MXL_UART3_BRC   (*((volatile uint32_t *)((MC9328MXL_UART3_BASE) + 0xac)))
++#define MC9328MXL_UART3_IPR1  (*((volatile uint32_t *)((MC9328MXL_UART3_BASE) + 0xb0)))
++#define MC9328MXL_UART3_IPR2  (*((volatile uint32_t *)((MC9328MXL_UART3_BASE) + 0xb4)))
++#define MC9328MXL_UART3_IPR3  (*((volatile uint32_t *)((MC9328MXL_UART3_BASE) + 0xb8)))
++#define MC9328MXL_UART3_IPR4  (*((volatile uint32_t *)((MC9328MXL_UART3_BASE) + 0xbc)))
++#define MC9328MXL_UART3_MPR1  (*((volatile uint32_t *)((MC9328MXL_UART3_BASE) + 0xc0)))
++#define MC9328MXL_UART3_MPR2  (*((volatile uint32_t *)((MC9328MXL_UART3_BASE) + 0xc4)))
++#define MC9328MXL_UART3_MPR3  (*((volatile uint32_t *)((MC9328MXL_UART3_BASE) + 0xc8)))
++#define MC9328MXL_UART3_MPR4  (*((volatile uint32_t *)((MC9328MXL_UART3_BASE) + 0xcc)))
++#define MC9328MXL_UART3_TS    (*((volatile uint32_t *)((MC9328MXL_UART3_BASE) + 0xd0)))
++
+ typedef struct {
+     volatile uint32_t rxd;
+     volatile uint32_t _res0[15];
+@@ -274,6 +299,12 @@ typedef struct {
+ #define MC9328MXL_PLL_SPCTL1 (*((volatile uint32_t *)((MC9328MXL_PLL_BASE) + 0x10)))
+ #define MC9328MXL_PLL_PCDR   (*((volatile uint32_t *)((MC9328MXL_PLL_BASE) + 0x20)))
+ 
++#define MC9328MXL_PLL_RSR    (*((volatile uint32_t *)((MC9328MXL_PLL_BASE) + 0x800)))
++#define MC9328MXL_PLL_SIDR   (*((volatile uint32_t *)((MC9328MXL_PLL_BASE) + 0x804)))
++#define MC9328MXL_PLL_FMCR   (*((volatile uint32_t *)((MC9328MXL_PLL_BASE) + 0x808)))
++#define MC9328MXL_PLL_GPCR   (*((volatile uint32_t *)((MC9328MXL_PLL_BASE) + 0x80C)))
++#define MC9328MXL_PLL_GCCR   (*((volatile uint32_t *)((MC9328MXL_PLL_BASE) + 0x810)))
++
+ #define MC9328MXL_PLL_CSCR_CLKOSEL_PERCLK1 (0 << 29)
+ #define MC9328MXL_PLL_CSCR_CLKOSEL_HCLK    (1 << 29)
+ #define MC9328MXL_PLL_CSCR_CLKOSEL_CLK48M  (2 << 29)
+@@ -304,6 +335,16 @@ typedef struct {
+ #define MC9328MXL_PLL_PCDR_PCLK3_MASK      (0x007f0000)
+ #define MC9328MXL_PLL_PCDR_PCLK3_SHIFT     (16)
+ 
++#define MC9328MXL_PLL_RSR_WDR              (bit(1))
++#define MC9328MXL_PLL_RSR_EXR              (bit(0))
++
++#define MC9328MXL_PLL_GCCR_UART3_CLK_EN    (bit(6))
++#define MC9328MXL_PLL_GCCR_SSI2_CLK_EN     (bit(5))
++#define MC9328MXL_PLL_GCCR_BROM_CLK_EN     (bit(4))
++#define MC9328MXL_PLL_GCCR_DMA_CLK_EN      (bit(3))
++#define MC9328MXL_PLL_GCCR_CSI_CLK_EN      (bit(2))
++#define MC9328MXL_PLL_GCCR_MMA_CLK_EN      (bit(1))
++#define MC9328MXL_PLL_GCCR_USBD_CLK_EN     (bit(0))
+ 
+ #define MC9328MXL_PLL_SPCTL_PD_MASK        (0x3c000000)
+ #define MC9328MXL_PLL_SPCTL_PD_SHIFT       (26)
