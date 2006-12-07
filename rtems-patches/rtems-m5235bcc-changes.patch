@@ -1,0 +1,104 @@
+---
+ c/src/lib/libbsp/m68k/mcf5235/start/start.S      |    1 
+ c/src/lib/libbsp/m68k/mcf5235/startup/init5235.c |   75 ++++++++++++-----------
+ 2 files changed, 42 insertions(+), 34 deletions(-)
+
+Index: rtems-4.6.99.3/c/src/lib/libbsp/m68k/mcf5235/start/start.S
+===================================================================
+--- rtems-4.6.99.3.orig/c/src/lib/libbsp/m68k/mcf5235/start/start.S	2006-12-07 16:00:00.000000000 +0100
++++ rtems-4.6.99.3/c/src/lib/libbsp/m68k/mcf5235/start/start.S	2006-12-07 16:09:00.000000000 +0100
+@@ -315,6 +315,7 @@
+     move.l  #0x01000000,d0		| Set system frequency to 150 MHz
+     move.l  d0, (0x40120000)
+     move.w  #0x2700,sr                  | Disable interrupts
++    move.l  #INITIAL_STACK,sp
+ 
+     move.l  #__SRAMBASE+1,d0    	| Enable the MCF5235 internal SRAM
+     movec   d0,%rambar          	| ...so we have a stack
+Index: rtems-4.6.99.3/c/src/lib/libbsp/m68k/mcf5235/startup/init5235.c
+===================================================================
+--- rtems-4.6.99.3.orig/c/src/lib/libbsp/m68k/mcf5235/startup/init5235.c	2006-12-07 16:03:50.000000000 +0100
++++ rtems-4.6.99.3/c/src/lib/libbsp/m68k/mcf5235/startup/init5235.c	2006-12-07 16:21:37.000000000 +0100
+@@ -24,41 +24,48 @@
+     MCF5235_GPIO_UART=0x3FFF;
+     MCF5235_GPIO_PAR_AD=0xE1;
+     
+-    //Setup the Chip Selects so CS0 is flash
+-    MCF5235_CS_CSAR0 =(0xFFE00000 & 0xffff0000)>>16;
+-    MCF5235_CS_CSMR0 = 0x001f0001;
+-    MCF5235_CS_CSCR0 = 0x1980;
+-    
+-    //Setup the SDRAM 
+-    for(x=0; x<20000; x++)
+-    {
+-	temp +=1;
+-    }
+-    MCF5235_SDRAMC_DCR  = 0x042E;
+-    MCF5235_SDRAMC_DACR0 = 0x00001300;
+-    MCF5235_SDRAMC_DMR0 = (0x00FC0000) | (0x00000001);
+-    for(x=0; x<20000; x++)
+-    {
+-	temp +=1;
+-    }
+-    // set ip ( bit 3 ) in dacr
+-    MCF5235_SDRAMC_DACR0 |= (0x00000008) ; 
+-    // init precharge
+-    *((unsigned long *)MM_SDRAM_BASE) = 0xDEADBEEF;
+-    // set RE in dacr
+-    MCF5235_SDRAMC_DACR0 |= (0x00008000);  
+-    // wait
+-    for(x=0; x<20000; x++)
+-    {
+-	temp +=1;
+-    }
+-    // issue IMRS
+-    MCF5235_SDRAMC_DACR0 |= (0x00000040);
+-    *((short *)MM_SDRAM_BASE) = 0;
+-    for(x=0; x<60000; x++)
+-    { 
+-	temp +=1;
++    /* Find actual execution address */
++    asm ("\tlea.l @pc,%0\n\t" : "=r" (temp) );
++
++    /* Initialization of SDRAM leads to disaster if code runs from it */
++    if ((temp ^ MM_SDRAM_BASE) & ~0x000fffff) {
++	//Setup the Chip Selects so CS0 is flash
++	MCF5235_CS_CSAR0 =(0xFFE00000 & 0xffff0000)>>16;
++	MCF5235_CS_CSMR0 = 0x001f0001;
++	MCF5235_CS_CSCR0 = 0x1980;
++	
++	//Setup the SDRAM 
++	for(x=0; x<20000; x++)
++	{
++		temp +=1;
++	}
++	MCF5235_SDRAMC_DCR  = 0x042E;
++	MCF5235_SDRAMC_DACR0 = 0x00001300;
++	MCF5235_SDRAMC_DMR0 = (0x00FC0000) | (0x00000001);
++	for(x=0; x<20000; x++)
++	{
++		temp +=1;
++	}
++	// set ip ( bit 3 ) in dacr
++	MCF5235_SDRAMC_DACR0 |= (0x00000008) ; 
++	// init precharge
++	*((unsigned long *)MM_SDRAM_BASE) = 0xDEADBEEF;
++	// set RE in dacr
++	MCF5235_SDRAMC_DACR0 |= (0x00008000);  
++	// wait
++	for(x=0; x<20000; x++)
++	{
++		temp +=1;
++	}
++	// issue IMRS
++	MCF5235_SDRAMC_DACR0 |= (0x00000040);
++	*((short *)MM_SDRAM_BASE) = 0;
++	for(x=0; x<60000; x++)
++	{ 
++		temp +=1;
++	}
+     }
++
+     *((unsigned long*)MM_SDRAM_BASE)=0x12345678;
+ 	
+     /* Copy the interrupt vector table to address 0x0 in SDRAM */
