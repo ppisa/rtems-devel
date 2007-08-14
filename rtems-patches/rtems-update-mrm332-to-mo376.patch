@@ -1,4 +1,4 @@
-Index: rtems-051009/c/src/lib/libbsp/m68k/mo376/start/start.S
+Index: rtems/c/src/lib/libbsp/m68k/mo376/start/start.S
 ===================================================================
 --- rtems.orig/c/src/lib/libbsp/m68k/mo376/start/start.S
 +++ rtems/c/src/lib/libbsp/m68k/mo376/start/start.S
@@ -11,7 +11,7 @@ Index: rtems-051009/c/src/lib/libbsp/m68k/mo376/start/start.S
  #include <rtems/asm.h>
  #include <rtems/m68k/sim.h>
  
-Index: rtems-051009/c/src/lib/libbsp/m68k/mo376/include/bsp.h
+Index: rtems/c/src/lib/libbsp/m68k/mo376/include/bsp.h
 ===================================================================
 --- rtems.orig/c/src/lib/libbsp/m68k/mo376/include/bsp.h
 +++ rtems/c/src/lib/libbsp/m68k/mo376/include/bsp.h
@@ -24,11 +24,11 @@ Index: rtems-051009/c/src/lib/libbsp/m68k/mo376/include/bsp.h
  #include <rtems/m68k/sim.h>
  #include <rtems/m68k/qsm.h>
  
-Index: rtems-051009/c/src/lib/libbsp/m68k/mo376/ChangeLog
+Index: rtems/c/src/lib/libbsp/m68k/mo376/ChangeLog
 ===================================================================
 --- rtems.orig/c/src/lib/libbsp/m68k/mo376/ChangeLog
 +++ rtems/c/src/lib/libbsp/m68k/mo376/ChangeLog
-@@ -2,6 +2,11 @@
+@@ -11,6 +11,11 @@
  
  	* include/bsp.h: New header guard.
  
@@ -40,7 +40,7 @@ Index: rtems-051009/c/src/lib/libbsp/m68k/mo376/ChangeLog
  2005-01-07	Ralf Corsepius <ralf.corsepius@rtems.org>
  
  	* Makefile.am: Eliminate CFLAGS_OPTIMIZE_V.
-Index: rtems-051009/c/src/lib/libbsp/m68k/mo376/clock/ckinit.c
+Index: rtems/c/src/lib/libbsp/m68k/mo376/clock/ckinit.c
 ===================================================================
 --- rtems.orig/c/src/lib/libbsp/m68k/mo376/clock/ckinit.c
 +++ rtems/c/src/lib/libbsp/m68k/mo376/clock/ckinit.c
@@ -53,7 +53,7 @@ Index: rtems-051009/c/src/lib/libbsp/m68k/mo376/clock/ckinit.c
  
  #define CLOCK_VECTOR   MRM_PIV
  
-Index: rtems-051009/c/src/lib/libbsp/m68k/mo376/configure.ac
+Index: rtems/c/src/lib/libbsp/m68k/mo376/configure.ac
 ===================================================================
 --- rtems.orig/c/src/lib/libbsp/m68k/mo376/configure.ac
 +++ rtems/c/src/lib/libbsp/m68k/mo376/configure.ac
@@ -66,7 +66,7 @@ Index: rtems-051009/c/src/lib/libbsp/m68k/mo376/configure.ac
  AC_CONFIG_SRCDIR([bsp_specs])
  RTEMS_TOP(../../../../../..)
  
-Index: rtems-051009/c/src/lib/libbsp/m68k/mo376/README
+Index: rtems/c/src/lib/libbsp/m68k/mo376/README
 ===================================================================
 --- rtems.orig/c/src/lib/libbsp/m68k/mo376/README
 +++ rtems/c/src/lib/libbsp/m68k/mo376/README
@@ -107,12 +107,12 @@ Index: rtems-051009/c/src/lib/libbsp/m68k/mo376/README
 -  the interrupt priority and (2) to prevent it from blocking.
 -- add a timer driver for the tmtest set.
  
-Index: rtems-051009/c/src/lib/libbsp/m68k/mo376/Makefile.am
+Index: rtems/c/src/lib/libbsp/m68k/mo376/Makefile.am
 ===================================================================
 --- rtems.orig/c/src/lib/libbsp/m68k/mo376/Makefile.am
 +++ rtems/c/src/lib/libbsp/m68k/mo376/Makefile.am
-@@ -17,7 +17,7 @@ DISTCLEANFILES = include/bspopts.h
- 
+@@ -16,7 +16,7 @@ nodist_include_HEADERS = include/bspopts
+ DISTCLEANFILES = include/bspopts.h
  noinst_PROGRAMS =
  
 -include_HEADERS += include/mrm332.h
@@ -120,20 +120,7 @@ Index: rtems-051009/c/src/lib/libbsp/m68k/mo376/Makefile.am
  nodist_include_HEADERS += ../../shared/include/coverhd.h
  
  EXTRA_DIST = times
-@@ -97,9 +97,9 @@ $(PROJECT_INCLUDE)/bspopts.h: include/bs
- 	$(INSTALL_DATA) $< $(PROJECT_INCLUDE)/bspopts.h
- PREINSTALL_FILES += $(PROJECT_INCLUDE)/bspopts.h
- 
--$(PROJECT_INCLUDE)/mrm332.h: include/mrm332.h $(PROJECT_INCLUDE)/$(dirstamp)
--	$(INSTALL_DATA) $< $(PROJECT_INCLUDE)/mrm332.h
--PREINSTALL_FILES += $(PROJECT_INCLUDE)/mrm332.h
-+$(PROJECT_INCLUDE)/mo376.h: include/mo376.h $(PROJECT_INCLUDE)/$(dirstamp)
-+	$(INSTALL_DATA) $< $(PROJECT_INCLUDE)/mo376.h
-+PREINSTALL_FILES += $(PROJECT_INCLUDE)/mo376.h
- 
- $(PROJECT_INCLUDE)/coverhd.h: ../../shared/include/coverhd.h $(PROJECT_INCLUDE)/$(dirstamp)
- 	$(INSTALL_DATA) $< $(PROJECT_INCLUDE)/coverhd.h
-Index: rtems-051009/c/src/lib/libbsp/m68k/mo376/console/sci.c
+Index: rtems/c/src/lib/libbsp/m68k/mo376/console/sci.c
 ===================================================================
 --- rtems.orig/c/src/lib/libbsp/m68k/mo376/console/sci.c
 +++ rtems/c/src/lib/libbsp/m68k/mo376/console/sci.c
@@ -155,7 +142,7 @@ Index: rtems-051009/c/src/lib/libbsp/m68k/mo376/console/sci.c
  
      value = ( (uint16_t) ( SYS_CLOCK / rate / 32.0 + 0.5 ) & 0x1fff );
  
-Index: rtems-051009/c/src/lib/libbsp/m68k/mo376/startup/start_c.c
+Index: rtems/c/src/lib/libbsp/m68k/mo376/startup/start_c.c
 ===================================================================
 --- rtems.orig/c/src/lib/libbsp/m68k/mo376/startup/start_c.c
 +++ rtems/c/src/lib/libbsp/m68k/mo376/startup/start_c.c
@@ -168,7 +155,7 @@ Index: rtems-051009/c/src/lib/libbsp/m68k/mo376/startup/start_c.c
  #include <rtems/m68k/sim.h>
  #define __START_C__
  #include "bsp.h"
-Index: rtems-051009/c/src/lib/libbsp/m68k/mo376/times
+Index: rtems/c/src/lib/libbsp/m68k/mo376/times
 ===================================================================
 --- rtems.orig/c/src/lib/libbsp/m68k/mo376/times
 +++ rtems/c/src/lib/libbsp/m68k/mo376/times
@@ -191,7 +178,7 @@ Index: rtems-051009/c/src/lib/libbsp/m68k/mo376/times
  Memory Configuration: SRAM, DRAM, cache, etc
  Wait States:          
  
-Index: rtems-051009/c/src/lib/libbsp/m68k/mo376/include/mo376.h
+Index: rtems/c/src/lib/libbsp/m68k/mo376/include/mo376.h
 ===================================================================
 --- /dev/null
 +++ rtems/c/src/lib/libbsp/m68k/mo376/include/mo376.h
@@ -266,7 +253,7 @@ Index: rtems-051009/c/src/lib/libbsp/m68k/mo376/include/mo376.h
 +#endif /* ASM */
 +
 +#endif /* _MRM_H_ */
-Index: rtems-051009/c/src/lib/libbsp/m68k/mo376/include/mrm332.h
+Index: rtems/c/src/lib/libbsp/m68k/mo376/include/mrm332.h
 ===================================================================
 --- rtems.orig/c/src/lib/libbsp/m68k/mo376/include/mrm332.h
 +++ /dev/null
@@ -341,7 +328,7 @@ Index: rtems-051009/c/src/lib/libbsp/m68k/mo376/include/mrm332.h
 -#endif /* ASM */
 -
 -#endif /* _MRM_H_ */
-Index: rtems-051009/make/custom/mo376.cfg
+Index: rtems/make/custom/mo376.cfg
 ===================================================================
 --- rtems.orig/make/custom/mo376.cfg
 +++ rtems/make/custom/mo376.cfg
@@ -373,3 +360,20 @@ Index: rtems-051009/make/custom/mo376.cfg
  
  #  This is a good way to get debug information.  The output file is large
  #  though and greatly slows the build process so only do this if needed.
+Index: rtems/c/src/lib/libbsp/m68k/mo376/preinstall.am
+===================================================================
+--- rtems.orig/c/src/lib/libbsp/m68k/mo376/preinstall.am
++++ rtems/c/src/lib/libbsp/m68k/mo376/preinstall.am
+@@ -44,9 +44,9 @@ $(PROJECT_INCLUDE)/bspopts.h: include/bs
+ 	$(INSTALL_DATA) $< $(PROJECT_INCLUDE)/bspopts.h
+ PREINSTALL_FILES += $(PROJECT_INCLUDE)/bspopts.h
+ 
+-$(PROJECT_INCLUDE)/mrm332.h: include/mrm332.h $(PROJECT_INCLUDE)/$(dirstamp)
+-	$(INSTALL_DATA) $< $(PROJECT_INCLUDE)/mrm332.h
+-PREINSTALL_FILES += $(PROJECT_INCLUDE)/mrm332.h
++$(PROJECT_INCLUDE)/mo376.h: include/mo376.h $(PROJECT_INCLUDE)/$(dirstamp)
++	$(INSTALL_DATA) $< $(PROJECT_INCLUDE)/mo376.h
++PREINSTALL_FILES += $(PROJECT_INCLUDE)/mo376.h
+ 
+ $(PROJECT_INCLUDE)/coverhd.h: ../../shared/include/coverhd.h $(PROJECT_INCLUDE)/$(dirstamp)
+ 	$(INSTALL_DATA) $< $(PROJECT_INCLUDE)/coverhd.h

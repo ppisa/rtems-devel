@@ -1,7 +1,7 @@
-Index: rtems-051009/c/src/lib/libbsp/powerpc/ec555/include/bsp.h
+Index: rtems/c/src/lib/libbsp/powerpc/ec555/include/bsp.h
 ===================================================================
---- rtems-051009.orig/c/src/lib/libbsp/powerpc/ec555/include/bsp.h
-+++ rtems-051009/c/src/lib/libbsp/powerpc/ec555/include/bsp.h
+--- rtems/c/src/lib/libbsp/powerpc/ec555/include/bsp.h
++++ rtems/c/src/lib/libbsp/powerpc/ec555/include/bsp.h
 @@ -44,37 +44,6 @@ extern "C" {
  #define BSP_CRYSTAL_HZ 	 4000000	/* crystal frequency, Hz */
  #define BSP_CLOCK_HZ	40000000	/* CPU clock frequency, Hz
@@ -40,10 +40,10 @@ Index: rtems-051009/c/src/lib/libbsp/powerpc/ec555/include/bsp.h
  /* miscellaneous stuff assumed to exist */
  
  extern rtems_configuration_table BSP_Configuration;
-Index: rtems-051009/c/src/lib/libbsp/powerpc/ec555/startup/iss555.c
+Index: rtems/c/src/lib/libbsp/powerpc/ec555/startup/iss555.c
 ===================================================================
---- rtems-051009.orig/c/src/lib/libbsp/powerpc/ec555/startup/iss555.c
-+++ rtems-051009/c/src/lib/libbsp/powerpc/ec555/startup/iss555.c
+--- rtems/c/src/lib/libbsp/powerpc/ec555/startup/iss555.c
++++ rtems/c/src/lib/libbsp/powerpc/ec555/startup/iss555.c
 @@ -96,6 +96,8 @@ void _InitSS555 (void)
     */
    extern char int_ram_top[];		/* top of internal ram */
@@ -63,11 +63,11 @@ Index: rtems-051009/c/src/lib/libbsp/powerpc/ec555/startup/iss555.c
    /*
     * Disable show cycles and serialization so that burst accesses will work
     * properly.  A different value, such as 0x0, may be more appropriate for
-Index: rtems-051009/c/src/lib/libbsp/powerpc/ec555/startup/linkcmds
+Index: rtems/c/src/lib/libbsp/powerpc/ec555/startup/linkcmds
 ===================================================================
---- rtems-051009.orig/c/src/lib/libbsp/powerpc/ec555/startup/linkcmds
-+++ rtems-051009/c/src/lib/libbsp/powerpc/ec555/startup/linkcmds
-@@ -269,14 +269,6 @@ SECTIONS
+--- rtems/c/src/lib/libbsp/powerpc/ec555/startup/linkcmds
++++ rtems/c/src/lib/libbsp/powerpc/ec555/startup/linkcmds
+@@ -268,14 +268,6 @@ SECTIONS
      sram = .;
    }
  

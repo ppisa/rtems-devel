@@ -1,7 +1,7 @@
-Index: rtems-060602/c/src/lib/libbsp/arm/csb336/console/uart.c
+Index: rtems/c/src/lib/libbsp/arm/csb336/console/uart.c
 ===================================================================
---- rtems-060602.orig/c/src/lib/libbsp/arm/csb336/console/uart.c
-+++ rtems-060602/c/src/lib/libbsp/arm/csb336/console/uart.c
+--- rtems.orig/c/src/lib/libbsp/arm/csb336/console/uart.c
++++ rtems/c/src/lib/libbsp/arm/csb336/console/uart.c
 @@ -24,6 +24,13 @@
  /* Define this to use interrupt driver UART driver */
  #define USE_INTERRUPTS 1
@@ -58,10 +58,10 @@ Index: rtems-060602/c/src/lib/libbsp/arm/csb336/console/uart.c
      if (minor == 0) {
  #if defined(USE_INTERRUPTS) 
          imx_uart_tx_isr_data[minor].name = BSP_INT_UART1_TX;
-Index: rtems-060602/c/src/lib/libcpu/arm/mc9328mxl/include/mc9328mxl.h
+Index: rtems/c/src/lib/libcpu/arm/mc9328mxl/include/mc9328mxl.h
 ===================================================================
---- rtems-060602.orig/c/src/lib/libcpu/arm/mc9328mxl/include/mc9328mxl.h
-+++ rtems-060602/c/src/lib/libcpu/arm/mc9328mxl/include/mc9328mxl.h
+--- rtems.orig/c/src/lib/libcpu/arm/mc9328mxl/include/mc9328mxl.h
++++ rtems/c/src/lib/libcpu/arm/mc9328mxl/include/mc9328mxl.h
 @@ -31,6 +31,7 @@
  #define MC9328MXL_LCDC_BASE     0x00205000
  #define MC9328MXL_UART1_BASE    0x00206000
