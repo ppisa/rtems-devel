@@ -1,15 +1,20 @@
-#  Makefile.rules - OCERA make framework common project rules
-#                   This version is adapted for RTEMS build
+#                   This version is adapted for RTEMS build  #OMK@rtems
+#
+#  Makefile.rules - OCERA make framework common project rules -*- makefile -*- #OMK@base
 #
 #  (C) Copyright 2003 by Pavel Pisa - OCERA team member
+#  (C) Copyright 2006 by Michal Sojka - Czech Technical University, FEE, DCE
 #
-#  The uLan driver is distributed under the Gnu General Public License.
-#  See file COPYING for details.
-#
+# The OMK build system is distributed under the GNU General Public
+# License.  See file COPYING for details.
 #
 # input variables
 # V                .. if set to 1, full command text is shown else short form is used
+# W                .. whole tree - if set to 1, make is always called from the top-level directory
 # SUBDIRS          .. list of subdirectories intended for make from actual directory
+# default_CONFIG   .. list of default config assignments CONFIG_XXX=y/n ...
+# LN_HEADERS       .. if "y", header files are symbolicaly linked instead of copied. #OMK@include
+#                                                            #OMK@rtems
 # lib_LIBRARIES    .. list of the user-space libraries
 # shared_LIBRARIES .. list of the user-space shared libraries
 # include_HEADERS  .. list of the user-space public header files
@@ -19,10 +24,17 @@
 # utils_PROGRAMS   .. list of the development utility programs
 # xxx_SOURCES      .. list of specific target sources
 # INCLUDES         .. additional include directories and defines for user-space
-# default_CONFIG   .. list of default config assignments CONFIG_XXX=y/n ...
 # tar_EMBEDFILES   .. list of tars with embedded files
-#
-
+# LOCAL_CONFIG_H   .. name of local config.h file generated from values #OMK@config_h
+#                     of options defined in the current directory
+# config_include_HEADERS .. names of global config files (possibly
+#                     with subdirectories)
+# xxx_DEFINES      .. list of config directives to be included in
+#                     config header file of the name <somedir>/xxx.h
+# DOXYGEN          .. if non-empty, generated headers includes Doxygen's @file
+# 		      command, so it is possible to document config
+# 		      variables.
+                                                             #OMK@rtems-setup
 # Include RTEMS target configuration defining RTEMS_MAKEFILE_PATH
 include $(MAKERULES_DIR)/config.target
 
@@ -35,46 +47,217 @@ COMPILED_DIR_NAME = _compiled/$(RTEMS_BSP)
 GROUP_DIR_NAME =
 
 
-# We need to ensure definition of sources directory first
-ifndef SOURCES_DIR
-SOURCES_DIR := $(shell ( pwd -L ) )
-endif
-
-all: default
-
 USER_INCLUDE_DIR := $(MAKERULES_DIR)/$(COMPILED_DIR_NAME)/include
 USER_LIB_DIR     := $(MAKERULES_DIR)/$(COMPILED_DIR_NAME)/lib
 USER_UTILS_DIR   := $(MAKERULES_DIR)/$(COMPILED_DIR_NAME)/bin-utils
 USER_BIN_DIR     := $(MAKERULES_DIR)/$(COMPILED_DIR_NAME)/bin
 USER_BUILD_DIR   := $(MAKERULES_DIR)/$(BUILD_DIR_NAME)/user
+
+LOCAL_BUILD_DIR  = $(USER_OBJS_DIR)
+                                                             #OMK@base
+# We need to ensure definition of sources directory first
+ifndef SOURCES_DIR
+SOURCES_DIR := $(shell ( pwd -L ) )
+endif
+
+.PHONY: all default check-make-ver
+
+ifdef W
+  ifeq ("$(origin W)", "command line")
+    OMK_WHOLE_TREE:=$(W)
+  endif
+endif
+ifndef OMK_WHOLE_TREE
+  OMK_WHOLE_TREE:=0
+endif
+
+ifneq ($(OMK_WHOLE_TREE),1)
+all: check-make-ver default
+	@echo "Compilation finished"
+else
+# Run make in the top-level directory
+all:
+	@$(MAKE) -C $(MAKERULES_DIR) OMK_SERIALIZE_INCLUDED=n SOURCES_DIR=$(MAKERULES_DIR) RELATIVE_DIR="" $(MAKECMDGOALS) W=0
+endif
+
+#=========================
+# Include the config file
+
+ifneq ($(CONFIG_FILE_OK),y)
 ifndef CONFIG_FILE
 CONFIG_FILE      := $(MAKERULES_DIR)/config.omk
 endif
 ifneq ($(wildcard $(CONFIG_FILE)-default),)
 -include $(CONFIG_FILE)-default
 else
+ifneq ($(MAKECMDGOALS),default-config)
 $(warning Please, run "make default-config" first)
 endif
+endif
+
 ifneq ($(wildcard $(CONFIG_FILE)),)
 include $(CONFIG_FILE)
 CONFIG_FILE_OK = y
 endif
-
-# Check and include real OCERA style Makefile.omk now
-ifndef OMK_INCLUDED
-include $(SOURCES_DIR)/Makefile.omk
-OMK_INCLUDED := 1
-endif
+endif #$(CONFIG_FILE_OK)
 
 export SOURCES_DIR MAKERULES_DIR RELATIVE_DIR
 export CONFIG_FILE OMK_SERIALIZE_INCLUDED OMK_VERBOSE OMK_SILENT
+# OMK_SERIALIZE_INCLUDED has to be exported to submakes because passes
+# must to be serialized only in the toplevel make.
 
-#CFLAGS += -ggdb
-#CFLAGS += -O2
-#CFLAGS += -Wall
-#CXXFLAGS += -ggdb
-#CXXFLAGS += -O2
-#CXXFLAGS += -Wall
+ifndef RELATIVE_DIR
+RELATIVE_DIR := $(SOURCES_DIR:$(MAKERULES_DIR)%=%)
+endif
+#$(warning  === RELATIVE_DIR = "$(RELATIVE_DIR)" ===)
+override RELATIVE_DIR := $(RELATIVE_DIR:/%=%)
+override RELATIVE_DIR := $(RELATIVE_DIR:\\%=%)
+#$(warning  RELATIVE_DIR = "$(RELATIVE_DIR)")
+override BACK2TOP_DIR := $(shell echo $(RELATIVE_DIR)/ | sed -e 's_//_/_g' -e 's_/\./_/_g' -e 's_^\./__g'  -e 's_\([^/][^/]*\)_.._g' -e 's_/$$__')
+#$(warning  BACK2TOP_DIR = "$(BACK2TOP_DIR)")
+
+#$(warning SOURCES_DIR = "$(SOURCES_DIR)")
+#$(warning MAKERULES_DIR = "$(MAKERULES_DIR)")
+#$(warning RELATIVE_DIR = "$(RELATIVE_DIR)")
+
+# We have to use RELATIVE_PREFIX because of mingw
+override RELATIVE_PREFIX := $(RELATIVE_DIR)/
+override RELATIVE_PREFIX := $(RELATIVE_PREFIX:/%=%)
+
+#vpath %.c $(SOURCES_DIR)
+#vpath %.cc $(SOURCES_DIR)
+#vpath %.cxx $(SOURCES_DIR)
+
+VPATH = $(SOURCES_DIR)
+srcdir = $(SOURCES_DIR)
+
+# Defines for quiet compilation
+ifdef V
+  ifeq ("$(origin V)", "command line")
+    OMK_VERBOSE = $(V)
+  endif
+endif
+ifndef OMK_VERBOSE
+  OMK_VERBOSE = 0
+endif
+ifeq ($(OMK_VERBOSE),1)
+  Q =
+else
+  Q = @
+endif
+ifneq ($(findstring s,$(MAKEFLAGS)),)
+  QUIET_CMD_ECHO = true
+  OMK_SILENT = 1
+else
+  QUIET_CMD_ECHO = echo
+endif
+
+MAKEFILE_OMK=Makefile.omk
+# All subdirectories (even linked ones) containing Makefile.omk
+# Usage in Makefile.omk: SUBDIRS = $(ALL_OMK_SUBDIRS)
+ALL_OMK_SUBDIRS = $(patsubst %/$(MAKEFILE_OMK),%,$(patsubst $(SOURCES_DIR)/%,%,$(wildcard $(SOURCES_DIR)/*/$(MAKEFILE_OMK))))
+
+# ===================================================================
+# We have set up all important variables, so we can check and include
+# real OCERA style Makefile.omk now
+ifndef OMK_INCLUDED
+include $(SOURCES_DIR)/$(MAKEFILE_OMK)
+OMK_INCLUDED := 1
+endif
+
+check-make-ver:
+	@GOOD_MAKE_VERSION=`echo $(MAKE_VERSION) | sed -n -e 's/^[4-9]\..*\|^3\.9[0-9].*\|^3\.8[1-9].*/y/p'` ; \
+	if [ x$$GOOD_MAKE_VERSION != xy ] ; then \
+		echo "Your make program version is too old and does not support OMK system." ; \
+		echo "Please update to make program 3.81beta1 or newer." ; exit 1 ; \
+	fi
+
+distclean dist-clean:
+	@$(QUIET_CMD_ECHO) "  RM      $(COMPILED_DIR_NAME) $(BUILD_DIR_NAME)"
+	@rm -fr $(MAKERULES_DIR)/$(COMPILED_DIR_NAME)  $(MAKERULES_DIR)/$(BUILD_DIR_NAME)
+
+# Common OMK templates
+# ====================
+
+# Syntax: $(call mkdir,<dir name>)
+define mkdir_def
+	[ -d $(1) ] || mkdir -p $(1) || exit 1
+endef
+
+ifneq ($(V),2)
+NO_PRINT_DIRECTORY := --no-print-directory
+endif
+
+# Syntax: $(call omk_pass_template,<pass name>,<build dir>,[<local make flags>],[<local condition>])
+define omk_pass_template
+.PHNOY: $(1) $(1)-local
+$(1):
+	+@$(foreach dir,$(SUBDIRS),$(call mkdir_def,$(2)/$(dir)); \
+		$(MAKE) SOURCES_DIR=$(SOURCES_DIR)/$(dir) $(NO_PRINT_DIRECTORY) \
+		RELATIVE_DIR=$(RELATIVE_PREFIX)$(dir) -C $(2)/$(dir) \
+		-f $(SOURCES_DIR)/$(dir)/Makefile $$@ || exit 1 ;) true
+ifneq ($(4),)
+	@echo "make[omk]: $$@ in $(RELATIVE_DIR)"; \
+	$(call mkdir_def,$(2)); \
+	$(MAKE) $(NO_PRINT_DIRECTORY) SOURCES_DIR=$(SOURCES_DIR) RELATIVE_DIR=$(RELATIVE_DIR) -C $(2) \
+	        -f $(SOURCES_DIR)/Makefile $(3) $$(@:%=%-local)
+endif
+endef
+
+# =======================
+# DEFAULT CONFIG PASS
+
+default-config:
+	@echo "# Start of OMK config file" > "$(CONFIG_FILE)-default"
+	@echo "# This file should not be altered manually" >> "$(CONFIG_FILE)-default"
+	@echo "# Overrides should be stored in file $(notdir $(CONFIG_FILE))" >> "$(CONFIG_FILE)-default"
+	@echo >> "$(CONFIG_FILE)-default"
+	@$(MAKE) $(NO_PRINT_DIRECTORY) -C $(MAKERULES_DIR) \
+		RELATIVE_DIR="" SOURCES_DIR=$(MAKERULES_DIR) \
+		-f $(MAKERULES_DIR)/Makefile default-config-pass
+
+$(eval $(call omk_pass_template,default-config-pass,$$(LOCAL_BUILD_DIR),,always))
+
+default-config-pass-local:
+#	@echo Default config for $(RELATIVE_DIR)
+	@echo "# Config for $(RELATIVE_DIR)" >> "$(CONFIG_FILE)-default"
+	@$(foreach x, $(default_CONFIG), echo '$(x)' | \
+		sed -e 's/^[^=]*=x$$/#\0/' >> "$(CONFIG_FILE)-default" ; )
+
+ifeq ($(OMK_VERBOSE),1)                                      #OMK@include
+CPHEADER_FLAGS += -v
+LNHEADER_FLAGS += -v
+endif
+
+ifneq ($(LN_HEADERS),y)
+define cp_cmd
+( echo "  CP      $(1:$(MAKERULES_DIR)/%=%) -> $(2:$(MAKERULES_DIR)/%=%)"; cp $(CPHEADER_FLAGS) $(1) $(2) )
+endef
+else
+define cp_cmd
+( echo "  LN      $(1:$(MAKERULES_DIR)/%=%) -> $(2:$(MAKERULES_DIR)/%=%)"; ln -sf $(LNHEADER_FLAGS) $(1) $(2) )
+endef
+endif
+
+# TODO: Check modification date of changed header files. If it is
+# newer that in source dir, show a warning.
+
+# Syntax: $(call include-pass-template,<include dir>,<keyword>)
+define include-pass-template
+	@$(foreach f, $($(2)_HEADERS), cmp --quiet $(SOURCES_DIR)/$(f) $(1)/$(notdir $(f)) \
+	   || $(call cp_cmd,$(SOURCES_DIR)/$(f),$(1)/$(notdir $(f))) || exit 1 ; )
+	@$(foreach f, $(nobase_$(2)_HEADERS), cmp --quiet $(SOURCES_DIR)/$(f) $(1)/$(f) \
+	   || ( mkdir -p $(1)/$(dir $(f)) && $(call cp_cmd,$(SOURCES_DIR)/$(f),$(1)/$(f)) ) || exit 1 ; )
+	@$(foreach f, $(renamed_$(2)_HEADERS), \
+	   srcfname=`echo '$(f)' | sed -e 's/^\(.*\)->.*$$/\1/'` ; destfname=`echo '$(f)' | sed -e 's/^.*->\(.*\)$$/\1/'` ; \
+	   cmp --quiet $(SOURCES_DIR)/$${srcfname} $(1)/$${destfname} \
+	   || ( mkdir -p `dirname $(1)/$${destfname}` && $(call cp_cmd,$(SOURCES_DIR)/$${srcfname},$(1)/$${destfname}) ) || exit 1 ; )
+endef
+
+# Local Variables:
+# mode:makefile
+# End:
+                                                             #OMK@rtems
 
 DEFAULT_INCLUDES = -I $(PROJECT_INCLUDE)
 
@@ -113,83 +296,21 @@ srcdir = $(SOURCES_DIR)
 
 USER_OBJS_DIR = $(USER_BUILD_DIR)/$(RELATIVE_DIR)
 
-.PHONY: default dep subdirs clean cleandepend default-config
-.PHONY: check-make-ver check-dir include-pass library-pass binary-pass utils-pass
-.PHONY: default-config-pass
-.PHONY: check-dir-local include-pass-local library-pass-local binary-pass-local
-.PHONY: utils-pass-local default-config-pass-local
+.PHONY: check-dir
 
 # Some support to serialize some targets for parallel make
 ifneq ($(OMK_SERIALIZE_INCLUDED),y)
 include-pass: check-dir
 library-pass: include-pass
-binary-pass utils-pass: library-pass
+binary-pass: library-pass
 
-OMK_SERIALIZE_INCLUDED = y
+override OMK_SERIALIZE_INCLUDED = y
 endif
-
-# Defines for quiet compilation
-ifdef V
-  ifeq ("$(origin V)", "command line")
-    OMK_VERBOSE = $(V)
-  endif
-endif
-ifndef OMK_VERBOSE
-  OMK_VERBOSE = 0
-endif
-ifeq ($(OMK_VERBOSE),1)
-  Q =
-else
-  Q = @
-endif
-ifneq ($(findstring s,$(MAKEFLAGS)),)
-  QUIET_CMD_ECHO = true
-  OMK_SILENT = 1
-else
-  QUIET_CMD_ECHO = echo
-  CPHEADER_FLAGS += -v
-endif
-
-default: check-make-ver check-dir include-pass library-pass binary-pass utils-pass
-
-#=====================================================================
-# Common utility rules
-
-define mkdir_def
-	[ -d $(1) ] || mkdir -p $(1) || exit 1
-endef
-
-ifdef LOCAL_CONFIG_H
-
-$(LOCAL_CONFIG_H) : $(wildcard $(CONFIG_FILE)) $(wildcard $(CONFIG_FILE)-default)
-	@echo LOCAL_CONFIG_H=`pwd`/$(LOCAL_CONFIG_H)
-	@echo "/* Automatically generated from */" > "$(LOCAL_CONFIG_H).tmp"
-	@echo "/* config file : $< */" >> "$(LOCAL_CONFIG_H).tmp"
-	@echo "#ifndef _LOCAL_CONFIG_H" >> "$(LOCAL_CONFIG_H).tmp"
-	@echo "#define _LOCAL_CONFIG_H" >> "$(LOCAL_CONFIG_H).tmp"
-	@( $(foreach x, $(shell echo $(default_CONFIG) | sed -e 's/\<\([^ ]*\)=[^ ]\>/\1/g' ), \
-		echo $(x).$($(x)) ; ) echo ; ) | \
-		sed -n -e 's/^\(.*\)\.[ym]$$/#define \1 1/p' \
-		  >> "$(LOCAL_CONFIG_H).tmp"
-	@echo "#endif /*_LOCAL_CONFIG_H*/" >> "$(LOCAL_CONFIG_H).tmp"
-	@if cmp --quiet "$(LOCAL_CONFIG_H).tmp" "$(LOCAL_CONFIG_H)" ; then \
-	echo rm "$(LOCAL_CONFIG_H).tmp" ; \
-	else mv "$(LOCAL_CONFIG_H).tmp" "$(LOCAL_CONFIG_H)" ; \
-	echo Updated configuration "$(LOCAL_CONFIG_H)" ; fi
-
-endif
-
-check-make-ver:
-	@GOOD_MAKE_VERSION=`echo $(MAKE_VERSION) | sed -n -e 's/^[4-9]\..*\|^3\.9[0-9].*\|^3\.8[1-9].*/y/p'` ; \
-	if [ x$$GOOD_MAKE_VERSION != xy ] ; then \
-		echo "Your make program version is too old and does not support OMK system." ; \
-		echo "Please update to make program 3.81beta1 or newer." ; exit 1 ; \
-	fi
 
 #=====================================================================
 # Special rules for target filesystem and data preparation
 
-
+# Syntax: $(call TARFILE_template,<filename>,<filename2>,<directory>) FIXME: Is this correct?
 define TARFILE_template
 
 .PHONY: $(2)
@@ -237,7 +358,7 @@ endif
 
 # Syntax: $(call COMPILE_c_o_template,<source>,<target>,<additional c-flags>)
 define COMPILE_c_o_template
-$(2): $(1) $(LOCAL_CONFIG_H) $$(GEN_HEADERS)
+$(2): $(1) $$(GEN_HEADERS)
 	@$(QUIET_CMD_ECHO) "  CC      $$@"
 	$(Q) if $$(c_o_COMPILE) $$(CC_DEPFLAGS) $(3) -o $$@ -c $$< ; \
 	then mv -f "$$@.d.tmp" "$$@.d" ; \
@@ -248,7 +369,7 @@ endef
 
 # Syntax: $(call COMPILE_cc_o_template,<source>,<target>,<additional c-flags>)
 define COMPILE_cc_o_template
-$(2): $(1) $(LOCAL_CONFIG_H) $$(GEN_HEADERS)
+$(2): $(1) $$(GEN_HEADERS)
 	@$(QUIET_CMD_ECHO) "  CXX     $$@"
 	$(Q) if $$(cc_o_COMPILE) $$(CC_DEPFLAGS) $(3) -o $$@ -c $$< ; \
 	then mv -f "$$@.d.tmp" "$$@.d" ; \
@@ -259,7 +380,7 @@ endef
 
 # Syntax: $(call COMPILE_S_o_template,<source>,<target>,<additional c-flags>)
 define COMPILE_S_o_template
-$(2): $(1) $(LOCAL_CONFIG_H) $$(GEN_HEADERS)
+$(2): $(1) $$(GEN_HEADERS)
 	@$(QUIET_CMD_ECHO) "  AS      $$@"
 	$(Q) if $$(S_o_COMPILE) -D__ASSEMBLY__ $$(CC_DEPFLAGS) $(3) -o $$@ -c $$< ; \
 	then if [ -e "$$@.d.tmp" ] ; then mv -f "$$@.d.tmp" "$$@.d" ; fi ; \
@@ -311,6 +432,7 @@ $(2)/$(1): $$($(1)_OBJS)
 #@sed -n -e 's/^LOAD \(.*\)$$$$/  \1  \\/p' $(USER_OBJS_DIR)/$(1).exe.map  >>$(USER_OBJS_DIR)/$(1).exe.d
 #@echo >>$(USER_OBJS_DIR)/$(1).exe.d
 #-Wl,-Map,$(USER_OBJS_DIR)/$(1).exe.map
+# FIXME: Why the map file was commented out?
 endef
 
 
@@ -359,9 +481,7 @@ endef
 library-pass-local: $(addprefix $(USER_INCLUDE_DIR)/,$(cmetric_include_HEADERS)) \
 		    $(lib_LIBRARIES:%=$(USER_LIB_DIR)/lib%.a) $(shared_LIBRARIES:%=$(USER_LIB_DIR)/lib%.so)
 
-binary-pass-local: $(bin_PROGRAMS:%=$(USER_BIN_DIR)/%)
-
-utils-pass-local: $(utils_PROGRAMS:%=$(USER_UTILS_DIR)/%)
+binary-pass-local: $(bin_PROGRAMS:%=$(USER_BIN_DIR)/%) $(utils_PROGRAMS:%=$(USER_UTILS_DIR)/%)
 
 # Special rules for CMETRIC generated headers
 
@@ -391,62 +511,20 @@ endif
 #=====================================================================
 
 
-library-pass binary-pass utils-pass:
-	+@$(foreach dir, $(SUBDIRS), $(call mkdir_def,$(USER_OBJS_DIR)/$(dir)) ; \
-		$(MAKE) SOURCES_DIR=$(SOURCES_DIR)/$(dir) \
-		RELATIVE_DIR=$(RELATIVE_DIR)/$(dir) -C $(USER_OBJS_DIR)/$(dir) \
-		-f $(SOURCES_DIR)/$(dir)/Makefile $@ || exit 1 ;)
-	+@$(call mkdir_def,$(USER_OBJS_DIR))
-	@$(MAKE) --no-print-directory -C $(USER_OBJS_DIR) \
-		-f $(SOURCES_DIR)/Makefile USER_RULE_TEMPLATES=y $(@:%=%-local)
+$(eval $(call omk_pass_template, include-pass,$(USER_OBJS_DIR),,$(include_HEADERS)$(nobase_include_HEADERS)$(renamed_include_HEADERS)$(config_include_HEADERS)$(LOCAL_CONFIG_H)))
+$(eval $(call omk_pass_template, library-pass,$(USER_OBJS_DIR),USER_RULE_TEMPLATES=y,$(lib_LIBRARIES)$(shared_LIBRARIES)))
+$(eval $(call omk_pass_template, binary-pass, $(USER_OBJS_DIR),USER_RULE_TEMPLATES=y,$(bin_PROGRAMS)$(utils_PROGRAMS)))
 
+$(eval $(call omk_pass_template,clean,$(USER_OBJS_DIR),,always))
 
-dep clean install check-dir include-pass default-config-pass:
-	+@$(foreach dir, $(SUBDIRS), $(call mkdir_def,$(USER_OBJS_DIR)/$(dir)) ; \
-		$(MAKE) SOURCES_DIR=$(SOURCES_DIR)/$(dir) \
-		RELATIVE_DIR=$(RELATIVE_DIR)/$(dir) -C $(USER_OBJS_DIR)/$(dir) \
-		-f $(SOURCES_DIR)/$(dir)/Makefile $@ || exit 1 ;)
-	+@$(call mkdir_def,$(USER_OBJS_DIR))
-	@$(MAKE) --no-print-directory -C $(USER_OBJS_DIR) \
-		-f $(SOURCES_DIR)/Makefile $(@:%=%-local)
-
-
-dep-local:
-
-check-dir-local:
-	@$(call mkdir_def,$(USER_OBJS_DIR))
+check-dir:
 	@$(call mkdir_def,$(USER_INCLUDE_DIR))
 	@$(call mkdir_def,$(USER_LIB_DIR))
 	@$(call mkdir_def,$(USER_BIN_DIR))
 	@$(call mkdir_def,$(USER_UTILS_DIR))
 
-install-local:
-
-default-config:
-	@echo "# Start of OMK config file" > "$(CONFIG_FILE)-default"
-	@echo "# This file should not be altered manually" >> "$(CONFIG_FILE)-default"
-	@echo "# Overrides should be stored in file $(notdir $(CONFIG_FILE))" >> "$(CONFIG_FILE)-default"
-	@echo >> "$(CONFIG_FILE)-default"
-	@$(MAKE) --no-print-directory -C $(MAKERULES_DIR) \
-		RELATIVE_DIR="" SOURCES_DIR=$(MAKERULES_DIR) \
-		-f $(MAKERULES_DIR)/Makefile default-config-pass
-
-default-config-pass-local:
-	@echo Default config for $(RELATIVE_DIR)
-	@echo "# Config for $(RELATIVE_DIR)" >> "$(CONFIG_FILE)-default"
-	@$(foreach x, $(default_CONFIG), echo $(x) | \
-		sed -e 's/^.*=x$$/#\0/' >> "$(CONFIG_FILE)-default" ; )
-
 include-pass-local:
-	@$(call mkdir_def,$(USER_INCLUDE_DIR))
-	@$(foreach f, $(include_HEADERS), cmp --quiet $(SOURCES_DIR)/$(f) $(USER_INCLUDE_DIR)/$(notdir $(f)) \
-	   || cp $(CPHEADER_FLAGS) $(SOURCES_DIR)/$(f) $(USER_INCLUDE_DIR)/$(notdir $(f)) || exit 1 ; )
-	@$(foreach f, $(nobase_include_HEADERS), cmp --quiet $(SOURCES_DIR)/$(f) $(USER_INCLUDE_DIR)/$(f) \
-	   || ( mkdir -p $(USER_INCLUDE_DIR)/$(dir $(f)) && cp $(CPHEADER_FLAGS) $(SOURCES_DIR)/$(f) $(USER_INCLUDE_DIR)/$(f) ) || exit 1 ; )
-	@$(foreach f, $(renamed_include_HEADERS), \
-	   srcfname=`echo '$(f)' | sed -e 's/^\(.*\)->.*$$/\1/'` ; destfname=`echo '$(f)' | sed -e 's/^.*->\(.*\)$$/\1/'` ; \
-	   cmp --quiet $(SOURCES_DIR)/$${srcfname} $(USER_INCLUDE_DIR)/$${destfname} \
-	   || ( mkdir -p `dirname $(USER_INCLUDE_DIR)/$${destfname}` && cp $(CPHEADER_FLAGS) $(SOURCES_DIR)/$${srcfname} $(USER_INCLUDE_DIR)/$${destfname} ) || exit 1 ; )
+	$(call include-pass-template,$(USER_INCLUDE_DIR),include)
 
 ifdef USER_RULE_TEMPLATES
 
@@ -492,3 +570,163 @@ clean-local:
 	       $(tar_EMBEDFILES:%=$(USER_OBJS_DIR)/%_tarfile)
 
 
+default: include-pass library-pass binary-pass
+
+# Local Variables:
+# mode:makefile
+# End:
+                                                             #OMK@config_h
+# Syntax: $(call BUILD_CONFIG_H_template,<stamp_dir>,<header_file_path>,<list_of_options_to_export>,<header_barrier>)
+define BUILD_CONFIG_H_template
+
+$(addprefix $(1)/,$(notdir $(addsuffix .stamp,$(2)))) : $(wildcard $(CONFIG_FILE)) $(wildcard $(CONFIG_FILE)-default)
+	@$(QUIET_CMD_ECHO) "  CONFGEN $$(@:%.stamp=%)"
+	@if [ ! -d `dirname $(2).tmp` ] ; then \
+		mkdir -p `dirname $(2).tmp` ; fi
+	@echo "/* Automatically generated from */" > "$(2).tmp"
+	@echo "/* config file: $$< */" >> "$(2).tmp"
+	$(if $(DOXYGEN),@echo "/** @file */" >> "$(2).tmp")
+	@echo "#ifndef $(4)" >> "$(2).tmp"
+	@echo "#define $(4)" >> "$(2).tmp"
+	@( $(foreach x, $(shell echo '$($(3))' | tr 'x\t ' 'x\n\n' | sed -e 's/^\([^ =]*\)\(=[^ ]\+\|\)$$/\1/' ), \
+		echo '$(x).$($(x))' ; ) echo ; ) | \
+		sed -e '/^[^.]*\.n$$$$/d' -e '/^[^.]*\.$$$$/d' -e 's/^\([^.]*\)\.[ym]$$$$/\1.1/' | \
+		sed -n -e 's/^\([^.]*\)\.\(.*\)$$$$/#define \1 \2/p' \
+		  >> "$(2).tmp"
+	@echo "#endif /*$(4)*/" >> "$(2).tmp"
+	@touch "$$@"
+	@if cmp --quiet "$(2).tmp" "$(2)" ; then rm "$(2).tmp"; \
+	else mv "$(2).tmp" "$(2)" ; \
+	echo "Updated configuration $(2)" ; fi
+
+endef
+
+ifdef LOCAL_CONFIG_H
+
+# This must be declared after the default cflags are assigned!
+# Override is used to override command line assignemnt.
+override CFLAGS += -I.
+$(eval $(call BUILD_CONFIG_H_template,$(USER_OBJS_DIR),$(USER_OBJS_DIR)/$(LOCAL_CONFIG_H),default_CONFIG,_LOCAL_CONFIG_H) )
+
+endif
+
+# Special rules for configuration exported headers
+
+#FIXME: The directory for headers should not be specified here.
+$(foreach confh,$(config_include_HEADERS),$(eval $(call BUILD_CONFIG_H_template,$(USER_OBJS_DIR),$(addprefix $(USER_INCLUDE_DIR)/,$(confh)),$(basename $(notdir $(confh)))_DEFINES,\
+_$(basename $(notdir $(confh)))_H \
+)))
+
+config_h_stamp_files = $(addprefix $(USER_OBJS_DIR)/,$(notdir $(addsuffix .stamp,$(config_include_HEADERS) $(LOCAL_CONFIG_H))))
+
+# Add some hooks to standard passes
+include-pass-local: $(config_h_stamp_files)
+
+ifneq ($(KERN_CONFIG_HEADERS_REQUIRED),)
+
+ifdef LOCAL_CONFIG_H
+$(eval $(call BUILD_CONFIG_H_template,$(KERN_OBJS_DIR),$(KERN_OBJS_DIR)/$(LOCAL_CONFIG_H),default_CONFIG,_LOCAL_CONFIG_H) )
+endif
+
+$(foreach confh,$(config_include_HEADERS),$(eval $(call BUILD_CONFIG_H_template,$(KERN_OBJS_DIR),$(addprefix $(KERN_INCLUDE_DIR)/,$(confh)),$(basename $(notdir $(confh)))_DEFINES,\
+_$(basename $(notdir $(confh)))_H \
+)))
+
+kern_config_h_stamp_files = $(addprefix $(KERN_OBJS_DIR)/,$(notdir $(addsuffix .stamp,$(config_include_HEADERS) $(LOCAL_CONFIG_H))))
+
+# Add some hooks to standard passes
+include-pass-local: $(kern_config_h_stamp_files)
+
+endif
+
+clean-local: clean-local-config-h
+
+clean-local-config-h:
+	@$(foreach confh,$(config_h_stamp_files) $(kern_config_h_stamp_files),\
+	    if [ -e $(confh) ] ; then rm $(confh) ; fi ; \
+	)
+
+
+# Local Variables:
+# mode:makefile
+# End:
+                                                             #OMK@sources-list
+# Rules that creates the list of files which are used during
+# compilation. The list reflects conditional compilation depending on
+# config.omk and other variables.
+
+SOURCES_LIST_FN=sources.txt
+ifndef SOURCES_LIST
+SOURCES_LIST_DIR:=$(RELATIVE_DIR)
+SOURCES_LIST:=$(MAKERULES_DIR)/$(SOURCES_LIST_DIR)/$(SOURCES_LIST_FN)
+export SOURCES_LIST SOURCES_LIST_DIR
+endif
+
+ifeq ($(MAKECMDGOALS),sources-list)
+NEED_SOURCES_LIST=y
+endif
+ifeq ($(MAKECMDGOALS),TAGS)
+NEED_SOURCES_LIST=y
+endif
+ifeq ($(MAKECMDGOALS),tags)
+NEED_SOURCES_LIST=y
+endif
+
+ifeq ($(NEED_SOURCES_LIST),y) # avoid execution of find command bellow if it is not useful
+.PHONY: sources-list
+sources-list: $(SOURCES_LIST)
+
+$(SOURCES_LIST): $(CONFIG_FILE) $(CONFIG_FILE)-default $(shell find -name $(MAKEFILE_OMK))
+	@echo -n "" > "$(SOURCES_LIST).tmp"
+	@$(MAKE) --no-print-directory sources-list-pass
+	@echo "# Automatically generated list of files in '$(RELATIVE_DIR)' that are used during OMK compilation" > "$(SOURCES_LIST).tmp2"
+	@cat "$(SOURCES_LIST).tmp"|sort|uniq >> "$(SOURCES_LIST).tmp2"
+	@rm "$(SOURCES_LIST).tmp"
+	@mv "$(SOURCES_LIST).tmp2" "$(SOURCES_LIST)"
+endif
+
+$(eval $(call omk_pass_template,sources-list-pass,$$(LOCAL_BUILD_DIR),,always))
+
+sources-list-pass-local:
+	@$(foreach h,$(include_HEADERS) $(nobase_include_HEADERS) $(kernel_HEADERS),\
+	  echo "$(RELATIVE_DIR:$(SOURCES_LIST_DIR)/%=%)/$(h)" >> "$(SOURCES_LIST).tmp";)
+	@$(foreach ch,$(config_include_HEADERS), \
+	  echo "$(USER_INCLUDE_DIR:$(MAKERULES_DIR)/$(addsuffix /,$(SOURCES_LIST_DIR))%=%)/$(ch)" >> "$(SOURCES_LIST).tmp";)
+	@$(foreach h,$(renamed_include_HEADERS),echo "$(RELATIVE_DIR:$(SOURCES_LIST_DIR)/%=%)/$(h)"|sed -e 's/\(.*\)->.*/\1/' >> "$(SOURCES_LIST).tmp";)
+	@$(foreach bin,$(lib_LIBRARIES) $(shared_LIBRARIES) $(bin_PROGRAMS) $(utils_PROGRAMS) \
+	  $(kernel_LIBRARIES) $(rtlinux_LIBRARIES) $(kernel_MODULES),\
+	  $(foreach src,$(filter-out %.o,$($(bin)_SOURCES)),echo "$(RELATIVE_DIR:$(SOURCES_LIST_DIR)/%=%)/$(src)" >> "$(SOURCES_LIST).tmp";))
+
+############ TAGS ###########
+
+ifeq ($(MAKECMDGOALS),TAGS)
+ETAGS=etags
+TAGS_CMD = $(ETAGS)
+TAGS: $(SOURCES_LIST)
+	@$(MAKE) --no-print-directory do-tags
+endif
+ifeq ($(MAKECMDGOALS),tags) 
+CTAGS=ctags -N
+TAGS_CMD = $(CTAGS)
+tags: $(SOURCES_LIST)
+	@$(MAKE) --no-print-directory do-tags
+endif
+export TAGS_CMD
+
+ifeq ($(MAKECMDGOALS),do-tags)
+.PHONY: do-tags
+do-tags: $(shell sed -e '/^\#/d' $(SOURCES_LIST))
+	@$(QUIET_CMD_ECHO) "  TAGS    $(SOURCES_LIST_FN)"
+	$(Q)$(TAGS_CMD) $^
+endif
+
+############ CSCOPE ###########
+
+cscope: $(SOURCES_LIST)
+	@$(QUIET_CMD_ECHO) "  CSCOPE  < $(SOURCES_LIST_FN)"
+	$(Q)sed -e '/^#/d' $(SOURCES_LIST)|cscope -b -i-
+#FIXME: see doc to -i in cscope(1)
+
+# Local Variables:
+# mode:makefile
+# End:
