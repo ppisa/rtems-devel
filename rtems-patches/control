@@ -1,0 +1,11 @@
+Package: rtems-common
+Version: 4.7.1
+Architecture: amd64
+Source: rtems-4.7.1
+Section: cross-dev
+Priority: extra
+Maintainer: Pavel Pisa <pisa@cmp.felk.cvut.cz>
+Priority: extra
+Description: RTEMS executive common files
+ .
+ RTEMS support files common to all target architectures

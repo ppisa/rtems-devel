@@ -1,7 +1,19 @@
-Index: rtems-051009/c/src/lib/libbsp/m68k/mo376/include/bsp.h
+---
+ c/src/lib/libbsp/m68k/mo376/clock/ckinit.c       |    2 
+ c/src/lib/libbsp/m68k/mo376/include/bsp.h        |   26 +
+ c/src/lib/libbsp/m68k/mo376/include/mo376.h      |   27 -
+ c/src/lib/libbsp/m68k/mo376/misc/gdbinit68       |  395 ++++++++++++++++++++++-
+ c/src/lib/libbsp/m68k/mo376/spurious/spinit.c    |   10 
+ c/src/lib/libbsp/m68k/mo376/startup/linkcmds     |   10 
+ c/src/lib/libbsp/m68k/mo376/startup/linkcmds_ROM |   17 
+ c/src/lib/libbsp/m68k/mo376/startup/start_c.c    |    6 
+ make/custom/mo376.cfg                            |   10 
+ 9 files changed, 455 insertions(+), 48 deletions(-)
+
+Index: rtems/c/src/lib/libbsp/m68k/mo376/include/bsp.h
 ===================================================================
---- rtems.orig/c/src/lib/libbsp/m68k/mo376/include/bsp.h
-+++ rtems/c/src/lib/libbsp/m68k/mo376/include/bsp.h
+--- rtems.orig/c/src/lib/libbsp/m68k/mo376/include/bsp.h	2007-08-14 17:24:09.000000000 +0200
++++ rtems/c/src/lib/libbsp/m68k/mo376/include/bsp.h	2007-08-14 17:36:35.000000000 +0200
 @@ -1,6 +1,6 @@
  /*  bsp.h
   *
@@ -10,7 +22,7 @@ Index: rtems-051009/c/src/lib/libbsp/m68k/mo376/include/bsp.h
   *
   *  COPYRIGHT (c) 1989-1999.
   *  On-Line Applications Research Corporation (OAR).
-@@ -41,6 +41,30 @@ extern "C" {
+@@ -41,6 +41,30 @@
  /* #define CONFIGURE_INTERRUPT_STACK_MEMORY  (TBD * 1024) */
  
  /*
@@ -41,11 +53,11 @@ Index: rtems-051009/c/src/lib/libbsp/m68k/mo376/include/bsp.h
   *  Simple spin delay in microsecond units for device drivers.
   *  This is very dependent on the clock speed of the target.
   */
-Index: rtems-051009/c/src/lib/libbsp/m68k/mo376/clock/ckinit.c
+Index: rtems/c/src/lib/libbsp/m68k/mo376/clock/ckinit.c
 ===================================================================
---- rtems.orig/c/src/lib/libbsp/m68k/mo376/clock/ckinit.c
-+++ rtems/c/src/lib/libbsp/m68k/mo376/clock/ckinit.c
-@@ -60,7 +60,7 @@ void Install_clock(
+--- rtems.orig/c/src/lib/libbsp/m68k/mo376/clock/ckinit.c	2007-08-14 17:24:09.000000000 +0200
++++ rtems/c/src/lib/libbsp/m68k/mo376/clock/ckinit.c	2007-08-14 17:36:35.000000000 +0200
+@@ -60,7 +60,7 @@
    Old_ticker = (rtems_isr_entry) set_vector( clock_isr, CLOCK_VECTOR, 1 );
  
    /* enable 1mS interrupts */
@@ -54,10 +66,10 @@ Index: rtems-051009/c/src/lib/libbsp/m68k/mo376/clock/ckinit.c
    *PICR = (unsigned short int)                     /* enable interrupt */
      ( SAM(ISRL_PIT,8,PIRQL) | SAM(CLOCK_VECTOR,0,PIV) );
  
-Index: rtems-051009/c/src/lib/libbsp/m68k/mo376/misc/gdbinit68
+Index: rtems/c/src/lib/libbsp/m68k/mo376/misc/gdbinit68
 ===================================================================
---- rtems.orig/c/src/lib/libbsp/m68k/mo376/misc/gdbinit68
-+++ rtems/c/src/lib/libbsp/m68k/mo376/misc/gdbinit68
+--- rtems.orig/c/src/lib/libbsp/m68k/mo376/misc/gdbinit68	2007-08-14 17:20:30.000000000 +0200
++++ rtems/c/src/lib/libbsp/m68k/mo376/misc/gdbinit68	2007-08-14 17:36:35.000000000 +0200
 @@ -1,16 +1,399 @@
  #
  #  $Id: gdbinit68,v 1.1 2001/05/25 16:28:46 joel Exp $
@@ -464,10 +476,10 @@ Index: rtems-051009/c/src/lib/libbsp/m68k/mo376/misc/gdbinit68
 +#b main
 +
 +run
-Index: rtems-051009/c/src/lib/libbsp/m68k/mo376/include/mo376.h
+Index: rtems/c/src/lib/libbsp/m68k/mo376/include/mo376.h
 ===================================================================
---- rtems.orig/c/src/lib/libbsp/m68k/mo376/include/mo376.h
-+++ rtems/c/src/lib/libbsp/m68k/mo376/include/mo376.h
+--- rtems.orig/c/src/lib/libbsp/m68k/mo376/include/mo376.h	2007-08-14 17:24:09.000000000 +0200
++++ rtems/c/src/lib/libbsp/m68k/mo376/include/mo376.h	2007-08-14 17:36:35.000000000 +0200
 @@ -26,31 +26,22 @@
  #define EFI_INT1 25		/* CTS interrupt */
  #define ISRL_SCI 6
@@ -509,10 +521,10 @@ Index: rtems-051009/c/src/lib/libbsp/m68k/mo376/include/mo376.h
  #define SCI_BAUD 19200		/* RS232 Baud Rate */
  
  /* macros/functions */
-Index: rtems-051009/c/src/lib/libbsp/m68k/mo376/startup/linkcmds_ROM
+Index: rtems/c/src/lib/libbsp/m68k/mo376/startup/linkcmds_ROM
 ===================================================================
---- rtems.orig/c/src/lib/libbsp/m68k/mo376/startup/linkcmds_ROM
-+++ rtems/c/src/lib/libbsp/m68k/mo376/startup/linkcmds_ROM
+--- rtems.orig/c/src/lib/libbsp/m68k/mo376/startup/linkcmds_ROM	2007-08-14 17:20:30.000000000 +0200
++++ rtems/c/src/lib/libbsp/m68k/mo376/startup/linkcmds_ROM	2007-08-14 17:36:35.000000000 +0200
 @@ -4,7 +4,8 @@
   */
  
@@ -523,7 +535,7 @@ Index: rtems-051009/c/src/lib/libbsp/m68k/mo376/startup/linkcmds_ROM
  __DYNAMIC  =  0;
  
  /*
-@@ -39,18 +40,18 @@ __DYNAMIC  =  0;
+@@ -39,18 +40,18 @@
  
  MEMORY
  {
@@ -549,36 +561,36 @@ Index: rtems-051009/c/src/lib/libbsp/m68k/mo376/startup/linkcmds_ROM
  
  /*
   * 
-Index: rtems-051009/c/src/lib/libbsp/m68k/mo376/spurious/spinit.c
+Index: rtems/c/src/lib/libbsp/m68k/mo376/spurious/spinit.c
 ===================================================================
---- rtems.orig/c/src/lib/libbsp/m68k/mo376/spurious/spinit.c
-+++ rtems/c/src/lib/libbsp/m68k/mo376/spurious/spinit.c
-@@ -33,8 +33,8 @@ rtems_isr Spurious_Isr(
+--- rtems.orig/c/src/lib/libbsp/m68k/mo376/spurious/spinit.c	2007-08-14 17:20:30.000000000 +0200
++++ rtems/c/src/lib/libbsp/m68k/mo376/spurious/spinit.c	2007-08-14 17:45:18.000000000 +0200
+@@ -33,8 +33,8 @@
    rtems_vector_number vector
  )
  {
--  //int sp = 0;
+-  /*int sp = 0; */
 -#if 0
 +  int sp = 0;
 +#if 1
    const char * const VectDescrip[] = {
      _Spurious_Error_[0],   _Spurious_Error_[0],  _Spurious_Error_[1],
      _Spurious_Error_[2],   _Spurious_Error_[3],  _Spurious_Error_[4],
-@@ -60,11 +60,11 @@ rtems_isr Spurious_Isr(
+@@ -60,11 +60,11 @@
      _Spurious_Error_[27], _Spurious_Error_[28]};
  #endif
  
--  //asm volatile ( "movea.l   %%sp,%0 " : "=a" (sp) : "0" (sp) );
+-  /*asm volatile ( "movea.l   %%sp,%0 " : "=a" (sp) : "0" (sp) ); */
 +  asm volatile ( "movea.l   %%sp,%0 " : "=a" (sp) : "0" (sp) );
  
    _CPU_ISR_Set_level( 7 );
-   //_UART_flush();
+   /*_UART_flush(); */
 -#if 0
 +#if 1
    RAW_PUTS("\n\rRTEMS: Spurious interrupt: ");
    RAW_PUTS((char *)VectDescrip[( (vector>64) ? 64 : vector )]);
    RAW_PUTS("\n\rRTEMS:    Vector: ");
-@@ -89,6 +89,7 @@ void Spurious_Initialize(void)
+@@ -89,6 +89,7 @@
      {
        switch (vector)
  	{
@@ -586,7 +598,7 @@ Index: rtems-051009/c/src/lib/libbsp/m68k/mo376/spurious/spinit.c
  	case 4:
  	case 9:
  	case 31:
-@@ -96,6 +97,7 @@ void Spurious_Initialize(void)
+@@ -96,6 +97,7 @@
  	case 66:
  	  /* These vectors used by CPU32bug - don't overwrite them. */
  	  break;
@@ -594,11 +606,11 @@ Index: rtems-051009/c/src/lib/libbsp/m68k/mo376/spurious/spinit.c
  
  	default:
  	  (void) set_vector( Spurious_Isr, vector, 1 );
-Index: rtems-051009/c/src/lib/libbsp/m68k/mo376/startup/linkcmds
+Index: rtems/c/src/lib/libbsp/m68k/mo376/startup/linkcmds
 ===================================================================
---- rtems.orig/c/src/lib/libbsp/m68k/mo376/startup/linkcmds
-+++ rtems/c/src/lib/libbsp/m68k/mo376/startup/linkcmds
-@@ -33,15 +33,15 @@ __DYNAMIC  =  0;
+--- rtems.orig/c/src/lib/libbsp/m68k/mo376/startup/linkcmds	2007-08-14 17:20:30.000000000 +0200
++++ rtems/c/src/lib/libbsp/m68k/mo376/startup/linkcmds	2007-08-14 17:36:35.000000000 +0200
+@@ -33,15 +33,15 @@
  /*
   * Declare some sizes.
   */
@@ -619,33 +631,32 @@ Index: rtems-051009/c/src/lib/libbsp/m68k/mo376/startup/linkcmds
  }
  
  _copy_data_from_rom = 0;
-Index: rtems-051009/make/custom/mo376.cfg
+Index: rtems/make/custom/mo376.cfg
 ===================================================================
---- rtems.orig/make/custom/mo376.cfg
-+++ rtems/make/custom/mo376.cfg
-@@ -16,8 +16,16 @@ RTEMS_BSP_FAMILY=mo376
+--- rtems.orig/make/custom/mo376.cfg	2007-08-14 17:24:09.000000000 +0200
++++ rtems/make/custom/mo376.cfg	2007-08-14 17:41:03.000000000 +0200
+@@ -16,8 +16,14 @@
  #  and (hopefully) optimize for it. 
  CPU_CFLAGS = -mcpu32
  
+-# optimize flag: typically -O2
+-CFLAGS_OPTIMIZE_V = -O2 -g -fomit-frame-pointer
 +# Debugging flags:  If we debug with optimization on, single-stepping
 +# sometimes looks a little odd, but there won't be any surprises later.
 +CFLAGS_DEBUG_V += -O2 -ggdb
 +CXXFLAGS_DEBUG_V += -O2 -ggdb
 +
- # optimize flag: typically -0, could use -O4 or -fast, -O4 is ok for RTEMS
--CFLAGS_OPTIMIZE_V=-O4 -fomit-frame-pointer
-+CFLAGS_OPTIMIZE_V=-O4 -fomit-frame-pointer -ggdb
-+CXXFLAGS_OPTIMIZE_V=-O4 -ggdb
-+
-+
++# optimize flag: typically -0, could use -O4 or -fast, -O4 is ok for RTEMS
++CFLAGS_OPTIMIZE_V=-O2 -fomit-frame-pointer -ggdb
++CXXFLAGS_OPTIMIZE_V=-O2 -ggdb
  
  # The following are definitions of make-exe which will work using ld as
- # is currently required.  It is expected that as of gcc 2.8, the end user
-Index: rtems-051009/c/src/lib/libbsp/m68k/mo376/startup/start_c.c
+ # is currently required.
+Index: rtems/c/src/lib/libbsp/m68k/mo376/startup/start_c.c
 ===================================================================
---- rtems.orig/c/src/lib/libbsp/m68k/mo376/startup/start_c.c
-+++ rtems/c/src/lib/libbsp/m68k/mo376/startup/start_c.c
-@@ -60,12 +60,12 @@ void  start_c() {
+--- rtems.orig/c/src/lib/libbsp/m68k/mo376/startup/start_c.c	2007-08-14 17:24:09.000000000 +0200
++++ rtems/c/src/lib/libbsp/m68k/mo376/startup/start_c.c	2007-08-14 17:36:35.000000000 +0200
+@@ -60,12 +60,12 @@
  
    /* Port E and F Data Direction Register */
    /*    see section 9 of the SIM Reference Manual */

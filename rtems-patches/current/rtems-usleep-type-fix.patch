@@ -1,0 +1,19 @@
+---
+ cpukit/posix/src/usleep.c |    4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+Index: rtems/cpukit/posix/src/usleep.c
+===================================================================
+--- rtems.orig/cpukit/posix/src/usleep.c	2007-08-15 01:51:58.000000000 +0200
++++ rtems/cpukit/posix/src/usleep.c	2007-08-15 01:50:38.000000000 +0200
+@@ -15,8 +15,8 @@
+ #include <rtems/score/tod.h>
+ 
+ 
+-unsigned usleep(
+-  unsigned int useconds
++int usleep(
++  useconds_t useconds
+ )
+ {
+   struct timespec tp;

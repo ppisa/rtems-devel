@@ -1,20 +1,27 @@
+---
+ c/src/lib/libbsp/powerpc/ec555/ChangeLog    |    5 +++++
+ c/src/lib/libbsp/powerpc/ec555/README       |   18 +++++++++---------
+ c/src/lib/libbsp/powerpc/ec555/configure.ac |    2 +-
+ make/custom/ec555.cfg                       |    6 +++---
+ 4 files changed, 18 insertions(+), 13 deletions(-)
+
 Index: rtems/c/src/lib/libbsp/powerpc/ec555/ChangeLog
 ===================================================================
---- rtems/c/src/lib/libbsp/powerpc/ec555/ChangeLog
-+++ rtems/c/src/lib/libbsp/powerpc/ec555/ChangeLog
+--- rtems.orig/c/src/lib/libbsp/powerpc/ec555/ChangeLog	2007-08-14 17:51:38.000000000 +0200
++++ rtems/c/src/lib/libbsp/powerpc/ec555/ChangeLog	2007-08-14 17:56:57.000000000 +0200
 @@ -1,3 +1,8 @@
-+2006-06-02	Pavel Pisa <pisa@cmp.felk.cvut.cz>
++2007-08-14	Pavel Pisa <pisa@cmp.felk.cvut.cz>
 +
 +	* EC555 BSP for Wuerz-elektronik EC555 board started
 +	  as clone of SS555 BSP.
 +
- 2006-03-08	Joel Sherrill <joel@OARcorp.com>
+ 2007-04-06	Ralf Corsépius	<ralf.corsepius@rtems.org>
  
- 	* startup/linkcmds: Add .gnu.linkonce.b.* section.
+ 	* bsp_specs: Remove lib (Now expected to exist in GCC).
 Index: rtems/c/src/lib/libbsp/powerpc/ec555/README
 ===================================================================
---- rtems/c/src/lib/libbsp/powerpc/ec555/README
-+++ rtems/c/src/lib/libbsp/powerpc/ec555/README
+--- rtems.orig/c/src/lib/libbsp/powerpc/ec555/README	2007-08-14 17:51:38.000000000 +0200
++++ rtems/c/src/lib/libbsp/powerpc/ec555/README	2007-08-14 17:53:52.000000000 +0200
 @@ -2,9 +2,9 @@
  #  $Id: README,v 1.1 2004/04/12 21:52:13 joel Exp $
  #
@@ -27,7 +34,7 @@ Index: rtems/c/src/lib/libbsp/powerpc/ec555/README
  Canada - Suffield, and is Copyright (C) 2004, Real-Time Systems Inc.
  
  Please send any comments, improvements, or bug reports to:
-@@ -16,8 +16,8 @@ querbach@realtime.bc.ca
+@@ -16,8 +16,8 @@
  Summary
  -------
  
@@ -38,7 +45,7 @@ Index: rtems/c/src/lib/libbsp/powerpc/ec555/README
  BUS:                None 
  CPU FAMILY:         PowerPC
  CPU:                PowerPC MPC555
-@@ -88,7 +88,7 @@ RAM:            512k 2-1-1-1 burst SRAM
+@@ -88,7 +88,7 @@
  Installation
  ------------
  
@@ -47,7 +54,7 @@ Index: rtems/c/src/lib/libbsp/powerpc/ec555/README
  depending on whether or not it is built for debugging by giving the
  VARIANT=DEBUG switch to make:
  
-@@ -112,7 +112,7 @@ Console driver
+@@ -112,7 +112,7 @@
  
  This BSP includes an termios-capable asynchronous serial line driver that
  supports SCI1 and SCI2. The RTEMS console is selected at configuration time
@@ -56,7 +63,7 @@ Index: rtems/c/src/lib/libbsp/powerpc/ec555/README
  SCI2 for the console, since SCI1 has some extra features which may be
  desired for application use.
  
-@@ -123,7 +123,7 @@ The BSP console supports three different
+@@ -123,7 +123,7 @@
    3. interrupt-driven I/O with termios support.
       
  The mode of operation of the serial driver is determined at configure time in
@@ -65,7 +72,7 @@ Index: rtems/c/src/lib/libbsp/powerpc/ec555/README
  
    0 - polled I/O.
    1 - interrupt-driven I/O.
-@@ -208,7 +208,7 @@ from the Debian distribution.
+@@ -208,7 +208,7 @@
  Test Configuration
  ------------------
  
@@ -74,7 +81,7 @@ Index: rtems/c/src/lib/libbsp/powerpc/ec555/README
  CPU:                  Motorola MPC555LFMZP40, mask 1K83H
  Clock Speed:          Crystal 4.0 MHz, CPU 40.0 MHz
  RAM:                  512K bytes of 2-1-1-1 Burst SRAM
-@@ -244,7 +244,7 @@ Timing tests:
+@@ -244,7 +244,7 @@
    OPERATION_COUNT=20 at configuration time.
  
    To run tm27 (the interrupt latency timer test), short CN5-48 to CN5-50 on
@@ -85,21 +92,21 @@ Index: rtems/c/src/lib/libbsp/powerpc/ec555/README
    exits.  This doesn't seem to cause a problem otherwise.
 Index: rtems/c/src/lib/libbsp/powerpc/ec555/configure.ac
 ===================================================================
---- rtems/c/src/lib/libbsp/powerpc/ec555/configure.ac
-+++ rtems/c/src/lib/libbsp/powerpc/ec555/configure.ac
+--- rtems.orig/c/src/lib/libbsp/powerpc/ec555/configure.ac	2007-08-14 17:51:38.000000000 +0200
++++ rtems/c/src/lib/libbsp/powerpc/ec555/configure.ac	2007-08-14 17:55:32.000000000 +0200
 @@ -3,7 +3,7 @@
- ## $Id: configure.ac,v 1.7 2006/01/11 04:52:39 ralf Exp $
+ ## $Id: configure.ac,v 1.7.2.2 2006/12/02 06:06:51 ralf Exp $
  
- AC_PREREQ(2.59)
--AC_INIT([rtems-c-src-lib-libbsp-powerpc-mbx5xx],[_RTEMS_VERSION],[rtems-bugs@rtems.com])
-+AC_INIT([rtems-c-src-lib-libbsp-powerpc-ec5xx],[_RTEMS_VERSION],[rtems-bugs@rtems.com])
+ AC_PREREQ(2.60)
+-AC_INIT([rtems-c-src-lib-libbsp-powerpc-mbx5xx],[_RTEMS_VERSION],[http://www.rtems.org/bugzilla])
++AC_INIT([rtems-c-src-lib-libbsp-powerpc-ec5xx],[_RTEMS_VERSION],[http://www.rtems.org/bugzilla])
  AC_CONFIG_SRCDIR([bsp_specs])
  RTEMS_TOP(../../../../../..)
  
 Index: rtems/make/custom/ec555.cfg
 ===================================================================
---- rtems/make/custom/ec555.cfg
-+++ rtems/make/custom/ec555.cfg
+--- rtems.orig/make/custom/ec555.cfg	2007-08-14 17:51:38.000000000 +0200
++++ rtems/make/custom/ec555.cfg	2007-08-14 17:53:52.000000000 +0200
 @@ -1,5 +1,5 @@
  #
 -#  Config file for an Intec Automation SS555 MPC555-based card
@@ -107,7 +114,7 @@ Index: rtems/make/custom/ec555.cfg
  #
  #  This file is derived from:
  #
-@@ -15,7 +15,7 @@ GCC_CPU_MODEL=505
+@@ -15,7 +15,7 @@
  RTEMS_CPU_MODEL=mpc555
  
  # This is the actual bsp directory used during the build process.
@@ -116,8 +123,8 @@ Index: rtems/make/custom/ec555.cfg
  
  #  This contains the compiler options necessary to select the CPU model
  #  and (hopefully) optimize for it.
-@@ -34,7 +34,7 @@ CFLAGS_OPTIMIZE_V=-O4 -fno-keep-inline-f
- CXXFLAGS_OPTIMIZE_V=-O4
+@@ -26,7 +26,7 @@
+ CFLAGS_OPTIMIZE_V = -O2 -g -fno-keep-inline-functions
  
  define make-exe
 -	$(LINK.c) $(AM_CFLAGS) $(AM_LDFLAGS) $(SS555_LDFLAGS) \

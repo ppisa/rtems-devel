@@ -1,13 +1,17 @@
-Index: rtems-051009/c/src/lib/libbsp/m68k/acinclude.m4
+---
+ c/src/lib/libbsp/m68k/acinclude.m4 |    2 ++
+ 1 file changed, 2 insertions(+)
+
+Index: rtems/c/src/lib/libbsp/m68k/acinclude.m4
 ===================================================================
---- rtems.orig/c/src/lib/libbsp/m68k/acinclude.m4
-+++ rtems/c/src/lib/libbsp/m68k/acinclude.m4
-@@ -22,6 +22,8 @@ AC_DEFUN([RTEMS_CHECK_BSPDIR],
+--- rtems.orig/c/src/lib/libbsp/m68k/acinclude.m4	2007-08-14 18:59:45.000000000 +0200
++++ rtems/c/src/lib/libbsp/m68k/acinclude.m4	2007-08-14 19:04:40.000000000 +0200
+@@ -20,6 +20,8 @@
+     AC_CONFIG_SUBDIRS([mcf5206elite]);;
+   mcf5235 )
      AC_CONFIG_SUBDIRS([mcf5235]);;
-   mrm332 )
-     AC_CONFIG_SUBDIRS([mrm332]);;
 +  mo376 )
 +    AC_CONFIG_SUBDIRS([mo376]);;
+   mrm332 )
+     AC_CONFIG_SUBDIRS([mrm332]);;
    mvme136 )
-     AC_CONFIG_SUBDIRS([mvme136]);;
-   mvme147 )

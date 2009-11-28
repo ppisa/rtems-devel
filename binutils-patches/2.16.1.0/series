@@ -1,5 +1,0 @@
-binutils-2.15-psignal.patch
-binutils-skip-comments.patch
-cross-gprof.patch
-binutils-redefinition-mname.patch
-binutils-bfd-soname-mod.patch

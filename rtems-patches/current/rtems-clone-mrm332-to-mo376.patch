@@ -1,12 +1,43 @@
+---
+ c/src/lib/libbsp/m68k/mo376/ChangeLog                     |  455 +++
+ c/src/lib/libbsp/m68k/mo376/Makefile.am                   |   68 
+ c/src/lib/libbsp/m68k/mo376/README                        |   24 
+ c/src/lib/libbsp/m68k/mo376/bsp_specs                     |   16 
+ c/src/lib/libbsp/m68k/mo376/clock/ckinit.c                |  128 +
+ c/src/lib/libbsp/m68k/mo376/configure.ac                  |   20 
+ c/src/lib/libbsp/m68k/mo376/console/console.c             |  174 +
+ c/src/lib/libbsp/m68k/mo376/console/sci.c                 | 1596 ++++++++++++++
+ c/src/lib/libbsp/m68k/mo376/console/sci.h                 |  234 ++
+ c/src/lib/libbsp/m68k/mo376/include/bsp.h                 |  139 +
+ c/src/lib/libbsp/m68k/mo376/include/bspopts.h.in          |   16 
+ c/src/lib/libbsp/m68k/mo376/include/mrm332.h              |   70 
+ c/src/lib/libbsp/m68k/mo376/include/tm27.h                |   34 
+ c/src/lib/libbsp/m68k/mo376/misc/dotests                  |   15 
+ c/src/lib/libbsp/m68k/mo376/misc/gdbinit68                |   16 
+ c/src/lib/libbsp/m68k/mo376/misc/interr.c                 |   99 
+ c/src/lib/libbsp/m68k/mo376/preinstall.am                 |   66 
+ c/src/lib/libbsp/m68k/mo376/spurious/spinit.c             |  105 
+ c/src/lib/libbsp/m68k/mo376/start/start.S                 |  150 +
+ c/src/lib/libbsp/m68k/mo376/startup/bspclean.c            |   27 
+ c/src/lib/libbsp/m68k/mo376/startup/bspstart.c            |   82 
+ c/src/lib/libbsp/m68k/mo376/startup/except_vect_332_ROM.S |  293 ++
+ c/src/lib/libbsp/m68k/mo376/startup/linkcmds              |  164 +
+ c/src/lib/libbsp/m68k/mo376/startup/linkcmds_ROM          |  200 +
+ c/src/lib/libbsp/m68k/mo376/startup/start_c.c             |  125 +
+ c/src/lib/libbsp/m68k/mo376/timer/timer.c                 |   81 
+ c/src/lib/libbsp/m68k/mo376/times                         |  195 +
+ make/custom/mo376.cfg                                     |   67 
+ 28 files changed, 4659 insertions(+)
+
 Index: rtems/make/custom/mo376.cfg
 ===================================================================
---- /dev/null
-+++ rtems/make/custom/mo376.cfg
-@@ -0,0 +1,68 @@
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ rtems/make/custom/mo376.cfg	2007-08-14 17:20:30.000000000 +0200
+@@ -0,0 +1,67 @@
 +#
 +#  Config file for the mrm332 BSP
 +#
-+#  $Id: mrm332.cfg,v 1.8 2004/02/04 16:50:30 ralf Exp $
++#  $Id: mrm332.cfg,v 1.9.2.3 2007/01/18 11:27:07 ralf Exp $
 +#
 +
 +include $(RTEMS_ROOT)/make/custom/default.cfg
@@ -21,12 +52,11 @@ Index: rtems/make/custom/mo376.cfg
 +#  and (hopefully) optimize for it. 
 +CPU_CFLAGS = -mcpu32
 +
-+# optimize flag: typically -0, could use -O4 or -fast, -O4 is ok for RTEMS
-+CFLAGS_OPTIMIZE_V=-O4 -fomit-frame-pointer
++# optimize flag: typically -O2
++CFLAGS_OPTIMIZE_V = -O2 -g -fomit-frame-pointer
 +
 +# The following are definitions of make-exe which will work using ld as
-+# is currently required.  It is expected that as of gcc 2.8, the end user
-+# will be able to override parts of the compilers specs and link using gcc.
++# is currently required.
 +
 +ifeq ($(MRM_IN_ROM),yes)
 +# Build a rommable image - move the .data section after the .text section
@@ -50,8 +80,8 @@ Index: rtems/make/custom/mo376.cfg
 +	        /\.text/ { base = $$4 ; size = $$3 };\
 +	        END { printf("0x%x", h2d(base) + h2d(size)) }'\
 +	       ` $(basename $@).pxe $(basename $@).nxe
-+	$(OBJCOPY) -O srec $(basename $@).nxe $(basename $@).i
-+	sed -e 's/.$$//' -e '/^S0/d' $(basename $@).i | \
++	$(OBJCOPY) -O srec $(basename $@).nxe $(basename $@).srec
++	sed -e 's/.$$//' -e '/^S0/d' $(basename $@).srec | \
 +	    $(PACKHEX) > $(basename $@).exe
 +	$(NM) -g -n $(basename $@).pxe > $(basename $@).pnum
 +	$(NM) -g -n $(basename $@).nxe > $(basename $@).num
@@ -61,9 +91,9 @@ Index: rtems/make/custom/mo376.cfg
 +define make-exe
 +	$(LINK.c) $(AM_CFLAGS) $(AM_LDFLAGS) -o $(basename $@).nxe \
 +	    $(LINK_OBJS) $(LINK_LIBS)
-+	$(OBJCOPY) -O srec $(basename $@).nxe $(basename $@).i
++	$(OBJCOPY) -O srec $(basename $@).nxe $(basename $@).srec
 +#	m68k-rtems-objdump -dxC $(basename $@).nxe > $(basename $@).dump
-+	sed -e 's/.$$//' -e '/^S0/d' $(basename $@).i | \
++	sed -e 's/.$$//' -e '/^S0/d' $(basename $@).srec | \
 +	    $(PACKHEX) > $(basename $@).exe
 +	$(NM) -g -n $(basename $@).nxe > $(basename $@).num
 +	$(SIZE) $(basename $@).nxe
@@ -73,9 +103,9 @@ Index: rtems/make/custom/mo376.cfg
 +# Miscellaneous additions go here
 Index: rtems/c/src/lib/libbsp/m68k/mo376/console/sci.h
 ===================================================================
---- /dev/null
-+++ rtems/c/src/lib/libbsp/m68k/mo376/console/sci.h
-@@ -0,0 +1,231 @@
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ rtems/c/src/lib/libbsp/m68k/mo376/console/sci.h	2007-08-14 17:20:30.000000000 +0200
+@@ -0,0 +1,234 @@
 +/****************************************************************************
 +* File:     sci.h
 +*
@@ -83,7 +113,7 @@ Index: rtems/c/src/lib/libbsp/m68k/mo376/console/sci.h
 +*
 +* Note:     See bsp.h,confdefs.h,system.h for installing drivers into RTEMS.
 +*
-+* $Id: sci.h,v 1.4 2004/04/21 16:01:35 ralf Exp $
++* $Id: sci.h,v 1.5 2006/09/11 21:43:55 joel Exp $
 +****************************************************************************/
 +
 +#ifndef _sci_h_
@@ -94,64 +124,65 @@ Index: rtems/c/src/lib/libbsp/m68k/mo376/console/sci.h
 +  I'm still working on these...
 +*******************************************************************************/
 +
-+#define SCI_IOCTL_PARITY_NONE           0x00    // no parity bit after the data bits
-+#define SCI_IOCTL_PARITY_ODD            0x01    // parity bit added after data bits
-+#define SCI_IOCTL_PARITY_EVEN           0x02    // parity bit added after data bits
-+#define SCI_IOCTL_PARITY_MARK           0x03    // parity bit is lo, -12 volts, logical 1
-+#define SCI_IOCTL_PARITY_SPACE          0x04    // parity bit is hi, +12 volts, logical 0
-+#define SCI_IOCTL_PARITY_FORCED_ON      0x03    // parity bit is forced hi or lo
-+#define SCI_IOCTL_PARITY_FORCED_OFF     0x04    // parity bit is forced hi or lo
++#define SCI_IOCTL_PARITY_NONE           0x00    /* no parity bit after the data bits */
++#define SCI_IOCTL_PARITY_ODD            0x01    /* parity bit added after data bits */
++#define SCI_IOCTL_PARITY_EVEN           0x02    /* parity bit added after data bits */
++#define SCI_IOCTL_PARITY_MARK           0x03    /* parity bit is lo, -12 volts, logical 1 */
++#define SCI_IOCTL_PARITY_SPACE          0x04    /* parity bit is hi, +12 volts, logical 0 */
++#define SCI_IOCTL_PARITY_FORCED_ON      0x03    /* parity bit is forced hi or lo */
++#define SCI_IOCTL_PARITY_FORCED_OFF     0x04    /* parity bit is forced hi or lo */
 +
-+#define SCI_IOCTL_BAUD_RATE             0x20    // set the baud rate, arg is baud
++#define SCI_IOCTL_BAUD_RATE             0x20    /* set the baud rate, arg is baud */
 +
-+#define SCI_IOCTL_DATA_BITS             0x30    // set the data bits, arg is # bits
++#define SCI_IOCTL_DATA_BITS             0x30    /* set the data bits, arg is # bits */
 +
-+#define SCI_IOCTL_STOP_BITS_1           0x40    // 1 stop bit after char frame
-+#define SCI_IOCTL_STOP_BITS_2           0x41    // 2 stop bit after char frame
++#define SCI_IOCTL_STOP_BITS_1           0x40    /* 1 stop bit after char frame */
++#define SCI_IOCTL_STOP_BITS_2           0x41    /* 2 stop bit after char frame */
 +
-+#define SCI_IOCTL_MODE_NORMAL           0x50    // normal operating mode
-+#define SCI_IOCTL_MODE_LOOP             0x51    // internal loopback mode
++#define SCI_IOCTL_MODE_NORMAL           0x50    /* normal operating mode */
++#define SCI_IOCTL_MODE_LOOP             0x51    /* internal loopback mode */
 +
-+#define SCI_IOCTL_FLOW_NONE             0x60    // no flow control
-+#define SCI_IOCTL_FLOW_RTS_CTS          0x61    // hardware flow control
++#define SCI_IOCTL_FLOW_NONE             0x60    /* no flow control */
++#define SCI_IOCTL_FLOW_RTS_CTS          0x61    /* hardware flow control */
 +
-+#define SCI_IOCTL_SEND_BREAK            0x70    // send an rs-232 break
++#define SCI_IOCTL_SEND_BREAK            0x70    /* send an rs-232 break */
 +
-+#define SCI_IOCTL_MODE_1200             0x80    // 1200,n,8,1 download mode
-+#define SCI_IOCTL_MODE_9600             0x81    // 9600,n,8,1 download mode
-+#define SCI_IOCTL_MODE_9_BIT            0x82    // 9600,forced,8,1 command mode
++#define SCI_IOCTL_MODE_1200             0x80    /* 1200,n,8,1 download mode */
++#define SCI_IOCTL_MODE_9600             0x81    /* 9600,n,8,1 download mode */
++#define SCI_IOCTL_MODE_9_BIT            0x82    /* 9600,forced,8,1 command mode */
 +
 +
 +/*******************************************************************************
 +  SCI Registers
 +*******************************************************************************/
 +
-+// SCI Control Register 0  (SCCR0)  $FFFC08
++/* SCI Control Register 0  (SCCR0)  $FFFC08
 +
-+//  8 4 2 1 - 8 4 2 1 - 8 4 2 1 - 8 4 2 1
-+//  ^ ^ ^ ^   ^ ^ ^ ^   ^ ^ ^ ^   ^ ^ ^ ^
-+//  | | | |   | | | |   | | | |   | | | |
-+//  | | | |   | | | |   | | | |   | | | +-----   0 baud rate divisor
-+//  | | | |   | | | |   | | | |   | | +-------   1 baud rate divisor
-+//  | | | |   | | | |   | | | |   | +---------   2 baud rate divisor
-+//  | | | |   | | | |   | | | |   +-----------   3 baud rate divisor
-+//  | | | |   | | | |   | | | |
-+//  | | | |   | | | |   | | | +---------------   4 baud rate divisor
-+//  | | | |   | | | |   | | +-----------------   5 baud rate divisor
-+//  | | | |   | | | |   | +-------------------   6 baud rate divisor
-+//  | | | |   | | | |   +---------------------   7 baud rate divisor
-+//  | | | |   | | | |
-+//  | | | |   | | | +-------------------------   8 baud rate divisor
-+//  | | | |   | | +---------------------------   9 baud rate divisor
-+//  | | | |   | +-----------------------------  10 baud rate divisor
-+//  | | | |   +-------------------------------  11 baud rate divisor
-+//  | | | |
-+//  | | | +-----------------------------------  12 baud rate divisor
-+//  | | +-------------------------------------  13 unused
-+//  | +---------------------------------------  14 unused
-+//  +-----------------------------------------  15 unused
++    8 4 2 1 - 8 4 2 1 - 8 4 2 1 - 8 4 2 1
++    ^ ^ ^ ^   ^ ^ ^ ^   ^ ^ ^ ^   ^ ^ ^ ^
++    | | | |   | | | |   | | | |   | | | |
++    | | | |   | | | |   | | | |   | | | +-----   0 baud rate divisor
++    | | | |   | | | |   | | | |   | | +-------   1 baud rate divisor
++    | | | |   | | | |   | | | |   | +---------   2 baud rate divisor
++    | | | |   | | | |   | | | |   +-----------   3 baud rate divisor
++    | | | |   | | | |   | | | |
++    | | | |   | | | |   | | | +---------------   4 baud rate divisor
++    | | | |   | | | |   | | +-----------------   5 baud rate divisor
++    | | | |   | | | |   | +-------------------   6 baud rate divisor
++    | | | |   | | | |   +---------------------   7 baud rate divisor
++    | | | |   | | | |
++    | | | |   | | | +-------------------------   8 baud rate divisor
++    | | | |   | | +---------------------------   9 baud rate divisor
++    | | | |   | +-----------------------------  10 baud rate divisor
++    | | | |   +-------------------------------  11 baud rate divisor
++    | | | |
++    | | | +-----------------------------------  12 baud rate divisor
++    | | +-------------------------------------  13 unused
++    | +---------------------------------------  14 unused
++    +-----------------------------------------  15 unused
 +
-+//  0 0 0 0 - 0 0 0 0 - 0 0 0 0 - 0 1 0 0       reset value - (64k baud?)
++    0 0 0 0 - 0 0 0 0 - 0 0 0 0 - 0 1 0 0       reset value - (64k baud?)
++ */
 +
 +#define SCI_BAUD_57_6K            9
 +#define SCI_BAUD_38_4K           14
@@ -162,115 +193,117 @@ Index: rtems/c/src/lib/libbsp/m68k/mo376/console/sci.h
 +#define SCI_BAUD_1200           437
 +
 +
-+//  SCI Control Register 1  (SCCR1)  $FFFC0A
++/*  SCI Control Register 1  (SCCR1)  $FFFC0A
 +
-+//  8 4 2 1 - 8 4 2 1 - 8 4 2 1 - 8 4 2 1
-+//  ^ ^ ^ ^   ^ ^ ^ ^   ^ ^ ^ ^   ^ ^ ^ ^
-+//  | | | |   | | | |   | | | |   | | | |
-+//  | | | |   | | | |   | | | |   | | | +-----   0 send a break
-+//  | | | |   | | | |   | | | |   | | +-------   1 rcvr wakeup mode
-+//  | | | |   | | | |   | | | |   | +---------   2 rcvr enable
-+//  | | | |   | | | |   | | | |   +-----------   3 xmtr enable
-+//  | | | |   | | | |   | | | |
-+//  | | | |   | | | |   | | | +---------------   4 idle line intr enable
-+//  | | | |   | | | |   | | +-----------------   5 rcvr intr enable
-+//  | | | |   | | | |   | +-------------------   6 xmit complete intr enable
-+//  | | | |   | | | |   +---------------------   7 xmtr intr enable
-+//  | | | |   | | | |
-+//  | | | |   | | | +-------------------------   8 wakeup on address mark
-+//  | | | |   | | +---------------------------   9 mode 1=9 bits, 0=8 bits
-+//  | | | |   | +-----------------------------  10 parity enable 1=on, 0=off
-+//  | | | |   +-------------------------------  11 parity type 1=odd, 0=even
-+//  | | | |
-+//  | | | +-----------------------------------  12 idle line select
-+//  | | +-------------------------------------  13 wired-or mode
-+//  | +---------------------------------------  14 loop mode
-+//  +-----------------------------------------  15 unused
++    8 4 2 1 - 8 4 2 1 - 8 4 2 1 - 8 4 2 1
++    ^ ^ ^ ^   ^ ^ ^ ^   ^ ^ ^ ^   ^ ^ ^ ^
++    | | | |   | | | |   | | | |   | | | |
++    | | | |   | | | |   | | | |   | | | +-----   0 send a break
++    | | | |   | | | |   | | | |   | | +-------   1 rcvr wakeup mode
++    | | | |   | | | |   | | | |   | +---------   2 rcvr enable
++    | | | |   | | | |   | | | |   +-----------   3 xmtr enable
++    | | | |   | | | |   | | | |
++    | | | |   | | | |   | | | +---------------   4 idle line intr enable
++    | | | |   | | | |   | | +-----------------   5 rcvr intr enable
++    | | | |   | | | |   | +-------------------   6 xmit complete intr enable
++    | | | |   | | | |   +---------------------   7 xmtr intr enable
++    | | | |   | | | |
++    | | | |   | | | +-------------------------   8 wakeup on address mark
++    | | | |   | | +---------------------------   9 mode 1=9 bits, 0=8 bits
++    | | | |   | +-----------------------------  10 parity enable 1=on, 0=off
++    | | | |   +-------------------------------  11 parity type 1=odd, 0=even
++    | | | |
++    | | | +-----------------------------------  12 idle line select
++    | | +-------------------------------------  13 wired-or mode
++    | +---------------------------------------  14 loop mode
++    +-----------------------------------------  15 unused
++  
++    0 0 0 0 - 0 0 0 0 - 0 0 0 0 - 0 0 0 0       reset value
++*/
 +
-+//  0 0 0 0 - 0 0 0 0 - 0 0 0 0 - 0 0 0 0       reset value
++#define SCI_SEND_BREAK          0x0001          /* 0000-0000-0000-0001 */
++#define SCI_RCVR_WAKEUP         0x0002          /* 0000-0000-0000-0010 */
++#define SCI_ENABLE_RCVR         0x0004          /* 0000-0000-0000-0100 */
++#define SCI_ENABLE_XMTR         0x0008          /* 0000-0000-0000-1000 */
 +
-+#define SCI_SEND_BREAK          0x0001          // 0000-0000-0000-0001
-+#define SCI_RCVR_WAKEUP         0x0002          // 0000-0000-0000-0010
-+#define SCI_ENABLE_RCVR         0x0004          // 0000-0000-0000-0100
-+#define SCI_ENABLE_XMTR         0x0008          // 0000-0000-0000-1000
++#define SCI_DISABLE_RCVR        0xFFFB          /* 1111-1111-1111-1011 */
++#define SCI_DISABLE_XMTR        0xFFF7          /* 1111-1111-1111-0111 */
 +
-+#define SCI_DISABLE_RCVR        0xFFFB          // 1111-1111-1111-1011
-+#define SCI_DISABLE_XMTR        0xFFF7          // 1111-1111-1111-0111
++#define SCI_ENABLE_INT_IDLE     0x0010          /* 0000-0000-0001-0000 */
++#define SCI_ENABLE_INT_RX       0x0020          /* 0000-0000-0010-0000 */
++#define SCI_ENABLE_INT_TX_DONE  0x0040          /* 0000-0000-0100-0000 */
++#define SCI_ENABLE_INT_TX       0x0080          /* 0000-0000-1000-0000 */
 +
-+#define SCI_ENABLE_INT_IDLE     0x0010          // 0000-0000-0001-0000
-+#define SCI_ENABLE_INT_RX       0x0020          // 0000-0000-0010-0000
-+#define SCI_ENABLE_INT_TX_DONE  0x0040          // 0000-0000-0100-0000
-+#define SCI_ENABLE_INT_TX       0x0080          // 0000-0000-1000-0000
++#define SCI_DISABLE_INT_ALL     0xFF00          /* 1111-1111-0000-0000 ??? */
 +
-+#define SCI_DISABLE_INT_ALL     0xFF00          // 1111-1111-0000-0000 ???
++#define SCI_DISABLE_INT_RX      0xFFDF          /* 1111-1111-1101-1111 */
++#define SCI_CLEAR_RX_INT        0xFFBF          /* 1111-1111-1011-1111 */
++#define SCI_DISABLE_INT_TX      0xFF7F          /* 1111-1111-0111-1111 */
++#define SCI_CLEAR_TDRE          0xFEFF          /* 1111-1110-1111-1111 */
 +
-+#define SCI_DISABLE_INT_RX      0xFFDF          // 1111-1111-1101-1111
-+#define SCI_CLEAR_RX_INT        0xFFBF          // 1111-1111-1011-1111
-+#define SCI_DISABLE_INT_TX      0xFF7F          // 1111-1111-0111-1111
-+#define SCI_CLEAR_TDRE          0xFEFF          // 1111-1110-1111-1111
++#define SCI_RCVR_WAKE_ON_MARK   0x0100          /* 0000-0001-0000-0000 */
++#define SCI_9_DATA_BITS         0x0200          /* 0000-0010-0000-0000 */
++#define SCI_PARITY_ENABLE       0x0400          /* 0000-0100-0000-0000 */
++#define SCI_PARITY_ODD          0x0800          /* 0000-1000-0000-0000 */
 +
-+#define SCI_RCVR_WAKE_ON_MARK   0x0100          // 0000-0001-0000-0000
-+#define SCI_9_DATA_BITS         0x0200          // 0000-0010-0000-0000
-+#define SCI_PARITY_ENABLE       0x0400          // 0000-0100-0000-0000
-+#define SCI_PARITY_ODD          0x0800          // 0000-1000-0000-0000
++#define SCI_RCVR_WAKE_ON_IDLE   0xFEFF          /* 1111-1110-1111-1111 */
++#define SCI_8_DATA_BITS         0xFDFF          /* 1111-1101-1111-1111 */
++#define SCI_PARITY_DISABLE      0xFBFF          /* 1111-1011-1111-1111 */
++#define SCI_PARITY_EVEN         0xF7FF          /* 1111-0111-1111-1111 */
 +
-+#define SCI_RCVR_WAKE_ON_IDLE   0xFEFF          // 1111-1110-1111-1111
-+#define SCI_8_DATA_BITS         0xFDFF          // 1111-1101-1111-1111
-+#define SCI_PARITY_DISABLE      0xFBFF          // 1111-1011-1111-1111
-+#define SCI_PARITY_EVEN         0xF7FF          // 1111-0111-1111-1111
++#define SCI_PARITY_NONE         0xF3FF          /* 1111-0011-1111-1111 */
 +
-+#define SCI_PARITY_NONE         0xF3FF          // 1111-0011-1111-1111
-+
-+#define SCI_IDLE_LINE_LONG      0x1000          // 0001-0000-0000-0000
-+#define SCI_TXD_OPEN_DRAIN      0x2000          // 0010-0000-0000-0000
-+#define SCI_LOOPBACK_MODE       0x4000          // 0100-0000-0000-0000
-+#define SCI_SCCR1_UNUSED        0x8000          // 1000-0000-0000-0000
++#define SCI_IDLE_LINE_LONG      0x1000          /* 0001-0000-0000-0000 */
++#define SCI_TXD_OPEN_DRAIN      0x2000          /* 0010-0000-0000-0000 */
++#define SCI_LOOPBACK_MODE       0x4000          /* 0100-0000-0000-0000 */
++#define SCI_SCCR1_UNUSED        0x8000          /* 1000-0000-0000-0000 */
 +
 +
-+//  SCI Status Register  (SCSR)  $FFFC0C
++/*  SCI Status Register  (SCSR)  $FFFC0C
 +
-+//  8 4 2 1 - 8 4 2 1 - 8 4 2 1 - 8 4 2 1
-+//  ^ ^ ^ ^   ^ ^ ^ ^   ^ ^ ^ ^   ^ ^ ^ ^
-+//  | | | |   | | | |   | | | |   | | | |
-+//  | | | |   | | | |   | | | |   | | | +-----   0 PF - parity error
-+//  | | | |   | | | |   | | | |   | | +-------   1 FE - framing error
-+//  | | | |   | | | |   | | | |   | +---------   2 NF - noise flag
-+//  | | | |   | | | |   | | | |   +-----------   3 OR - overrun flag
-+//  | | | |   | | | |   | | | |
-+//  | | | |   | | | |   | | | +---------------   4 IDLE - idle line detected
-+//  | | | |   | | | |   | | +-----------------   5 RAF  - rcvr active flag
-+//  | | | |   | | | |   | +-------------------   6 RDRF - rcv data reg full
-+//  | | | |   | | | |   +---------------------   7 TC   - xmt complete flag
-+//  | | | |   | | | |
-+//  | | | |   | | | +-------------------------   8 TDRE - xmt data reg empty
-+//  | | | |   | | +---------------------------   9 always zero
-+//  | | | |   | +-----------------------------  10 always zero
-+//  | | | |   +-------------------------------  11 always zero
-+//  | | | |
-+//  | | | +-----------------------------------  12 always zero
-+//  | | +-------------------------------------  13 always zero
-+//  | +---------------------------------------  14 always zero
-+//  +-----------------------------------------  15 always zero
++    8 4 2 1 - 8 4 2 1 - 8 4 2 1 - 8 4 2 1
++    ^ ^ ^ ^   ^ ^ ^ ^   ^ ^ ^ ^   ^ ^ ^ ^
++    | | | |   | | | |   | | | |   | | | |
++    | | | |   | | | |   | | | |   | | | +-----   0 PF - parity error
++    | | | |   | | | |   | | | |   | | +-------   1 FE - framing error
++    | | | |   | | | |   | | | |   | +---------   2 NF - noise flag
++    | | | |   | | | |   | | | |   +-----------   3 OR - overrun flag
++    | | | |   | | | |   | | | |
++    | | | |   | | | |   | | | +---------------   4 IDLE - idle line detected
++    | | | |   | | | |   | | +-----------------   5 RAF  - rcvr active flag
++    | | | |   | | | |   | +-------------------   6 RDRF - rcv data reg full
++    | | | |   | | | |   +---------------------   7 TC   - xmt complete flag
++    | | | |   | | | |
++    | | | |   | | | +-------------------------   8 TDRE - xmt data reg empty
++    | | | |   | | +---------------------------   9 always zero
++    | | | |   | +-----------------------------  10 always zero
++    | | | |   +-------------------------------  11 always zero
++    | | | |
++    | | | +-----------------------------------  12 always zero
++    | | +-------------------------------------  13 always zero
++    | +---------------------------------------  14 always zero
++    +-----------------------------------------  15 always zero
++  
++    0 0 0 0 - 0 0 0 1 - 1 0 0 0 - 0 0 0 0       reset value
++*/
 +
-+//  0 0 0 0 - 0 0 0 1 - 1 0 0 0 - 0 0 0 0       reset value
++#define SCI_ERROR_PARITY        0x0001          /* 0000-0000-0000-0001 */
++#define SCI_ERROR_FRAMING       0x0002          /* 0000-0000-0000-0010 */
++#define SCI_ERROR_NOISE         0x0004          /* 0000-0000-0000-0100 */
++#define SCI_ERROR_OVERRUN       0x0008          /* 0000-0000-0000-1000 */
 +
-+#define SCI_ERROR_PARITY        0x0001          // 0000-0000-0000-0001
-+#define SCI_ERROR_FRAMING       0x0002          // 0000-0000-0000-0010
-+#define SCI_ERROR_NOISE         0x0004          // 0000-0000-0000-0100
-+#define SCI_ERROR_OVERRUN       0x0008          // 0000-0000-0000-1000
++#define SCI_IDLE_LINE           0x0010          /* 0000-0000-0001-0000 */
++#define SCI_RCVR_ACTIVE         0x0020          /* 0000-0000-0010-0000 */
++#define SCI_RCVR_READY          0x0040          /* 0000-0000-0100-0000 */
++#define SCI_XMTR_IDLE           0x0080          /* 0000-0000-1000-0000 */
 +
-+#define SCI_IDLE_LINE           0x0010          // 0000-0000-0001-0000
-+#define SCI_RCVR_ACTIVE         0x0020          // 0000-0000-0010-0000
-+#define SCI_RCVR_READY          0x0040          // 0000-0000-0100-0000
-+#define SCI_XMTR_IDLE           0x0080          // 0000-0000-1000-0000
++#define SCI_CLEAR_RX_INT        0xFFBF          /* 1111-1111-1011-1111 */
 +
-+#define SCI_CLEAR_RX_INT        0xFFBF          // 1111-1111-1011-1111
++#define SCI_XMTR_READY          0x0100          /* 0000-0001-0000-0000 */
 +
-+#define SCI_XMTR_READY          0x0100          // 0000-0001-0000-0000
++#define SCI_CLEAR_TDRE          0xFEFF          /* 1111-1110-1111-1111 */
 +
-+#define SCI_CLEAR_TDRE          0xFEFF          // 1111-1110-1111-1111
-+
-+#define SCI_XMTR_AVAILABLE      0x0180          // 0000-0001-1000-0000
++#define SCI_XMTR_AVAILABLE      0x0180          /* 0000-0001-1000-0000 */
 +
 +
 +
@@ -282,35 +315,35 @@ Index: rtems/c/src/lib/libbsp/m68k/mo376/console/sci.h
 +extern "C" {
 +#endif
 +
-+// look at console_open to see how this is called
++/* look at console_open to see how this is called */
 +
 +const rtems_termios_callbacks * SciGetTermiosHandlers( int32_t   polled );
 +
 +/* SCI interrupt */
 +
-+//rtems_isr SciIsr( rtems_vector_number vector );
++/*rtems_isr SciIsr( rtems_vector_number vector ); */
 +
-+//int32_t   SciOpenPolled    ( int32_t   major, int32_t   minor, void *arg );
-+//int32_t   SciOpenInterrupt ( int32_t   major, int32_t   minor, void *arg );
++/*int32_t   SciOpenPolled    ( int32_t   major, int32_t   minor, void *arg ); */
++/*int32_t   SciOpenInterrupt ( int32_t   major, int32_t   minor, void *arg ); */
 +
-+//int32_t   SciClose         ( int32_t   major, int32_t   minor, void *arg );
++/*int32_t   SciClose         ( int32_t   major, int32_t   minor, void *arg ); */
 +
-+//int32_t   SciWritePolled   ( int32_t   minor, const char *buf, int32_t   len );
-+//int32_t   SciWriteInterrupt( int32_t   minor, const char *buf, int32_t   len );
++/*int32_t   SciWritePolled   ( int32_t   minor, const char *buf, int32_t   len ); */
++/*int32_t   SciWriteInterrupt( int32_t   minor, const char *buf, int32_t   len ); */
 +
-+//int32_t   SciReadPolled    ( int32_t   minor );
++/*int32_t   SciReadPolled    ( int32_t   minor ); */
 +
-+//int32_t   SciSetAttributes ( int32_t   minor, const struct termios *t );
++/*int32_t   SciSetAttributes ( int32_t   minor, const struct termios *t ); */
 +
 +#ifdef __cplusplus
 +}
 +#endif
 +
-+#endif  // _sci_h_
++#endif  /* _sci_h_ */
 Index: rtems/c/src/lib/libbsp/m68k/mo376/startup/linkcmds_ROM
 ===================================================================
---- /dev/null
-+++ rtems/c/src/lib/libbsp/m68k/mo376/startup/linkcmds_ROM
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ rtems/c/src/lib/libbsp/m68k/mo376/startup/linkcmds_ROM	2007-08-14 17:20:30.000000000 +0200
 @@ -0,0 +1,200 @@
 +/*  linkcmds
 + *
@@ -514,8 +547,8 @@ Index: rtems/c/src/lib/libbsp/m68k/mo376/startup/linkcmds_ROM
 +}
 Index: rtems/c/src/lib/libbsp/m68k/mo376/startup/except_vect_332_ROM.S
 ===================================================================
---- /dev/null
-+++ rtems/c/src/lib/libbsp/m68k/mo376/startup/except_vect_332_ROM.S
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ rtems/c/src/lib/libbsp/m68k/mo376/startup/except_vect_332_ROM.S	2007-08-14 17:20:30.000000000 +0200
 @@ -0,0 +1,293 @@
 +/*
 + *  $Id: except_vect_332_ROM.S,v 1.3 2004/04/21 16:01:35 ralf Exp $
@@ -812,9 +845,9 @@ Index: rtems/c/src/lib/libbsp/m68k/mo376/startup/except_vect_332_ROM.S
 +				   not vectored to reboot or did not return. */
 Index: rtems/c/src/lib/libbsp/m68k/mo376/console/console.c
 ===================================================================
---- /dev/null
-+++ rtems/c/src/lib/libbsp/m68k/mo376/console/console.c
-@@ -0,0 +1,176 @@
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ rtems/c/src/lib/libbsp/m68k/mo376/console/console.c	2007-08-14 17:20:30.000000000 +0200
+@@ -0,0 +1,174 @@
 +/*
 + *  This file contains the generic console driver shell used
 + *  by all console drivers using libchip.
@@ -828,15 +861,13 @@ Index: rtems/c/src/lib/libbsp/m68k/mo376/console/console.c
 + *  found in the file LICENSE in this distribution or at
 + *  http://www.rtems.com/license/LICENSE.
 + *
-+ *  $Id: console.c,v 1.7 2004/04/21 16:01:35 ralf Exp $
++ *  $Id: console.c,v 1.8 2006/09/11 21:43:53 joel Exp $
 + */
 +
 +#include <bsp.h>
 +#include <rtems/libio.h>
 +#include <termios.h>
 +#include "sci.h"
-+//#include "../../../../../../rtems/c/src/lib/libbsp/m68k/opti/console/duart.h"
-+//#include "../../../../../../rtems/c/src/lib/libc/libio_.h"
 +
 +/*PAGE
 + *
@@ -991,29 +1022,10 @@ Index: rtems/c/src/lib/libbsp/m68k/mo376/console/console.c
 +
 +  return RTEMS_SUCCESSFUL;
 +}
-Index: rtems/c/src/lib/libbsp/m68k/mo376/.cvsignore
-===================================================================
---- /dev/null
-+++ rtems/c/src/lib/libbsp/m68k/mo376/.cvsignore
-@@ -0,0 +1,14 @@
-+aclocal.m4
-+autom4te*.cache
-+config.cache
-+config.guess
-+config.log
-+config.status
-+config.sub
-+configure
-+depcomp
-+install-sh
-+Makefile
-+Makefile.in
-+missing
-+mkinstalldirs
 Index: rtems/c/src/lib/libbsp/m68k/mo376/start/start.S
 ===================================================================
---- /dev/null
-+++ rtems/c/src/lib/libbsp/m68k/mo376/start/start.S
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ rtems/c/src/lib/libbsp/m68k/mo376/start/start.S	2007-08-14 17:20:30.000000000 +0200
 @@ -0,0 +1,150 @@
 +/*
 + *  $Id
@@ -1167,8 +1179,8 @@ Index: rtems/c/src/lib/libbsp/m68k/mo376/start/start.S
 +#endif
 Index: rtems/c/src/lib/libbsp/m68k/mo376/misc/dotests
 ===================================================================
---- /dev/null
-+++ rtems/c/src/lib/libbsp/m68k/mo376/misc/dotests
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ rtems/c/src/lib/libbsp/m68k/mo376/misc/dotests	2007-08-14 17:20:30.000000000 +0200
 @@ -0,0 +1,15 @@
 +#! /bin/bash
 +#
@@ -1187,9 +1199,9 @@ Index: rtems/c/src/lib/libbsp/m68k/mo376/misc/dotests
 +kill -9 $cpJob
 Index: rtems/c/src/lib/libbsp/m68k/mo376/include/bsp.h
 ===================================================================
---- /dev/null
-+++ rtems/c/src/lib/libbsp/m68k/mo376/include/bsp.h
-@@ -0,0 +1,140 @@
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ rtems/c/src/lib/libbsp/m68k/mo376/include/bsp.h	2007-08-14 17:20:30.000000000 +0200
+@@ -0,0 +1,139 @@
 +/*  bsp.h
 + *
 + *  This include file contains all mrm board IO definitions.
@@ -1201,7 +1213,7 @@ Index: rtems/c/src/lib/libbsp/m68k/mo376/include/bsp.h
 + *  found in the file LICENSE in this distribution or at
 + *  http://www.rtems.com/license/LICENSE.
 + *
-+ *  $Id: bsp.h,v 1.13 2005/05/26 05:31:17 ralf Exp $
++ *  $Id: bsp.h,v 1.14 2006/03/17 10:11:36 ralf Exp $
 + */
 +
 +#ifndef _BSP_H
@@ -1329,11 +1341,10 @@ Index: rtems/c/src/lib/libbsp/m68k/mo376/include/bsp.h
 +#endif
 +
 +#endif
-+/* end of include file */
 Index: rtems/c/src/lib/libbsp/m68k/mo376/misc/interr.c
 ===================================================================
---- /dev/null
-+++ rtems/c/src/lib/libbsp/m68k/mo376/misc/interr.c
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ rtems/c/src/lib/libbsp/m68k/mo376/misc/interr.c	2007-08-14 17:20:30.000000000 +0200
 @@ -0,0 +1,99 @@
 +/*
 + *  Internal Error Handler
@@ -1436,9 +1447,27 @@ Index: rtems/c/src/lib/libbsp/m68k/mo376/misc/interr.c
 +}
 Index: rtems/c/src/lib/libbsp/m68k/mo376/ChangeLog
 ===================================================================
---- /dev/null
-+++ rtems/c/src/lib/libbsp/m68k/mo376/ChangeLog
-@@ -0,0 +1,437 @@
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ rtems/c/src/lib/libbsp/m68k/mo376/ChangeLog	2007-08-14 17:20:30.000000000 +0200
+@@ -0,0 +1,455 @@
++2006-12-02	Ralf Corsépius <ralf.corsepius@rtems.org>
++
++	* configure.ac: New BUG-REPORT address.
++
++2006-10-20	Ralf Corsépius <ralf.corsepius@rtems.org>
++
++	* Makefile.am: Remove superfluous -DASM.
++
++2006-10-19	Ralf Corsépius <ralf.corsepius@rtems.org>
++
++	* configure.ac: Require automake-1.10. Require autoconf-2.60.
++
++2006-09-11	Joel Sherrill <joel@OARcorp.com>
++
++	* console/console.c, console/sci.c, console/sci.h, spurious/spinit.c,
++	startup/bspclean.c, startup/start_c.c: Convert C++ style comments to
++	C style.
++
 +2006-02-08	Joel Sherrill <joel@OARcorp.com>
 +
 +	* startup/linkcmds, startup/linkcmds_ROM: Add sections required by
@@ -1878,8 +1907,8 @@ Index: rtems/c/src/lib/libbsp/m68k/mo376/ChangeLog
 +
 Index: rtems/c/src/lib/libbsp/m68k/mo376/startup/bspclean.c
 ===================================================================
---- /dev/null
-+++ rtems/c/src/lib/libbsp/m68k/mo376/startup/bspclean.c
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ rtems/c/src/lib/libbsp/m68k/mo376/startup/bspclean.c	2007-08-14 17:20:30.000000000 +0200
 @@ -0,0 +1,27 @@
 +/*  bsp_cleanup()
 + *
@@ -1897,7 +1926,7 @@ Index: rtems/c/src/lib/libbsp/m68k/mo376/startup/bspclean.c
 + *  found in the file LICENSE in this distribution or at
 + *  http://www.rtems.com/license/LICENSE.
 + *
-+ *  $Id: bspclean.c,v 1.4 2004/04/21 10:42:52 ralf Exp $
++ *  $Id: bspclean.c,v 1.5 2006/09/11 21:43:56 joel Exp $
 + */
 +
 +#include <bsp.h>
@@ -1906,12 +1935,12 @@ Index: rtems/c/src/lib/libbsp/m68k/mo376/startup/bspclean.c
 +{
 +    /* interrupt driven stdio must be flushed */
 +    _CPU_ISR_Set_level( 7 );
-+    //_UART_flush();
++    /*_UART_flush(); */
 +}
 Index: rtems/c/src/lib/libbsp/m68k/mo376/timer/timer.c
 ===================================================================
---- /dev/null
-+++ rtems/c/src/lib/libbsp/m68k/mo376/timer/timer.c
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ rtems/c/src/lib/libbsp/m68k/mo376/timer/timer.c	2007-08-14 17:20:30.000000000 +0200
 @@ -0,0 +1,81 @@
 +/*  Timer_init()
 + *
@@ -1996,8 +2025,8 @@ Index: rtems/c/src/lib/libbsp/m68k/mo376/timer/timer.c
 +}
 Index: rtems/c/src/lib/libbsp/m68k/mo376/clock/ckinit.c
 ===================================================================
---- /dev/null
-+++ rtems/c/src/lib/libbsp/m68k/mo376/clock/ckinit.c
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ rtems/c/src/lib/libbsp/m68k/mo376/clock/ckinit.c	2007-08-14 17:20:30.000000000 +0200
 @@ -0,0 +1,128 @@
 +/*  Clock_init()
 + *
@@ -2129,8 +2158,8 @@ Index: rtems/c/src/lib/libbsp/m68k/mo376/clock/ckinit.c
 +}
 Index: rtems/c/src/lib/libbsp/m68k/mo376/misc/gdbinit68
 ===================================================================
---- /dev/null
-+++ rtems/c/src/lib/libbsp/m68k/mo376/misc/gdbinit68
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ rtems/c/src/lib/libbsp/m68k/mo376/misc/gdbinit68	2007-08-14 17:20:30.000000000 +0200
 @@ -0,0 +1,16 @@
 +#
 +#  $Id: gdbinit68,v 1.1 2001/05/25 16:28:46 joel Exp $
@@ -2150,20 +2179,20 @@ Index: rtems/c/src/lib/libbsp/m68k/mo376/misc/gdbinit68
 +q
 Index: rtems/c/src/lib/libbsp/m68k/mo376/configure.ac
 ===================================================================
---- /dev/null
-+++ rtems/c/src/lib/libbsp/m68k/mo376/configure.ac
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ rtems/c/src/lib/libbsp/m68k/mo376/configure.ac	2007-08-14 17:20:30.000000000 +0200
 @@ -0,0 +1,20 @@
 +## Process this file with autoconf to produce a configure script.
 +## 
-+## $Id: configure.ac,v 1.14 2004/09/24 06:32:09 ralf Exp $
++## $Id: configure.ac,v 1.14.2.2 2006/12/02 06:04:46 ralf Exp $
 +
-+AC_PREREQ(2.59)
-+AC_INIT([rtems-c-src-lib-libbsp-m68k-mrm332],[_RTEMS_VERSION],[rtems-bugs@rtems.com])
++AC_PREREQ(2.60)
++AC_INIT([rtems-c-src-lib-libbsp-m68k-mrm332],[_RTEMS_VERSION],[http://www.rtems.org/bugzilla])
 +AC_CONFIG_SRCDIR([bsp_specs])
 +RTEMS_TOP(../../../../../..)
 +
 +RTEMS_CANONICAL_TARGET_CPU
-+AM_INIT_AUTOMAKE([no-define nostdinc foreign 1.9])
++AM_INIT_AUTOMAKE([no-define nostdinc foreign 1.10])
 +RTEMS_BSP_CONFIGURE
 +
 +RTEMS_PROG_CC_FOR_TARGET
@@ -2175,8 +2204,8 @@ Index: rtems/c/src/lib/libbsp/m68k/mo376/configure.ac
 +AC_OUTPUT
 Index: rtems/c/src/lib/libbsp/m68k/mo376/README
 ===================================================================
---- /dev/null
-+++ rtems/c/src/lib/libbsp/m68k/mo376/README
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ rtems/c/src/lib/libbsp/m68k/mo376/README	2007-08-14 17:20:30.000000000 +0200
 @@ -0,0 +1,24 @@
 +#
 +#  $Id: README,v 1.1 2001/05/25 16:28:46 joel Exp $
@@ -2204,11 +2233,11 @@ Index: rtems/c/src/lib/libbsp/m68k/mo376/README
 +
 Index: rtems/c/src/lib/libbsp/m68k/mo376/Makefile.am
 ===================================================================
---- /dev/null
-+++ rtems/c/src/lib/libbsp/m68k/mo376/Makefile.am
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ rtems/c/src/lib/libbsp/m68k/mo376/Makefile.am	2007-08-14 17:20:30.000000000 +0200
 @@ -0,0 +1,68 @@
 +##
-+## $Id: Makefile.am,v 1.24 2006/01/12 10:12:30 ralf Exp $
++## $Id: Makefile.am,v 1.24.2.1 2006/10/20 11:54:57 ralf Exp $
 +##
 +
 +ACLOCAL_AMFLAGS = -I ../../../../aclocal
@@ -2232,7 +2261,7 @@ Index: rtems/c/src/lib/libbsp/m68k/mo376/Makefile.am
 +
 +EXTRA_DIST += start/start.S
 +start.$(OBJEXT): start/start.S
-+	$(CPPASCOMPILE) -DASM -o $@ -c $<
++	$(CPPASCOMPILE) -o $@ -c $<
 +
 +project_lib_DATA = start.$(OBJEXT)
 +
@@ -2277,9 +2306,9 @@ Index: rtems/c/src/lib/libbsp/m68k/mo376/Makefile.am
 +include $(top_srcdir)/../../../../automake/local.am
 Index: rtems/c/src/lib/libbsp/m68k/mo376/console/sci.c
 ===================================================================
---- /dev/null
-+++ rtems/c/src/lib/libbsp/m68k/mo376/console/sci.c
-@@ -0,0 +1,1620 @@
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ rtems/c/src/lib/libbsp/m68k/mo376/console/sci.c	2007-08-14 17:20:30.000000000 +0200
+@@ -0,0 +1,1596 @@
 +/*****************************************************************************
 +* File:     sci.c
 +*
@@ -2315,34 +2344,10 @@ Index: rtems/c/src/lib/libbsp/m68k/mo376/console/sci.c
 +*
 +* Note:     See bsp.h,confdefs.h,system.h for installing drivers into RTEMS.
 +*
-+* $Id: sci.c,v 1.10 2005/01/05 18:12:35 ralf Exp $
++* $Id: sci.c,v 1.11 2006/09/11 21:43:53 joel Exp $
 +*
 +*****************************************************************************/
 +
-+
-+/*****************************************************************************
-+  Compiler Options for the incurably curious
-+*****************************************************************************/
-+
-+/*
-+/opt/rtems/bin/m68k-rtems-gcc
-+    --pipe                                      # use pipes, not tmp files
-+    -B../../../../../../../../opti/lib/         # where the library is
-+    -specs bsp_specs                            # ???
-+    -qrtems                                     # ???
-+    -g                                          # add debugging info
-+    -Wall                                       # issue all warnings
-+    -fasm                                       # allow inline asm???
-+    -DCONSOLE_SCI                               # for opti-r box/rev b proto
-+    -mcpu32                                     # machine = motorola cpu 32
-+    -c                                          # compile, don't link
-+    -O4                                         # max optimization
-+    -fomit-frame-pointer                        # stack frames are optional
-+    -o o-optimize/sci.o                         # the object file
-+    ../../../../../../../../../rtems/c/src/lib/libbsp/m68k/opti/console/sci.c
-+*/
-+
-+
 +/*****************************************************************************
 +  Overview of serial port console terminal input/output
 +*****************************************************************************/
@@ -2394,29 +2399,29 @@ Index: rtems/c/src/lib/libbsp/m68k/mo376/console/sci.c
 +#include <libchip/serial.h>
 +#include <libchip/sersupp.h>
 +#include "sci.h"
-+//#include "../misc/include/cpu332.h"
++/*#include "../misc/include/cpu332.h" */
 +
 +
 +/*****************************************************************************
 +  Section B - Manifest Constants
 +*****************************************************************************/
 +
-+#define SCI_MINOR       0                   // minor device number
++#define SCI_MINOR       0                   /* minor device number */
 +
-+// IMPORTANT - if the device driver api is opened, it means the sci is being
-+// used for direct hardware access, so other users (like termios) get ignored
++/* IMPORTANT - if the device driver api is opened, it means the sci is being
++ * used for direct hardware access, so other users (like termios) get ignored
++ */
++#define DRIVER_CLOSED   0                   /* the device driver api is closed */
++#define DRIVER_OPENED   1                   /* the device driver api is opened */
 +
-+#define DRIVER_CLOSED   0                   // the device driver api is closed
-+#define DRIVER_OPENED   1                   // the device driver api is opened
++/* system clock definitions, i dont have documentation on this... */
 +
-+// system clock definitions, i dont have documentation on this...
-+
-+#if 0 // Not needed, this is provided in mrm332.h
-+#define XTAL            32768.0		        // crystal frequency in Hz
-+#define NUMB_W          0			        // system clock parameters
++#if 0 /* Not needed, this is provided in mrm332.h */
++#define XTAL            32768.0    /* crystal frequency in Hz */
++#define NUMB_W          0          /* system clock parameters */
 +#define NUMB_X          1
-+//efine NUMB_Y          0x38		        // for 14.942 Mhz
-+#define NUMB_Y          0x3F			    // for 16.777 Mhz
++#define NUMB_Y          0x38       /* for 14.942 Mhz */
++#define NUMB_Y          0x3F       /* for 16.777 Mhz */
 +
 +#define SYS_CLOCK       (XTAL * 4.0 * (NUMB_Y+1) * (1 << (2 * NUMB_W + NUMB_X)))
 +
@@ -2441,61 +2446,70 @@ Index: rtems/c/src/lib/libbsp/m68k/mo376/console/sci.c
 +
 +void SCI_output_char(char c);
 +
-+rtems_isr SciIsr( rtems_vector_number vector );         // interrupt handler
++/*rtems_isr SciIsr( rtems_vector_number vector );   interrupt handler */
 +
 +const rtems_termios_callbacks * SciGetTermiosHandlers( int32_t   polled );
 +
-+rtems_device_driver SciInitialize ();                   // device driver api
-+rtems_device_driver SciOpen ();                         // device driver api
-+rtems_device_driver SciClose ();                        // device driver api
-+rtems_device_driver SciRead ();                         // device driver api
-+rtems_device_driver SciWrite ();                        // device driver api
-+rtems_device_driver SciControl ();                      // device driver api
++rtems_device_driver SciInitialize(                     /* device driver api */
++    rtems_device_major_number, rtems_device_minor_number, void *);
++rtems_device_driver SciOpen(                           /* device driver api */
++    rtems_device_major_number, rtems_device_minor_number, void *);
++rtems_device_driver SciClose(                          /* device driver api */
++    rtems_device_major_number, rtems_device_minor_number, void *);
++rtems_device_driver SciRead(                           /* device driver api */
++    rtems_device_major_number, rtems_device_minor_number, void *);
++rtems_device_driver SciWrite(                          /* device driver api */
++    rtems_device_major_number, rtems_device_minor_number, void *);
++rtems_device_driver SciControl(                        /* device driver api */
++    rtems_device_major_number, rtems_device_minor_number, void *);
++rtems_device_driver SciRead (
++    rtems_device_major_number, rtems_device_minor_number, void *);
 +
-+int32_t   SciInterruptOpen();                            // termios api
-+int32_t   SciInterruptClose();                           // termios api
-+int32_t   SciInterruptWrite();                           // termios api
++int   SciInterruptOpen(int, int, void *);               /* termios api */
++int   SciInterruptClose(int, int, void *);              /* termios api */
++int   SciInterruptWrite(int, const char *, int);        /* termios api */
 +
-+int32_t   SciSetAttributes();                            // termios api
++int   SciSetAttributes(int, const struct termios*);     /* termios api */
++int   SciPolledOpen(int, int, void *);                  /* termios api */
++int   SciPolledClose(int, int, void *);                 /* termios api */
++int   SciPolledRead(int);                               /* termios api */
++int   SciPolledWrite(int, const char *, int);           /* termios api */
 +
-+int32_t   SciPolledOpen();                               // termios api
-+int32_t   SciPolledClose();                              // termios api
-+int32_t   SciPolledRead();                               // termios api
-+int32_t   SciPolledWrite();                              // termios api
++static void SciSetBaud(uint32_t   rate);                /* hardware routine */
++static void SciSetDataBits(uint16_t   bits);            /* hardware routine */
++static void SciSetParity(uint16_t   parity);            /* hardware routine */
 +
-+static void SciSetBaud(uint32_t   rate);                // hardware routine
-+static void SciSetDataBits(uint16_t   bits);            // hardware routine
-+static void SciSetParity(uint16_t   parity);            // hardware routine
++static void inline SciDisableAllInterrupts( void );     /* hardware routine */
++static void inline SciDisableTransmitInterrupts( void );/* hardware routine */
++static void inline SciDisableReceiveInterrupts( void ); /* hardware routine */
 +
-+static void inline SciDisableAllInterrupts( void );     // hardware routine
-+static void inline SciDisableTransmitInterrupts( void );// hardware routine
-+static void inline SciDisableReceiveInterrupts( void ); // hardware routine
++static void inline SciEnableTransmitInterrupts( void ); /* hardware routine */
++static void inline SciEnableReceiveInterrupts( void );  /* hardware routine */
 +
-+static void inline SciEnableTransmitInterrupts( void ); // hardware routine
-+static void inline SciEnableReceiveInterrupts( void );  // hardware routine
++static void inline SciDisableReceiver( void );          /* hardware routine */
++static void inline SciDisableTransmitter( void );       /* hardware routine */
 +
-+static void inline SciDisableReceiver( void );          // hardware routine
-+static void inline SciDisableTransmitter( void );       // hardware routine
++static void inline SciEnableReceiver( void );           /* hardware routine */
++static void inline SciEnableTransmitter( void );        /* hardware routine */
 +
-+static void inline SciEnableReceiver( void );           // hardware routine
-+static void inline SciEnableTransmitter( void );        // hardware routine
++void SciWriteCharWait  ( uint8_t );                     /* hardware routine */
++void SciWriteCharNoWait( uint8_t );                     /* hardware routine */
 +
-+void SciWriteCharWait  ( uint8_t);                   // hardware routine
-+void SciWriteCharNoWait( uint8_t);                   // hardware routine
++uint8_t   inline SciCharAvailable( void );              /* hardware routine */
 +
-+uint8_t   inline SciCharAvailable( void );              // hardware routine
++uint8_t   inline SciReadCharWait( void );               /* hardware routine */
++uint8_t   inline SciReadCharNoWait( void );             /* hardware routine */
 +
-+uint8_t   inline SciReadCharWait( void );               // hardware routine
-+uint8_t   inline SciReadCharNoWait( void );             // hardware routine
++void SciSendBreak( void );                              /* test routine */
 +
-+void SciSendBreak( void );                              // test routine
++static int8_t   SciRcvBufGetChar();                     /* circular rcv buf */
++static void    SciRcvBufPutChar( uint8_t);              /* circular rcv buf */
++#if 0
++static void    SciRcvBufFlush( void );                  /* unused routine */
++#endif
 +
-+static int8_t   SciRcvBufGetChar();                      // circular rcv buf
-+static void    SciRcvBufPutChar( uint8_t);           // circular rcv buf
-+//atic void    SciRcvBufFlush( void );                  // circular rcv buf
-+
-+void SciUnitTest();                                     // test routine
-+void SciPrintStats();                                   // test routine
++void SciUnitTest();                                     /* test routine */
++void SciPrintStats();                                   /* test routine */
 +
 +
 +/*****************************************************************************
@@ -2504,35 +2518,35 @@ Index: rtems/c/src/lib/libbsp/m68k/mo376/console/sci.c
 +
 +static struct rtems_termios_tty *SciTermioTty;
 +
-+static uint8_t   SciInited = 0;             // has the driver been inited
++static uint8_t   SciInited = 0;             /* has the driver been inited */
 +
-+static uint8_t   SciOpened;                 // has the driver been opened
++static uint8_t   SciOpened;                 /* has the driver been opened */
 +
-+static uint8_t   SciMajor;                  // major device number
++static uint8_t   SciMajor;                  /* major device number */
 +
-+static uint16_t   SciBaud;                  // current value in baud register
++static uint16_t   SciBaud;                  /* current value in baud register */
 +
-+static uint32_t   SciBytesIn  = 0;          // bytes received
-+static uint32_t   SciBytesOut = 0;          // bytes transmitted
++static uint32_t   SciBytesIn  = 0;          /* bytes received */
++static uint32_t   SciBytesOut = 0;          /* bytes transmitted */
 +
-+static uint32_t   SciErrorsParity  = 0;     // error counter
-+static uint32_t   SciErrorsNoise   = 0;     // error counter
-+static uint32_t   SciErrorsFraming = 0;     // error counter
-+static uint32_t   SciErrorsOverrun = 0;     // error counter
++static uint32_t   SciErrorsParity  = 0;     /* error counter */
++static uint32_t   SciErrorsNoise   = 0;     /* error counter */
++static uint32_t   SciErrorsFraming = 0;     /* error counter */
++static uint32_t   SciErrorsOverrun = 0;     /* error counter */
 +
 +#if defined(CONSOLE_SCI)
 +
-+// this is what rtems printk uses to do polling based output
++/* this is what rtems printk uses to do polling based output */
 +
 +BSP_output_char_function_type      BSP_output_char = SCI_output_char;
 +BSP_polling_getchar_function_type  BSP_poll_char   = NULL;
 +
 +#endif
 +
-+// cvs id string so you can use the unix ident command on the object
++/* cvs id string so you can use the unix ident command on the object */
 +
 +#ifdef ID_STRINGS
-+static const char SciIdent[]="$Id: sci.c,v 1.10 2005/01/05 18:12:35 ralf Exp $";
++static const char SciIdent[]="$Id: sci.c,v 1.11 2006/09/11 21:43:53 joel Exp $";
 +#endif
 +
 +
@@ -2540,21 +2554,21 @@ Index: rtems/c/src/lib/libbsp/m68k/mo376/console/sci.c
 +  Section G - A circular buffer for rcv chars when the driver interface is used.
 +*****************************************************************************/
 +
-+// it is trivial to wrap your buffer pointers when size is a power of two
++/* it is trivial to wrap your buffer pointers when size is a power of two */
 +
-+#define SCI_RCV_BUF_SIZE        256         // must be a power of 2 !!!
++#define SCI_RCV_BUF_SIZE        256         /* must be a power of 2 !!! */
 +
-+// if someone opens the sci device using the device driver interface,
-+// then the receive data interrupt handler will put characters in this buffer
-+// instead of sending them up to the termios module for the console
-+
++/* if someone opens the sci device using the device driver interface,
++ * then the receive data interrupt handler will put characters in this buffer
++ * instead of sending them up to the termios module for the console
++ */
 +static uint8_t   SciRcvBuffer[SCI_RCV_BUF_SIZE];
 +
-+static uint8_t   SciRcvBufPutIndex = 0;     // array index to put in next char
++static uint8_t   SciRcvBufPutIndex = 0; /* array index to put in next char */
 +
-+static uint8_t   SciRcvBufGetIndex = 0;     // array index to take out next char
++static uint8_t   SciRcvBufGetIndex = 0; /* array index to take out next char */
 +
-+static uint16_t  SciRcvBufCount = 0;        // how many bytes are in the buffer
++static uint16_t  SciRcvBufCount = 0;   /* how many bytes are in the buffer */
 +
 +
 +
@@ -2564,14 +2578,14 @@ Index: rtems/c/src/lib/libbsp/m68k/mo376/console/sci.c
 +
 +static const rtems_termios_callbacks SciInterruptCallbacks =
 +{
-+    SciInterruptOpen,                       // first open
-+    SciInterruptClose,                      // last close
-+    NULL,                                   // polled read (not required)
-+    SciInterruptWrite,                      // write
-+    SciSetAttributes,                       // set attributes
-+    NULL,                                   // stop remote xmit
-+    NULL,                                   // start remote xmit
-+    TRUE                                    // output uses interrupts
++    SciInterruptOpen,                       /* first open */
++    SciInterruptClose,                      /* last close */
++    NULL,                                   /* polled read (not required) */
++    SciInterruptWrite,                      /* write */
++    SciSetAttributes,                       /* set attributes */
++    NULL,                                   /* stop remote xmit */
++    NULL,                                   /* start remote xmit */
++    TRUE                                    /* output uses interrupts */
 +};
 +
 +/*****************************************************************************
@@ -2580,36 +2594,34 @@ Index: rtems/c/src/lib/libbsp/m68k/mo376/console/sci.c
 +
 +static const rtems_termios_callbacks SciPolledCallbacks =
 +{
-+    SciPolledOpen,                          // first open
-+    SciPolledClose,                         // last close
-+    SciPolledRead,                          // polled read
-+    SciPolledWrite,                         // write
-+    SciSetAttributes,                       // set attributes
-+    NULL,                                   // stop remote xmit
-+    NULL,                                   // start remote xmit
-+    FALSE                                   // output uses interrupts
++    SciPolledOpen,                          /* first open */
++    SciPolledClose,                         /* last close */
++    SciPolledRead,                          /* polled read */
++    SciPolledWrite,                         /* write */
++    SciSetAttributes,                       /* set attributes */
++    NULL,                                   /* stop remote xmit */
++    NULL,                                   /* start remote xmit */
++    FALSE                                   /* output uses interrupts */
 +};
 +
 +
-+/////////////////////////////////////////////////////////////////////////////
-+//
-+//                              SECTION 0
-+//                        MISCELLANEOUS ROUTINES
-+//
-+/////////////////////////////////////////////////////////////////////////////
++/*
++ *                              SECTION 0
++ *                        MISCELLANEOUS ROUTINES
++ */
 +
 +/****************************************************************************
-+* Func:     SCI_output_char
-+* Desc:     used by rtems printk function to send a char to the uart
-+* Inputs:   the character to transmit
-+* Outputs:  none
-+* Errors:   none
-+* Scope:    public
-+****************************************************************************/
++ * Func:     SCI_output_char
++ * Desc:     used by rtems printk function to send a char to the uart
++ * Inputs:   the character to transmit
++ * Outputs:  none
++ * Errors:   none
++ * Scope:    public
++ ****************************************************************************/
 +
 +void SCI_output_char(char c)
 +{
-+//  ( minor device number, pointer to the character, length )
++/*  ( minor device number, pointer to the character, length ) */
 +
 +    SciPolledWrite( SCI_MINOR, &c, 1);
 +
@@ -2631,11 +2643,11 @@ Index: rtems/c/src/lib/libbsp/m68k/mo376/console/sci.c
 +{
 +    if ( polled )
 +    {
-+        return &SciPolledCallbacks;             // polling based
++        return &SciPolledCallbacks;             /* polling based */
 +    }
 +    else
 +    {
-+        return &SciInterruptCallbacks;          // interrupt driven
++        return &SciInterruptCallbacks;          /* interrupt driven */
 +    }
 +}
 +
@@ -2658,53 +2670,52 @@ Index: rtems/c/src/lib/libbsp/m68k/mo376/console/sci.c
 +    if ( (*SCSR) & SCI_ERROR_NOISE   )   SciErrorsNoise   ++;
 +    if ( (*SCSR) & SCI_ERROR_OVERRUN )   SciErrorsOverrun ++;
 +
-+    // see if it was a transmit interrupt
++    /* see if it was a transmit interrupt */
 +
-+    if ( (*SCSR) & SCI_XMTR_AVAILABLE )         // data reg empty, xmt complete
++    if ( (*SCSR) & SCI_XMTR_AVAILABLE )         /* data reg empty, xmt complete */
 +    {
 +        SciDisableTransmitInterrupts();
 +
-+        // tell termios module that the charcter was sent
-+        // he will call us later to transmit more if there are any
++        /* tell termios module that the charcter was sent */
++        /* he will call us later to transmit more if there are any */
 +
 +        if (rtems_termios_dequeue_characters( SciTermioTty, 1 ))
 +        {
-+            // there are more bytes to transmit so enable TX interrupt
++            /* there are more bytes to transmit so enable TX interrupt */
 +
 +            SciEnableTransmitInterrupts();
 +        }
 +    }
 +
-+    // see if it was a receive interrupt
-+    // on the sci uart we just get one character per interrupt
++    /* see if it was a receive interrupt */
++    /* on the sci uart we just get one character per interrupt */
 +
-+    while (  SciCharAvailable() )               // char in data register?
++    while (  SciCharAvailable() )               /* char in data register? */
 +    {
-+        ch = SciReadCharNoWait();               // get the char from the uart
++        ch = SciReadCharNoWait();               /* get the char from the uart */
 +
-+        // IMPORTANT!!!
-+        // either send it to the termios module or keep it locally
++        /* IMPORTANT!!! */
++        /* either send it to the termios module or keep it locally */
 +
-+        if ( SciOpened == DRIVER_OPENED )       // the driver is open
++        if ( SciOpened == DRIVER_OPENED )       /* the driver is open */
 +        {
-+            SciRcvBufPutChar(ch);               // keep it locally
++            SciRcvBufPutChar(ch);               /* keep it locally */
 +        }
-+        else                                    // put in termios buffer
++        else                                    /* put in termios buffer */
 +        {
-+            rtems_termios_enqueue_raw_characters( SciTermioTty, &ch, 1 );
++            char c = (char) ch;
++            rtems_termios_enqueue_raw_characters( SciTermioTty, &c, 1 );
 +        }
 +
-+        *SCSR &= SCI_CLEAR_RX_INT;              // clear the interrupt
++        *SCSR &= SCI_CLEAR_RX_INT;              /* clear the interrupt */
 +    }
 +}
 +
 +
-+/////////////////////////////////////////////////////////////////////////////
-+//
-+//                              SECTION 1
-+//                ROUTINES TO MANIPULATE THE CIRCULAR BUFFER
-+//
-+/////////////////////////////////////////////////////////////////////////////
++/*
++ *                              SECTION 1
++ *                ROUTINES TO MANIPULATE THE CIRCULAR BUFFER
++ */
 +
 +/****************************************************************************
 +* Func:     SciRcvBufGetChar
@@ -2723,22 +2734,22 @@ Index: rtems/c/src/lib/libbsp/m68k/mo376/console/sci.c
 +
 +    if ( SciRcvBufCount == 0 )
 +    {
-+        rtems_fatal_error_occurred(0xDEAD);     // check the count first!
++        rtems_fatal_error_occurred(0xDEAD);     /* check the count first! */
 +    }
 +
-+    rtems_interrupt_disable( level );           // disable interrupts
++    rtems_interrupt_disable( level );           /* disable interrupts */
 +
-+    ch = SciRcvBuffer[SciRcvBufGetIndex];       // get next byte
++    ch = SciRcvBuffer[SciRcvBufGetIndex];       /* get next byte */
 +
-+    SciRcvBufGetIndex++;                        // bump the index
++    SciRcvBufGetIndex++;                        /* bump the index */
 +
-+    SciRcvBufGetIndex &= SCI_RCV_BUF_SIZE - 1;  // and wrap it
++    SciRcvBufGetIndex &= SCI_RCV_BUF_SIZE - 1;  /* and wrap it */
 +
-+    SciRcvBufCount--;                           // decrement counter
++    SciRcvBufCount--;                           /* decrement counter */
 +
-+    rtems_interrupt_enable( level );            // restore interrupts
++    rtems_interrupt_enable( level );            /* restore interrupts */
 +
-+    return ch;                                  // return the char
++    return ch;                                  /* return the char */
 +}
 +
 +
@@ -2755,24 +2766,24 @@ Index: rtems/c/src/lib/libbsp/m68k/mo376/console/sci.c
 +{
 +    rtems_interrupt_level level;
 +
-+    if ( SciRcvBufCount == SCI_RCV_BUF_SIZE )   // is there room?
++    if ( SciRcvBufCount == SCI_RCV_BUF_SIZE )   /* is there room? */
 +    {
-+        return;                                 // no, throw it away
++        return;                                 /* no, throw it away */
 +    }
 +
-+    rtems_interrupt_disable( level );           // disable interrupts
++    rtems_interrupt_disable( level );           /* disable interrupts */
 +
-+    SciRcvBuffer[SciRcvBufPutIndex] = ch;       // put it in the buf
++    SciRcvBuffer[SciRcvBufPutIndex] = ch;       /* put it in the buf */
 +
-+    SciRcvBufPutIndex++;                        // bump the index
++    SciRcvBufPutIndex++;                        /* bump the index */
 +
-+    SciRcvBufPutIndex &= SCI_RCV_BUF_SIZE - 1;  // and wrap it
++    SciRcvBufPutIndex &= SCI_RCV_BUF_SIZE - 1;  /* and wrap it */
 +
-+    SciRcvBufCount++;                           // increment counter
++    SciRcvBufCount++;                           /* increment counter */
 +
-+    rtems_interrupt_enable( level );            // restore interrupts
++    rtems_interrupt_enable( level );            /* restore interrupts */
 +
-+    return;                                     // return
++    return;                                     /* return */
 +}
 +
 +
@@ -2785,34 +2796,33 @@ Index: rtems/c/src/lib/libbsp/m68k/mo376/console/sci.c
 +* Scope:    private
 +****************************************************************************/
 +
-+#if 0                                           // prevents compiler warning
++#if 0                                           /* prevents compiler warning */
 +static void SciRcvBufFlush( void )
 +{
 +    rtems_interrupt_level level;
 +
-+    rtems_interrupt_disable( level );           // disable interrupts
++    rtems_interrupt_disable( level );           /* disable interrupts */
 +
 +    memset( SciRcvBuffer, 0, sizeof(SciRcvBuffer) );
 +
-+    SciRcvBufPutIndex = 0;                      // clear
++    SciRcvBufPutIndex = 0;                      /* clear */
 +
-+    SciRcvBufGetIndex = 0;                      // clear
++    SciRcvBufGetIndex = 0;                      /* clear */
 +
-+    SciRcvBufCount = 0;                         // clear
++    SciRcvBufCount = 0;                         /* clear */
 +
-+    rtems_interrupt_enable( level );            // restore interrupts
++    rtems_interrupt_enable( level );            /* restore interrupts */
 +
-+    return;                                     // return
++    return;                                     /* return */
 +}
 +#endif
 +
 +
-+/////////////////////////////////////////////////////////////////////////////
-+//
-+//                              SECTION 2
-+//            INTERRUPT BASED ENTRY POINTS FOR THE TERMIOS MODULE
-+//
-+/////////////////////////////////////////////////////////////////////////////
++/*
++ *
++ *                              SECTION 2
++ *            INTERRUPT BASED ENTRY POINTS FOR THE TERMIOS MODULE
++ */
 +
 +/****************************************************************************
 +* Func:     SciInterruptOpen
@@ -2828,43 +2838,43 @@ Index: rtems/c/src/lib/libbsp/m68k/mo376/console/sci.c
 +* Scope:    public API
 +****************************************************************************/
 +
-+int32_t   SciInterruptOpen(
-+    int32_t    major,
-+    int32_t    minor,
-+    void     *arg
++int   SciInterruptOpen(
++    int    major,
++    int    minor,
++    void  *arg
 +)
 +{
 +    rtems_libio_open_close_args_t * args = arg;
 +    rtems_isr_entry old_vector;
 +
-+    if ( minor != SCI_MINOR )                   // check minor device num
++    if ( minor != SCI_MINOR )                   /* check minor device num */
 +    {
 +        return -1;
 +    }
 +
-+    if ( !args )                                // must have args
++    if ( !args )                                /* must have args */
 +    {
 +        return -1;
 +    }
 +
-+    SciTermioTty = args->iop->data1;            // save address of struct
++    SciTermioTty = args->iop->data1;            /* save address of struct */
 +
-+    SciDisableAllInterrupts();                  // turn off sci interrupts
++    SciDisableAllInterrupts();                  /* turn off sci interrupts */
 +
-+    // THIS IS ACTUALLY A BAD THING - SETTING LINE PARAMETERS HERE
-+    // IT SHOULD BE DONE THROUGH TCSETATTR() WHEN THE CONSOLE IS OPENED!!!
++    /* THIS IS ACTUALLY A BAD THING - SETTING LINE PARAMETERS HERE */
++    /* IT SHOULD BE DONE THROUGH TCSETATTR() WHEN THE CONSOLE IS OPENED!!! */
 +
-+//  SciSetBaud(115200);                         // set the baud rate
-+//  SciSetBaud( 57600);                         // set the baud rate
-+//  SciSetBaud( 38400);                         // set the baud rate
-+SciSetBaud( 19200);                         // set the baud rate
-+//    SciSetBaud(  9600);                         // set the baud rate
++/*  SciSetBaud(115200);                         set the baud rate */
++/*  SciSetBaud( 57600);                         set the baud rate */
++/*  SciSetBaud( 38400);                         set the baud rate */
++    SciSetBaud( 19200);                      /* set the baud rate */
++/*  SciSetBaud(  9600);                         set the baud rate */
 +
-+    SciSetParity(SCI_PARITY_NONE);              // set parity to none
++    SciSetParity(SCI_PARITY_NONE);              /* set parity to none */
 +
-+    SciSetDataBits(SCI_8_DATA_BITS);            // set data bits to 8
++    SciSetDataBits(SCI_8_DATA_BITS);            /* set data bits to 8 */
 +
-+    // Install our interrupt handler into RTEMS, where does 66 come from?
++    /* Install our interrupt handler into RTEMS, where does 66 come from? */
 +
 +    rtems_interrupt_catch( SciIsr, 66, &old_vector );
 +
@@ -2872,11 +2882,11 @@ Index: rtems/c/src/lib/libbsp/m68k/mo376/console/sci.c
 +    *QIVR &= 0xf8;
 +    *QILR |= 0x06 & 0x07;
 +
-+    SciEnableTransmitter();                     // enable the transmitter
++    SciEnableTransmitter();                     /* enable the transmitter */
 +
-+    SciEnableReceiver();                        // enable the receiver
++    SciEnableReceiver();                        /* enable the receiver */
 +
-+    SciEnableReceiveInterrupts();               // enable rcv interrupts
++    SciEnableReceiveInterrupts();               /* enable rcv interrupts */
 +
 +    return RTEMS_SUCCESSFUL;
 +}
@@ -2893,10 +2903,10 @@ Index: rtems/c/src/lib/libbsp/m68k/mo376/console/sci.c
 +* Scope:    public - termio entry point
 +****************************************************************************/
 +
-+int32_t   SciInterruptClose(
-+    int32_t    major,
-+    int32_t    minor,
-+    void     *arg
++int   SciInterruptClose(
++    int    major,
++    int    minor,
++    void  *arg
 +)
 +{
 +    SciDisableAllInterrupts();
@@ -2916,37 +2926,37 @@ Index: rtems/c/src/lib/libbsp/m68k/mo376/console/sci.c
 +* Scope:    public API
 +****************************************************************************/
 +
-+int32_t   SciInterruptWrite(
-+    int32_t      minor,
++int   SciInterruptWrite(
++    int         minor,
 +    const char *buf,
-+    int32_t      len
++    int         len
 +)
 +{
-+    // We are using interrupt driven output so termios only sends us
-+    // one character at a time. The sci does not have a fifo.
++    /* We are using interrupt driven output so termios only sends us */
++    /* one character at a time. The sci does not have a fifo. */
 +
-+    if ( !len )                                 // no data?
++    if ( !len )                                 /* no data? */
 +    {
-+        return 0;                               // return error
++        return 0;                               /* return error */
 +    }
 +
-+    if ( minor != SCI_MINOR )                   // check the minor dev num
++    if ( minor != SCI_MINOR )                   /* check the minor dev num */
 +    {
-+        return 0;                               // return error
++        return 0;                               /* return error */
 +    }
 +
-+    if ( SciOpened == DRIVER_OPENED )           // is the driver api open?
++    if ( SciOpened == DRIVER_OPENED )           /* is the driver api open? */
 +    {
-+        return 1;                               // yep, throw this away
++        return 1;                               /* yep, throw this away */
 +    }
 +
-+    SciWriteCharNoWait(*buf);                   // try to send a char
++    SciWriteCharNoWait(*buf);                   /* try to send a char */
 +
-+    *SCSR &= SCI_CLEAR_TDRE;                    // clear tx data reg empty flag
++    *SCSR &= SCI_CLEAR_TDRE;                    /* clear tx data reg empty flag */
 +
-+    SciEnableTransmitInterrupts();              // enable the tx interrupt
++    SciEnableTransmitInterrupts();              /* enable the tx interrupt */
 +
-+    return 1;                                   // return success
++    return 1;                                   /* return success */
 +}
 +
 +
@@ -2960,8 +2970,8 @@ Index: rtems/c/src/lib/libbsp/m68k/mo376/console/sci.c
 +* Scope:    public API
 +****************************************************************************/
 +
-+int32_t   SciSetAttributes(
-+    int32_t   minor,
++int   SciSetAttributes(
++    int                   minor,
 +    const struct termios *t
 +)
 +{
@@ -2970,45 +2980,45 @@ Index: rtems/c/src/lib/libbsp/m68k/mo376/console/sci.c
 +    uint16_t    sci_parity = 0;
 +    uint16_t    sci_databits = 0;
 +
-+    if ( minor != SCI_MINOR )                   // check the minor dev num
++    if ( minor != SCI_MINOR )                   /* check the minor dev num */
 +    {
-+        return -1;                              // return error
++        return -1;                              /* return error */
 +    }
 +
-+    // if you look closely you will see this is the only thing we use
-+    // set the baud rate
++    /* if you look closely you will see this is the only thing we use */
++    /* set the baud rate */
 +
-+    baud_requested = t->c_cflag & CBAUD;        // baud rate
++    baud_requested = t->c_cflag & CBAUD;        /* baud rate */
 +
 +    if (!baud_requested)
 +    {
-+//        baud_requested = B9600;                 // default to 9600 baud
-+        baud_requested = B19200;                 // default to 19200 baud
++/*        baud_requested = B9600;                   default to 9600 baud */
++        baud_requested = B19200;                 /* default to 19200 baud */
 +    }
 +
 +    sci_rate = termios_baud_to_number( baud_requested );
 +
-+    // parity error detection
++    /* parity error detection */
 +
-+    if (t->c_cflag & PARENB)                    // enable parity detection?
++    if (t->c_cflag & PARENB)                    /* enable parity detection? */
 +    {
 +        if (t->c_cflag & PARODD)
 +        {
-+            sci_parity = SCI_PARITY_ODD;        // select odd parity
++            sci_parity = SCI_PARITY_ODD;        /* select odd parity */
 +        }
 +        else
 +        {
-+            sci_parity = SCI_PARITY_EVEN;       // select even parity
++            sci_parity = SCI_PARITY_EVEN;       /* select even parity */
 +        }
 +    }
 +    else
 +    {
-+        sci_parity = SCI_PARITY_NONE;           // no parity, most common
++        sci_parity = SCI_PARITY_NONE;           /* no parity, most common */
 +    }
 +
-+    //  set the number of data bits, 8 is most common
++    /*  set the number of data bits, 8 is most common */
 +
-+    if (t->c_cflag & CSIZE)                     // was it specified?
++    if (t->c_cflag & CSIZE)                     /* was it specified? */
 +    {
 +        switch (t->c_cflag & CSIZE)
 +        {
@@ -3018,34 +3028,31 @@ Index: rtems/c/src/lib/libbsp/m68k/mo376/console/sci.c
 +    }
 +    else
 +    {
-+        sci_databits = SCI_8_DATA_BITS;         // default to 8 data bits
++        sci_databits = SCI_8_DATA_BITS;         /* default to 8 data bits */
 +    }
 +
-+    //  the number of stop bits; always 1 for SCI
++    /*  the number of stop bits; always 1 for SCI */
 +
 +    if (t->c_cflag & CSTOPB)
 +    {
-+        // do nothing
++        /* do nothing */
 +    }
 +
-+    // setup the hardware with these serial port parameters
++    /* setup the hardware with these serial port parameters */
 +
-+    SciSetBaud(sci_rate);                       // set the baud rate
-+
-+    SciSetParity(sci_parity);                   // set the parity type
-+
-+    SciSetDataBits(sci_databits);               // set the data bits
++    SciSetBaud(sci_rate);                       /* set the baud rate */
++    SciSetParity(sci_parity);                   /* set the parity type */
++    SciSetDataBits(sci_databits);               /* set the data bits */
 +
 +    return RTEMS_SUCCESSFUL;
 +}
 +
 +
-+/////////////////////////////////////////////////////////////////////////////
-+//
-+//                              SECTION 3
-+//            POLLING BASED ENTRY POINTS FOR THE TERMIOS MODULE
-+//
-+/////////////////////////////////////////////////////////////////////////////
++/*
++ *
++ *                              SECTION 3
++ *            POLLING BASED ENTRY POINTS FOR THE TERMIOS MODULE
++ */
 +
 +/****************************************************************************
 +* Func:     SciPolledOpen
@@ -3059,44 +3066,44 @@ Index: rtems/c/src/lib/libbsp/m68k/mo376/console/sci.c
 +* Scope:    public - termios entry point
 +****************************************************************************/
 +
-+int32_t   SciPolledOpen(
-+    int32_t   major,
-+    int32_t   minor,
-+    void    *arg
++int   SciPolledOpen(
++    int   major,
++    int   minor,
++    void *arg
 +)
 +{
 +    rtems_libio_open_close_args_t * args = arg;
 +
-+    if ( minor != SCI_MINOR )                   // check minor device num
++    if ( minor != SCI_MINOR )                   /* check minor device num */
 +    {
 +        return -1;
 +    }
 +
-+    if ( !args )                                // must have args
++    if ( !args )                                /* must have args */
 +    {
 +        return -1;
 +    }
 +
-+    SciTermioTty = args->iop->data1;            // Store tty pointer
++    SciTermioTty = args->iop->data1;            /* Store tty pointer */
 +
-+    SciDisableAllInterrupts();                  // don't generate interrupts
++    SciDisableAllInterrupts();                  /* don't generate interrupts */
 +
-+    // THIS IS ACTUALLY A BAD THING - SETTING LINE PARAMETERS HERE
-+    // IT SHOULD BE DONE THROUGH TCSETATTR() WHEN THE CONSOLE IS OPENED!!!
++    /* THIS IS ACTUALLY A BAD THING - SETTING LINE PARAMETERS HERE */
++    /* IT SHOULD BE DONE THROUGH TCSETATTR() WHEN THE CONSOLE IS OPENED!!! */
 +
-+//  SciSetBaud(115200);                         // set the baud rate
-+//  SciSetBaud( 57600);                         // set the baud rate
-+//  SciSetBaud( 38400);                         // set the baud rate
-+  SciSetBaud( 19200);                         // set the baud rate
-+//  SciSetBaud(  9600);                         // set the baud rate
++/*  SciSetBaud(115200);                            set the baud rate */
++/*  SciSetBaud( 57600);                            set the baud rate */
++/*  SciSetBaud( 38400);                            set the baud rate */
++  SciSetBaud( 19200);                         /* set the baud rate */
++/*  SciSetBaud(  9600);                            set the baud rate */
 +
-+    SciSetParity(SCI_PARITY_NONE);              // set no parity
++    SciSetParity(SCI_PARITY_NONE);              /* set no parity */
 +
-+    SciSetDataBits(SCI_8_DATA_BITS);            // set 8 data bits
++    SciSetDataBits(SCI_8_DATA_BITS);            /* set 8 data bits */
 +
-+    SciEnableTransmitter();                     // enable the xmitter
++    SciEnableTransmitter();                     /* enable the xmitter */
 +
-+    SciEnableReceiver();                        // enable the rcvr
++    SciEnableReceiver();                        /* enable the rcvr */
 +
 +    return RTEMS_SUCCESSFUL;
 +}
@@ -3113,10 +3120,10 @@ Index: rtems/c/src/lib/libbsp/m68k/mo376/console/sci.c
 +* Scope:    public termios API
 +****************************************************************************/
 +
-+int32_t   SciPolledClose(
-+    int32_t    major,
-+    int32_t    minor,
-+    void     *arg
++int   SciPolledClose(
++    int    major,
++    int    minor,
++    void  *arg
 +)
 +{
 +    SciDisableAllInterrupts();
@@ -3134,21 +3141,21 @@ Index: rtems/c/src/lib/libbsp/m68k/mo376/console/sci.c
 +* Scope:    public API
 +****************************************************************************/
 +
-+int32_t   SciPolledRead(
-+    int32_t   minor
++int   SciPolledRead(
++    int   minor
 +)
 +{
-+    if ( minor != SCI_MINOR )               // check the minor dev num
++    if ( minor != SCI_MINOR )               /* check the type-punned dev num */
 +    {
-+        return -1;                          // return error
++        return -1;                          /* return error */
 +    }
 +
-+    if ( SciCharAvailable() )               // if a char is available
++    if ( SciCharAvailable() )               /* if a char is available */
 +    {
-+        return SciReadCharNoWait();         // read the rx data register
++        return SciReadCharNoWait();         /* read the rx data register */
 +    }
 +
-+    return -1;                              // return error
++    return -1;                              /* return error */
 +}
 +
 +
@@ -3164,43 +3171,42 @@ Index: rtems/c/src/lib/libbsp/m68k/mo376/console/sci.c
 +* Scope:    public termios API
 +****************************************************************************/
 +
-+int32_t   SciPolledWrite(
-+    int32_t        minor,
-+    const char   *buf,
-+    int32_t        len
++int   SciPolledWrite(
++    int         minor,
++    const char *buf,
++    int         len
 +)
 +{
 +    int32_t   written = 0;
 +
-+    if ( minor != SCI_MINOR )                   // check minor device num
++    if ( minor != SCI_MINOR )                   /* check minor device num */
 +    {
 +        return -1;
 +    }
 +
-+    if ( SciOpened == DRIVER_OPENED )           // is the driver api open?
++    if ( SciOpened == DRIVER_OPENED )           /* is the driver api open? */
 +    {
-+        return -1;                              // toss the data
++        return -1;                              /* toss the data */
 +    }
 +
-+    // send each byte in the string out the port
++    /* send each byte in the string out the port */
 +
 +    while ( written < len )
 +    {
-+        SciWriteCharWait(*buf++);               // send a byte
++        SciWriteCharWait(*buf++);               /* send a byte */
 +
-+        written++;                              // increment counter
++        written++;                              /* increment counter */
 +    }
 +
-+    return written;                             // return count
++    return written;                             /* return count */
 +}
 +
 +
-+/////////////////////////////////////////////////////////////////////////////
-+//
-+//                              SECTION 4
-+//                 DEVICE DRIVER PUBLIC API ENTRY POINTS
-+//
-+/////////////////////////////////////////////////////////////////////////////
++/*
++ *
++ *                              SECTION 4
++ *                 DEVICE DRIVER PUBLIC API ENTRY POINTS
++ */
 +
 +/****************************************************************************
 +* Func:     SciInit
@@ -3219,26 +3225,27 @@ Index: rtems/c/src/lib/libbsp/m68k/mo376/console/sci.c
 +    void * arg
 +)
 +{
-+//     rtems_status_code status;
++/*     rtems_status_code status; */
 +
-+//printk("%s\r\n", __FUNCTION__);
++/*printk("%s\r\n", __FUNCTION__); */
 +
-+    // register the SCI device name for termios console i/o
-+    // this is done over in console.c which doesn't seem exactly right
-+    // but there were problems doing it here...
++    /* register the SCI device name for termios console i/o
++     * this is done over in console.c which doesn't seem exactly right
++     * but there were problems doing it here...
++     */
 +
-+//  status = rtems_io_register_name( "/dev/sci", major, 0 );
++/*  status = rtems_io_register_name( "/dev/sci", major, 0 ); */
 +
-+//  if (status != RTEMS_SUCCESSFUL)
-+//      rtems_fatal_error_occurred(status);
++/*  if (status != RTEMS_SUCCESSFUL) */
++/*      rtems_fatal_error_occurred(status); */
 +
-+    SciMajor = major;                           // save the rtems major number
++    SciMajor = major;                           /* save the rtems major number */
 +
-+    SciOpened = DRIVER_CLOSED;                  // initial state is closed
++    SciOpened = DRIVER_CLOSED;                  /* initial state is closed */
 +
-+    // if you have an interrupt handler, install it here
++    /* if you have an interrupt handler, install it here */
 +
-+    SciInited = 1;                              // set the inited flag
++    SciInited = 1;                              /* set the inited flag */
 +
 +    return RTEMS_SUCCESSFUL;
 +}
@@ -3264,24 +3271,24 @@ Index: rtems/c/src/lib/libbsp/m68k/mo376/console/sci.c
 +    void * arg
 +)
 +{
-+//printk("%s major=%d minor=%d\r\n", __FUNCTION__,major,minor);
++/*printk("%s major=%d minor=%d\r\n", __FUNCTION__,major,minor); */
 +
-+    if (SciInited == 0)                         // must be initialized first!
++    if (SciInited == 0)                         /* must be initialized first! */
 +    {
 +        return RTEMS_NOT_CONFIGURED;
 +    }
 +
 +    if (minor != SCI_MINOR)
 +    {
-+        return RTEMS_INVALID_NAME;              // verify minor number
++        return RTEMS_INVALID_NAME;              /* verify minor number */
 +    }
 +
 +    if (SciOpened == DRIVER_OPENED)
 +    {
-+        return RTEMS_RESOURCE_IN_USE;           // already opened!
++        return RTEMS_RESOURCE_IN_USE;           /* already opened! */
 +    }
 +
-+    SciOpened = DRIVER_OPENED;                  // set the opened flag
++    SciOpened = DRIVER_OPENED;                  /* set the opened flag */
 +
 +    return RTEMS_SUCCESSFUL;
 +}
@@ -3306,19 +3313,19 @@ Index: rtems/c/src/lib/libbsp/m68k/mo376/console/sci.c
 +    void * arg
 +)
 +{
-+//printk("%s major=%d minor=%d\r\n", __FUNCTION__,major,minor);
++/*printk("%s major=%d minor=%d\r\n", __FUNCTION__,major,minor); */
 +
 +    if (minor != SCI_MINOR)
 +    {
-+        return RTEMS_INVALID_NAME;              // check the minor number
++        return RTEMS_INVALID_NAME;              /* check the minor number */
 +    }
 +
 +    if (SciOpened != DRIVER_OPENED)
 +    {
-+        return RTEMS_INCORRECT_STATE;           // must be opened first
++        return RTEMS_INCORRECT_STATE;           /* must be opened first */
 +    }
 +
-+    SciOpened = DRIVER_CLOSED;                  // set the flag
++    SciOpened = DRIVER_CLOSED;                  /* set the flag */
 +
 +    return RTEMS_SUCCESSFUL;
 +}
@@ -3342,42 +3349,42 @@ Index: rtems/c/src/lib/libbsp/m68k/mo376/console/sci.c
 +    void *arg
 +)
 +{
-+    rtems_libio_rw_args_t *rw_args;             // ptr to argument struct
-+    uint8_t   *buffer;
++    rtems_libio_rw_args_t *rw_args;             /* ptr to argument struct */
++    char      *buffer;
 +    uint16_t   length;
 +
-+    rw_args = (rtems_libio_rw_args_t *) arg;    // arguments to read()
++    rw_args = (rtems_libio_rw_args_t *) arg;    /* arguments to read() */
 +
 +    if (minor != SCI_MINOR)
 +    {
-+        return RTEMS_INVALID_NAME;              // check the minor number
++        return RTEMS_INVALID_NAME;              /* check the minor number */
 +    }
 +
 +    if (SciOpened == DRIVER_CLOSED)
 +    {
-+        return RTEMS_INCORRECT_STATE;           // must be opened first
++        return RTEMS_INCORRECT_STATE;           /* must be opened first */
 +    }
 +
-+    buffer = rw_args->buffer;                   // points to user's buffer
++    buffer = rw_args->buffer;                   /* points to user's buffer */
 +
-+    length = rw_args->count;                    // how many bytes they want
++    length = rw_args->count;                    /* how many bytes they want */
 +
-+//  *buffer = SciReadCharWait();                // wait for a character
++/*  *buffer = SciReadCharWait();                   wait for a character */
 +
-+    // if there isn't a character available, wait until one shows up
-+    // or the timeout period expires, which ever happens first
++    /* if there isn't a character available, wait until one shows up */
++    /* or the timeout period expires, which ever happens first */
 +
-+    if ( SciRcvBufCount == 0 )                  // no chars
++    if ( SciRcvBufCount == 0 )                  /* no chars */
 +    {
-+        // wait for someone to wake me up...
-+        //rtems_task_wake_after(SciReadTimeout);
++        /* wait for someone to wake me up... */
++        /*rtems_task_wake_after(SciReadTimeout); */
 +    }
 +
-+    if ( SciRcvBufCount )                       // any characters locally?
++    if ( SciRcvBufCount )                       /* any characters locally? */
 +    {
-+        *buffer = SciRcvBufGetChar();           // get the character
++        *buffer = SciRcvBufGetChar();           /* get the character */
 +
-+        rw_args->bytes_moved = 1;               // how many we actually read
++        rw_args->bytes_moved = 1;               /* how many we actually read */
 +    }
 +
 +    return RTEMS_SUCCESSFUL;
@@ -3402,7 +3409,7 @@ Index: rtems/c/src/lib/libbsp/m68k/mo376/console/sci.c
 +    void * arg
 +)
 +{
-+    rtems_libio_rw_args_t *rw_args;             // ptr to argument struct
++    rtems_libio_rw_args_t *rw_args;             /* ptr to argument struct */
 +    uint8_t   *buffer;
 +    uint16_t   length;
 +
@@ -3410,24 +3417,24 @@ Index: rtems/c/src/lib/libbsp/m68k/mo376/console/sci.c
 +
 +    if (minor != SCI_MINOR)
 +    {
-+        return RTEMS_INVALID_NAME;              // check the minor number
++        return RTEMS_INVALID_NAME;              /* check the minor number */
 +    }
 +
 +    if (SciOpened == DRIVER_CLOSED)
 +    {
-+        return RTEMS_INCORRECT_STATE;           // must be opened first
++        return RTEMS_INCORRECT_STATE;           /* must be opened first */
 +    }
 +
-+    buffer = (uint8_t*)rw_args->buffer;       // points to data
++    buffer = (uint8_t*)rw_args->buffer;       /* points to data */
 +
-+    length = rw_args->count;                    // how many bytes
++    length = rw_args->count;                    /* how many bytes */
 +
 +    while (length--)
 +    {
-+        SciWriteCharWait(*buffer++);            // send the bytes out
++        SciWriteCharWait(*buffer++);            /* send the bytes out */
 +    }
 +
-+    rw_args->bytes_moved = rw_args->count;      // how many we wrote
++    rw_args->bytes_moved = rw_args->count;      /* how many we wrote */
 +
 +    return RTEMS_SUCCESSFUL;
 +}
@@ -3451,53 +3458,52 @@ Index: rtems/c/src/lib/libbsp/m68k/mo376/console/sci.c
 +    void * arg
 +)
 +{
-+    rtems_libio_ioctl_args_t *args = arg;       // rtems arg struct
-+    uint16_t   command;                         // the cmd to execute
-+    uint16_t   unused;                          // maybe later
-+    uint16_t   *ptr;                            // ptr to user data
++    rtems_libio_ioctl_args_t *args = arg;       /* rtems arg struct */
++    uint16_t   command;                         /* the cmd to execute */
++    uint16_t   unused;                          /* maybe later */
++    uint16_t   *ptr;                            /* ptr to user data */
 +
-+//printk("%s major=%d minor=%d\r\n", __FUNCTION__,major,minor);
++/*printk("%s major=%d minor=%d\r\n", __FUNCTION__,major,minor); */
 +
-+    // do some sanity checking
++    /* do some sanity checking */
 +
 +    if (minor != SCI_MINOR)
 +    {
-+        return RTEMS_INVALID_NAME;              // check the minor number
++        return RTEMS_INVALID_NAME;              /* check the minor number */
 +    }
 +
 +    if (SciOpened == DRIVER_CLOSED)
 +    {
-+        return RTEMS_INCORRECT_STATE;           // must be open first
++        return RTEMS_INCORRECT_STATE;           /* must be open first */
 +    }
 +
 +    if (args == 0)
 +    {
-+        return RTEMS_INVALID_ADDRESS;           // must have args
++        return RTEMS_INVALID_ADDRESS;           /* must have args */
 +    }
 +
-+    args->ioctl_return = -1;                    // assume an error
++    args->ioctl_return = -1;                    /* assume an error */
 +
-+    command = args->command;                    // get the command
-+    ptr     = args->buffer;                     // this is an address
-+    unused  = *ptr;                             // brightness
++    command = args->command;                    /* get the command */
++    ptr     = args->buffer;                     /* this is an address */
++    unused  = *ptr;                             /* brightness */
 +
-+    if (command == SCI_SEND_BREAK)              // process the command
++    if (command == SCI_SEND_BREAK)              /* process the command */
 +    {
-+        SciSendBreak();                         // send break char
++        SciSendBreak();                         /* send break char */
 +    }
 +
-+    args->ioctl_return = 0;                     // return status
++    args->ioctl_return = 0;                     /* return status */
 +
 +    return RTEMS_SUCCESSFUL;
 +}
 +
 +
-+/////////////////////////////////////////////////////////////////////////////
-+//
-+//                              SECTION 5
-+//                       HARDWARE LEVEL ROUTINES
-+//
-+/////////////////////////////////////////////////////////////////////////////
++/*
++ *
++ *                              SECTION 5
++ *                       HARDWARE LEVEL ROUTINES
++ */
 +
 +/****************************************************************************
 +* Func:     SciSetBaud
@@ -3513,26 +3519,26 @@ Index: rtems/c/src/lib/libbsp/m68k/mo376/console/sci.c
 +    uint16_t   value;
 +    uint16_t   save_sccr1;
 +
-+// when you open the console you need to set the termio struct baud rate
-+// it has a default value of 9600, when someone calls tcsetattr it reverts!
++/* when you open the console you need to set the termio struct baud rate */
++/* it has a default value of 9600, when someone calls tcsetattr it reverts! */
 +
-+    SciBaud = rate;                             // save the rate
++    SciBaud = rate;                             /* save the rate */
 +
-+    // calculate the register value as a float and convert to an int
-+    // set baud rate - you must define the system clock constant
-+    // see mrm332.h for an example
++    /* calculate the register value as a float and convert to an int */
++    /* set baud rate - you must define the system clock constant */
++    /* see mrm332.h for an example */
 +
 +    value = ( (uint16_t) ( SYS_CLOCK / rate / 32.0 + 0.5 ) & 0x1fff );
 +
-+    save_sccr1 = *SCCR1;                        // save register
++    save_sccr1 = *SCCR1;                        /* save register */
 +
-+    // also turns off the xmtr and rcvr
++    /* also turns off the xmtr and rcvr */
 +
-+    *SCCR1 &= SCI_DISABLE_INT_ALL;              // disable interrupts
++    *SCCR1 &= SCI_DISABLE_INT_ALL;              /* disable interrupts */
 +
-+    *SCCR0 = value;                             // write the register
++    *SCCR0 = value;                             /* write the register */
 +
-+    *SCCR1 = save_sccr1;                        // restore register
++    *SCCR1 = save_sccr1;                        /* restore register */
 +
 +    return;
 +}
@@ -3551,28 +3557,28 @@ Index: rtems/c/src/lib/libbsp/m68k/mo376/console/sci.c
 +{
 +    uint16_t   value;
 +
-+    value = *SCCR1;                             // get the register
++    value = *SCCR1;                             /* get the register */
 +
 +    if (parity == SCI_PARITY_ODD)
 +    {
-+        value |= SCI_PARITY_ENABLE;             // parity enabled
-+        value |= SCI_PARITY_ODD;                // parity odd
++        value |= SCI_PARITY_ENABLE;             /* parity enabled */
++        value |= SCI_PARITY_ODD;                /* parity odd */
 +    }
 +
 +    else if (parity == SCI_PARITY_EVEN)
 +    {
-+        value |= SCI_PARITY_ENABLE;             // parity enabled
-+        value &= ~SCI_PARITY_ODD;               // parity even
++        value |= SCI_PARITY_ENABLE;             /* parity enabled */
++        value &= ~SCI_PARITY_ODD;               /* parity even */
 +    }
 +
 +    else if (parity == SCI_PARITY_NONE)
 +    {
-+        value &= ~SCI_PARITY_ENABLE;            // disabled, most common
++        value &= ~SCI_PARITY_ENABLE;            /* disabled, most common */
 +    }
 +
 +    /* else no changes */
 +
-+    *SCCR1 = value;                             // write the register
++    *SCCR1 = value;                             /* write the register */
 +
 +    return;
 +}
@@ -3591,23 +3597,23 @@ Index: rtems/c/src/lib/libbsp/m68k/mo376/console/sci.c
 +{
 +    uint16_t   value;
 +
-+    value = *SCCR1;                             // get the register
++    value = *SCCR1;                             /* get the register */
 +
 +    /* note - the parity setting affects the number of data bits */
 +
 +    if (bits == SCI_9_DATA_BITS)
 +    {
-+        value |= SCI_9_DATA_BITS;               // 9 data bits
++        value |= SCI_9_DATA_BITS;               /* 9 data bits */
 +    }
 +
 +    else if (bits == SCI_8_DATA_BITS)
 +    {
-+        value &= SCI_8_DATA_BITS;               // 8 data bits
++        value &= SCI_8_DATA_BITS;               /* 8 data bits */
 +    }
 +
 +    /* else no changes */
 +
-+    *SCCR1 = value;                             // write the register
++    *SCCR1 = value;                             /* write the register */
 +
 +    return;
 +}
@@ -3626,7 +3632,7 @@ Index: rtems/c/src/lib/libbsp/m68k/mo376/console/sci.c
 +
 +static void inline SciDisableAllInterrupts( void )
 +{
-+    // this also turns off the xmtr and rcvr
++    /* this also turns off the xmtr and rcvr */
 +
 +    *SCCR1 &= SCI_DISABLE_INT_ALL;
 +}
@@ -3694,7 +3700,7 @@ Index: rtems/c/src/lib/libbsp/m68k/mo376/console/sci.c
 +
 +void SciWriteCharWait(uint8_t   c)
 +{
-+    // poll the fifo, waiting for room for another character
++    /* poll the fifo, waiting for room for another character */
 +
 +    while ( ( *SCSR & SCI_XMTR_AVAILABLE ) == 0 )
 +    {
@@ -3708,9 +3714,9 @@ Index: rtems/c/src/lib/libbsp/m68k/mo376/console/sci.c
 +      rtems_task_wake_after(RTEMS_YIELD_PROCESSOR);
 +    }
 +
-+    *SCDR = c;                                  // send the charcter
++    *SCDR = c;                                  /* send the charcter */
 +
-+    SciBytesOut++;                              // increment the counter
++    SciBytesOut++;                              /* increment the counter */
 +
 +    return;
 +}
@@ -3728,12 +3734,12 @@ Index: rtems/c/src/lib/libbsp/m68k/mo376/console/sci.c
 +{
 +    if ( ( *SCSR & SCI_XMTR_AVAILABLE ) == 0 )
 +    {
-+        return;                                 // no room, throw it away
++        return;                                 /* no room, throw it away */
 +    }
 +
-+    *SCDR = c;                                  // put the char in the fifo
++    *SCDR = c;                                  /* put the char in the fifo */
 +
-+    SciBytesOut++;                              // increment the counter
++    SciBytesOut++;                              /* increment the counter */
 +
 +    return;
 +}
@@ -3752,21 +3758,21 @@ Index: rtems/c/src/lib/libbsp/m68k/mo376/console/sci.c
 +{
 +    uint8_t   ch;
 +
-+    while ( SciCharAvailable() == 0 )           // anything there?
++    while ( SciCharAvailable() == 0 )           /* anything there? */
 +    {
 +      /* relinquish processor while waiting */
 +      rtems_task_wake_after(RTEMS_YIELD_PROCESSOR);
 +    }
 +
-+    // if you have rcv ints enabled, then the isr will probably
-+    // get the character before you will unless you turn off ints
-+    // ie polling and ints don't mix that well
++    /* if you have rcv ints enabled, then the isr will probably */
++    /* get the character before you will unless you turn off ints */
++    /* ie polling and ints don't mix that well */
 +
-+    ch = *SCDR;                                 // get the charcter
++    ch = *SCDR;                                 /* get the charcter */
 +
-+    SciBytesIn++;                               // increment the counter
++    SciBytesIn++;                               /* increment the counter */
 +
-+    return ch;                                  // return the char
++    return ch;                                  /* return the char */
 +}
 +
 +/****************************************************************************
@@ -3782,14 +3788,14 @@ Index: rtems/c/src/lib/libbsp/m68k/mo376/console/sci.c
 +{
 +    uint8_t   ch;
 +
-+    if ( SciCharAvailable() == 0 )              // anything there?
++    if ( SciCharAvailable() == 0 )              /* anything there? */
 +        return -1;
 +
-+    ch = *SCDR;                                 // get the character
++    ch = *SCDR;                                 /* get the character */
 +
-+    SciBytesIn++;                               // increment the count
++    SciBytesIn++;                               /* increment the count */
 +
-+    return ch;                                  // return the char
++    return ch;                                  /* return the char */
 +}
 +
 +
@@ -3804,7 +3810,7 @@ Index: rtems/c/src/lib/libbsp/m68k/mo376/console/sci.c
 +
 +uint8_t   inline SciCharAvailable( void )
 +{
-+    return ( *SCSR & SCI_RCVR_READY );          // char in data register?
++    return ( *SCSR & SCI_RCVR_READY );          /* char in data register? */
 +}
 +
 +
@@ -3819,27 +3825,26 @@ Index: rtems/c/src/lib/libbsp/m68k/mo376/console/sci.c
 +
 +void SciSendBreak( void )
 +{
-+    // From the Motorola QSM reference manual -
++    /* From the Motorola QSM reference manual - */
 +
-+    // "if SBK is toggled by writing it first to a one and then immediately
-+    // to a zero (in less than one serial frame interval), the transmitter
-+    // sends only one or two break frames before reverting to mark (idle)
-+    // or before commencing to send more data"
++    /* "if SBK is toggled by writing it first to a one and then immediately */
++    /* to a zero (in less than one serial frame interval), the transmitter */
++    /* sends only one or two break frames before reverting to mark (idle) */
++    /* or before commencing to send more data" */
 +
-+    *SCCR1 |=  SCI_SEND_BREAK;                  // set the bit
++    *SCCR1 |=  SCI_SEND_BREAK;                  /* set the bit */
 +
-+    *SCCR1 &= ~SCI_SEND_BREAK;                  // clear the bit
++    *SCCR1 &= ~SCI_SEND_BREAK;                  /* clear the bit */
 +
 +    return;
 +}
 +
 +
-+/////////////////////////////////////////////////////////////////////////////
-+//
-+//                             SECTION 6
-+//                             TEST CODE
-+//
-+/////////////////////////////////////////////////////////////////////////////
++/*
++ *
++ *                             SECTION 6
++ *                             TEST CODE
++ */
 +
 +/****************************************************************************
 +* Func:     SciUnitTest
@@ -3850,23 +3855,23 @@ Index: rtems/c/src/lib/libbsp/m68k/mo376/console/sci.c
 +****************************************************************************/
 +
 +#if 0
-+#define O_RDWR LIBIO_FLAGS_READ_WRITE           // dont like this but...
++#define O_RDWR LIBIO_FLAGS_READ_WRITE           /* dont like this but... */
 +
 +void SciUnitTest()
 +{
-+    uint8_t   byte;                             // a character
-+    uint16_t   fd;                              // file descriptor for device
-+    uint16_t   result;                          // result of ioctl
++    uint8_t   byte;                             /* a character */
++    uint16_t   fd;                              /* file descriptor for device */
++    uint16_t   result;                          /* result of ioctl */
 +
-+    fd = open("/dev/sci",O_RDWR);               // open the device
++    fd = open("/dev/sci",O_RDWR);               /* open the device */
 +
 +printk("SCI open fd=%d\r\n",fd);
 +
-+    result = write(fd, "abcd\r\n", 6);          // send a string
++    result = write(fd, "abcd\r\n", 6);          /* send a string */
 +
 +printk("SCI write result=%d\r\n",result);
 +
-+    result = read(fd, &byte, 1);                // read a byte
++    result = read(fd, &byte, 1);                /* read a byte */
 +
 +printk("SCI read result=%d,byte=%x\r\n",result,byte);
 +
@@ -3902,8 +3907,8 @@ Index: rtems/c/src/lib/libbsp/m68k/mo376/console/sci.c
 +}
 Index: rtems/c/src/lib/libbsp/m68k/mo376/startup/bspstart.c
 ===================================================================
---- /dev/null
-+++ rtems/c/src/lib/libbsp/m68k/mo376/startup/bspstart.c
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ rtems/c/src/lib/libbsp/m68k/mo376/startup/bspstart.c	2007-08-14 17:20:30.000000000 +0200
 @@ -0,0 +1,82 @@
 +/*
 + *  This routine starts the application.  It includes application,
@@ -3989,8 +3994,8 @@ Index: rtems/c/src/lib/libbsp/m68k/mo376/startup/bspstart.c
 +}
 Index: rtems/c/src/lib/libbsp/m68k/mo376/startup/start_c.c
 ===================================================================
---- /dev/null
-+++ rtems/c/src/lib/libbsp/m68k/mo376/startup/start_c.c
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ rtems/c/src/lib/libbsp/m68k/mo376/startup/start_c.c	2007-08-14 17:20:30.000000000 +0200
 @@ -0,0 +1,125 @@
 +/*
 + *  $Id
@@ -4108,7 +4113,7 @@ Index: rtems/c/src/lib/libbsp/m68k/mo376/startup/start_c.c
 +
 +  /* Spurious should be called in the predriver hook */
 +  /* Spurious_Initialize(); */
-+  //console_init();
++  /*console_init(); */
 +
 +  /*
 +   * Execute main with arguments argc and agrv.
@@ -4119,8 +4124,8 @@ Index: rtems/c/src/lib/libbsp/m68k/mo376/startup/start_c.c
 +}
 Index: rtems/c/src/lib/libbsp/m68k/mo376/include/tm27.h
 ===================================================================
---- /dev/null
-+++ rtems/c/src/lib/libbsp/m68k/mo376/include/tm27.h
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ rtems/c/src/lib/libbsp/m68k/mo376/include/tm27.h	2007-08-14 17:20:30.000000000 +0200
 @@ -0,0 +1,34 @@
 +/*
 + *  tm27.h
@@ -4158,8 +4163,8 @@ Index: rtems/c/src/lib/libbsp/m68k/mo376/include/tm27.h
 +#endif
 Index: rtems/c/src/lib/libbsp/m68k/mo376/times
 ===================================================================
---- /dev/null
-+++ rtems/c/src/lib/libbsp/m68k/mo376/times
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ rtems/c/src/lib/libbsp/m68k/mo376/times	2007-08-14 17:20:30.000000000 +0200
 @@ -0,0 +1,195 @@
 +#
 +#  Timing Test Suite Results for the MRM332 BSP
@@ -4358,8 +4363,8 @@ Index: rtems/c/src/lib/libbsp/m68k/mo376/times
 +   rtems_rate_monotonic_period: conclude periods -- caller blocks       53
 Index: rtems/c/src/lib/libbsp/m68k/mo376/include/mrm332.h
 ===================================================================
---- /dev/null
-+++ rtems/c/src/lib/libbsp/m68k/mo376/include/mrm332.h
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ rtems/c/src/lib/libbsp/m68k/mo376/include/mrm332.h	2007-08-14 17:20:30.000000000 +0200
 @@ -0,0 +1,70 @@
 +/*  mrm332.h
 + *
@@ -4433,8 +4438,8 @@ Index: rtems/c/src/lib/libbsp/m68k/mo376/include/mrm332.h
 +#endif /* _MRM_H_ */
 Index: rtems/c/src/lib/libbsp/m68k/mo376/include/bspopts.h.in
 ===================================================================
---- /dev/null
-+++ rtems/c/src/lib/libbsp/m68k/mo376/include/bspopts.h.in
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ rtems/c/src/lib/libbsp/m68k/mo376/include/bspopts.h.in	2007-08-14 17:20:30.000000000 +0200
 @@ -0,0 +1,16 @@
 +/* include/bspopts.h.in.  Generated from configure.ac by autoheader.  */
 +
@@ -4454,8 +4459,8 @@ Index: rtems/c/src/lib/libbsp/m68k/mo376/include/bspopts.h.in
 +#undef PACKAGE_VERSION
 Index: rtems/c/src/lib/libbsp/m68k/mo376/spurious/spinit.c
 ===================================================================
---- /dev/null
-+++ rtems/c/src/lib/libbsp/m68k/mo376/spurious/spinit.c
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ rtems/c/src/lib/libbsp/m68k/mo376/spurious/spinit.c	2007-08-14 17:20:30.000000000 +0200
 @@ -0,0 +1,105 @@
 +/*  Spurious_driver
 + *
@@ -4472,7 +4477,7 @@ Index: rtems/c/src/lib/libbsp/m68k/mo376/spurious/spinit.c
 + *  found in the file LICENSE in this distribution or at
 + *  http://www.rtems.com/license/LICENSE.
 + *
-+ *  $Id: spinit.c,v 1.5 2004/04/21 10:42:52 ralf Exp $
++ *  $Id: spinit.c,v 1.6 2006/09/11 21:43:55 joel Exp $
 + */
 +
 +#include <bsp.h>
@@ -4492,7 +4497,7 @@ Index: rtems/c/src/lib/libbsp/m68k/mo376/spurious/spinit.c
 +  rtems_vector_number vector
 +)
 +{
-+  //int sp = 0;
++  /*int sp = 0; */
 +#if 0
 +  const char * const VectDescrip[] = {
 +    _Spurious_Error_[0],   _Spurious_Error_[0],  _Spurious_Error_[1],
@@ -4519,10 +4524,10 @@ Index: rtems/c/src/lib/libbsp/m68k/mo376/spurious/spinit.c
 +    _Spurious_Error_[27], _Spurious_Error_[28]};
 +#endif
 +
-+  //asm volatile ( "movea.l   %%sp,%0 " : "=a" (sp) : "0" (sp) );
++  /*asm volatile ( "movea.l   %%sp,%0 " : "=a" (sp) : "0" (sp) ); */
 +
 +  _CPU_ISR_Set_level( 7 );
-+  //_UART_flush();
++  /*_UART_flush(); */
 +#if 0
 +  RAW_PUTS("\n\rRTEMS: Spurious interrupt: ");
 +  RAW_PUTS((char *)VectDescrip[( (vector>64) ? 64 : vector )]);
@@ -4564,8 +4569,8 @@ Index: rtems/c/src/lib/libbsp/m68k/mo376/spurious/spinit.c
 +}
 Index: rtems/c/src/lib/libbsp/m68k/mo376/startup/linkcmds
 ===================================================================
---- /dev/null
-+++ rtems/c/src/lib/libbsp/m68k/mo376/startup/linkcmds
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ rtems/c/src/lib/libbsp/m68k/mo376/startup/linkcmds	2007-08-14 17:20:30.000000000 +0200
 @@ -0,0 +1,164 @@
 +/*  linkcmds
 + *
@@ -4733,8 +4738,8 @@ Index: rtems/c/src/lib/libbsp/m68k/mo376/startup/linkcmds
 +}
 Index: rtems/c/src/lib/libbsp/m68k/mo376/bsp_specs
 ===================================================================
---- /dev/null
-+++ rtems/c/src/lib/libbsp/m68k/mo376/bsp_specs
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ rtems/c/src/lib/libbsp/m68k/mo376/bsp_specs	2007-08-14 17:20:30.000000000 +0200
 @@ -0,0 +1,16 @@
 +%rename endfile old_endfile
 +%rename startfile old_startfile
@@ -4752,26 +4757,10 @@ Index: rtems/c/src/lib/libbsp/m68k/mo376/bsp_specs
 +*endfile:
 +%{!qrtems: %(old_endfile)} %{qrtems: crtend.o%s crtn.o%s}
 +
-Index: rtems/c/src/lib/libbsp/m68k/mo376/include/.cvsignore
-===================================================================
---- /dev/null
-+++ rtems/c/src/lib/libbsp/m68k/mo376/include/.cvsignore
-@@ -0,0 +1,5 @@
-+bspopts.h
-+bspopts.h.in
-+coverhd.h
-+stamp-h
-+stamp-h.in
-Index: rtems/c/src/lib/libbsp/m68k/mo376/wrapup/.keep
-===================================================================
---- /dev/null
-+++ rtems/c/src/lib/libbsp/m68k/mo376/wrapup/.keep
-@@ -0,0 +1 @@
-+
 Index: rtems/c/src/lib/libbsp/m68k/mo376/preinstall.am
 ===================================================================
---- /dev/null
-+++ rtems/c/src/lib/libbsp/m68k/mo376/preinstall.am
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ rtems/c/src/lib/libbsp/m68k/mo376/preinstall.am	2007-08-14 17:20:30.000000000 +0200
 @@ -0,0 +1,66 @@
 +## Automatically generated by ampolish3 - Do not edit
 +
@@ -4794,12 +4783,12 @@ Index: rtems/c/src/lib/libbsp/m68k/mo376/preinstall.am
 +CLEANFILES += $(PREINSTALL_FILES)
 +
 +$(PROJECT_LIB)/$(dirstamp):
-+	@$(mkdir_p) $(PROJECT_LIB)
++	@$(MKDIR_P) $(PROJECT_LIB)
 +	@: > $(PROJECT_LIB)/$(dirstamp)
 +PREINSTALL_DIRS += $(PROJECT_LIB)/$(dirstamp)
 +
 +$(PROJECT_INCLUDE)/$(dirstamp):
-+	@$(mkdir_p) $(PROJECT_INCLUDE)
++	@$(MKDIR_P) $(PROJECT_INCLUDE)
 +	@: > $(PROJECT_INCLUDE)/$(dirstamp)
 +PREINSTALL_DIRS += $(PROJECT_INCLUDE)/$(dirstamp)
 +

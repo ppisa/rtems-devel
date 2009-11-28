@@ -1,7 +1,24 @@
+---
+ c/src/lib/libbsp/m68k/mo376/ChangeLog         |    5 +
+ c/src/lib/libbsp/m68k/mo376/Makefile.am       |    2 
+ c/src/lib/libbsp/m68k/mo376/README            |   25 ++++-----
+ c/src/lib/libbsp/m68k/mo376/clock/ckinit.c    |    2 
+ c/src/lib/libbsp/m68k/mo376/configure.ac      |    2 
+ c/src/lib/libbsp/m68k/mo376/console/sci.c     |    4 -
+ c/src/lib/libbsp/m68k/mo376/include/bsp.h     |    2 
+ c/src/lib/libbsp/m68k/mo376/include/mo376.h   |   70 ++++++++++++++++++++++++++
+ c/src/lib/libbsp/m68k/mo376/include/mrm332.h  |   70 --------------------------
+ c/src/lib/libbsp/m68k/mo376/preinstall.am     |    6 +-
+ c/src/lib/libbsp/m68k/mo376/start/start.S     |    2 
+ c/src/lib/libbsp/m68k/mo376/startup/start_c.c |    2 
+ c/src/lib/libbsp/m68k/mo376/times             |    6 +-
+ make/custom/mo376.cfg                         |    4 -
+ 14 files changed, 104 insertions(+), 98 deletions(-)
+
 Index: rtems/c/src/lib/libbsp/m68k/mo376/start/start.S
 ===================================================================
---- rtems.orig/c/src/lib/libbsp/m68k/mo376/start/start.S
-+++ rtems/c/src/lib/libbsp/m68k/mo376/start/start.S
+--- rtems.orig/c/src/lib/libbsp/m68k/mo376/start/start.S	2007-08-14 17:20:30.000000000 +0200
++++ rtems/c/src/lib/libbsp/m68k/mo376/start/start.S	2007-08-14 17:24:09.000000000 +0200
 @@ -2,7 +2,7 @@
   *  $Id
   */
@@ -13,9 +30,9 @@ Index: rtems/c/src/lib/libbsp/m68k/mo376/start/start.S
  
 Index: rtems/c/src/lib/libbsp/m68k/mo376/include/bsp.h
 ===================================================================
---- rtems.orig/c/src/lib/libbsp/m68k/mo376/include/bsp.h
-+++ rtems/c/src/lib/libbsp/m68k/mo376/include/bsp.h
-@@ -26,7 +26,7 @@ extern "C" {
+--- rtems.orig/c/src/lib/libbsp/m68k/mo376/include/bsp.h	2007-08-14 17:20:30.000000000 +0200
++++ rtems/c/src/lib/libbsp/m68k/mo376/include/bsp.h	2007-08-14 17:24:09.000000000 +0200
+@@ -26,7 +26,7 @@
  #include <rtems/clockdrv.h>
  #include <rtems/console.h>
  #include <rtems/iosupp.h>
@@ -26,9 +43,9 @@ Index: rtems/c/src/lib/libbsp/m68k/mo376/include/bsp.h
  
 Index: rtems/c/src/lib/libbsp/m68k/mo376/ChangeLog
 ===================================================================
---- rtems.orig/c/src/lib/libbsp/m68k/mo376/ChangeLog
-+++ rtems/c/src/lib/libbsp/m68k/mo376/ChangeLog
-@@ -11,6 +11,11 @@
+--- rtems.orig/c/src/lib/libbsp/m68k/mo376/ChangeLog	2007-08-14 17:20:30.000000000 +0200
++++ rtems/c/src/lib/libbsp/m68k/mo376/ChangeLog	2007-08-14 17:24:09.000000000 +0200
+@@ -29,6 +29,11 @@
  
  	* include/bsp.h: New header guard.
  
@@ -42,8 +59,8 @@ Index: rtems/c/src/lib/libbsp/m68k/mo376/ChangeLog
  	* Makefile.am: Eliminate CFLAGS_OPTIMIZE_V.
 Index: rtems/c/src/lib/libbsp/m68k/mo376/clock/ckinit.c
 ===================================================================
---- rtems.orig/c/src/lib/libbsp/m68k/mo376/clock/ckinit.c
-+++ rtems/c/src/lib/libbsp/m68k/mo376/clock/ckinit.c
+--- rtems.orig/c/src/lib/libbsp/m68k/mo376/clock/ckinit.c	2007-08-14 17:20:30.000000000 +0200
++++ rtems/c/src/lib/libbsp/m68k/mo376/clock/ckinit.c	2007-08-14 17:24:09.000000000 +0200
 @@ -20,7 +20,7 @@
  #include <stdlib.h>
  #include <bsp.h>
@@ -55,21 +72,21 @@ Index: rtems/c/src/lib/libbsp/m68k/mo376/clock/ckinit.c
  
 Index: rtems/c/src/lib/libbsp/m68k/mo376/configure.ac
 ===================================================================
---- rtems.orig/c/src/lib/libbsp/m68k/mo376/configure.ac
-+++ rtems/c/src/lib/libbsp/m68k/mo376/configure.ac
+--- rtems.orig/c/src/lib/libbsp/m68k/mo376/configure.ac	2007-08-14 17:20:30.000000000 +0200
++++ rtems/c/src/lib/libbsp/m68k/mo376/configure.ac	2007-08-14 17:26:26.000000000 +0200
 @@ -3,7 +3,7 @@
- ## $Id: configure.ac,v 1.14 2004/09/24 06:32:09 ralf Exp $
+ ## $Id: configure.ac,v 1.14.2.2 2006/12/02 06:04:46 ralf Exp $
  
- AC_PREREQ(2.59)
--AC_INIT([rtems-c-src-lib-libbsp-m68k-mrm332],[_RTEMS_VERSION],[rtems-bugs@rtems.com])
-+AC_INIT([rtems-c-src-lib-libbsp-m68k-mo376],[_RTEMS_VERSION],[rtems-bugs@rtems.com])
+ AC_PREREQ(2.60)
+-AC_INIT([rtems-c-src-lib-libbsp-m68k-mrm332],[_RTEMS_VERSION],[http://www.rtems.org/bugzilla])
++AC_INIT([rtems-c-src-lib-libbsp-m68k-mo376],[_RTEMS_VERSION],[http://www.rtems.org/bugzilla])
  AC_CONFIG_SRCDIR([bsp_specs])
  RTEMS_TOP(../../../../../..)
  
 Index: rtems/c/src/lib/libbsp/m68k/mo376/README
 ===================================================================
---- rtems.orig/c/src/lib/libbsp/m68k/mo376/README
-+++ rtems/c/src/lib/libbsp/m68k/mo376/README
+--- rtems.orig/c/src/lib/libbsp/m68k/mo376/README	2007-08-14 17:20:30.000000000 +0200
++++ rtems/c/src/lib/libbsp/m68k/mo376/README	2007-08-14 17:24:09.000000000 +0200
 @@ -2,23 +2,24 @@
  #  $Id: README,v 1.1 2001/05/25 16:28:46 joel Exp $
  #
@@ -109,9 +126,9 @@ Index: rtems/c/src/lib/libbsp/m68k/mo376/README
  
 Index: rtems/c/src/lib/libbsp/m68k/mo376/Makefile.am
 ===================================================================
---- rtems.orig/c/src/lib/libbsp/m68k/mo376/Makefile.am
-+++ rtems/c/src/lib/libbsp/m68k/mo376/Makefile.am
-@@ -16,7 +16,7 @@ nodist_include_HEADERS = include/bspopts
+--- rtems.orig/c/src/lib/libbsp/m68k/mo376/Makefile.am	2007-08-14 17:20:30.000000000 +0200
++++ rtems/c/src/lib/libbsp/m68k/mo376/Makefile.am	2007-08-14 17:24:09.000000000 +0200
+@@ -16,7 +16,7 @@
  DISTCLEANFILES = include/bspopts.h
  noinst_PROGRAMS =
  
@@ -122,30 +139,30 @@ Index: rtems/c/src/lib/libbsp/m68k/mo376/Makefile.am
  EXTRA_DIST = times
 Index: rtems/c/src/lib/libbsp/m68k/mo376/console/sci.c
 ===================================================================
---- rtems.orig/c/src/lib/libbsp/m68k/mo376/console/sci.c
-+++ rtems/c/src/lib/libbsp/m68k/mo376/console/sci.c
-@@ -129,7 +129,7 @@
+--- rtems.orig/c/src/lib/libbsp/m68k/mo376/console/sci.c	2007-08-14 17:20:30.000000000 +0200
++++ rtems/c/src/lib/libbsp/m68k/mo376/console/sci.c	2007-08-14 17:31:42.000000000 +0200
+@@ -105,7 +105,7 @@
  
- // system clock definitions, i dont have documentation on this...
+ /* system clock definitions, i dont have documentation on this... */
  
--#if 0 // Not needed, this is provided in mrm332.h
-+#if 0 // Not needed, this is provided in mo376.h
- #define XTAL            32768.0		        // crystal frequency in Hz
- #define NUMB_W          0			        // system clock parameters
+-#if 0 /* Not needed, this is provided in mrm332.h */
++#if 0 /* Not needed, this is provided in mo376.h */
+ #define XTAL            32768.0    /* crystal frequency in Hz */
+ #define NUMB_W          0          /* system clock parameters */
  #define NUMB_X          1
-@@ -1238,7 +1238,7 @@ static void SciSetBaud(uint32_t   rate)
+@@ -1215,7 +1215,7 @@
  
-     // calculate the register value as a float and convert to an int
-     // set baud rate - you must define the system clock constant
--    // see mrm332.h for an example
-+    // see mo376.h for an example
+     /* calculate the register value as a float and convert to an int */
+     /* set baud rate - you must define the system clock constant */
+-    /* see mrm332.h for an example */
++    /* see mo376.h for an example */
  
      value = ( (uint16_t) ( SYS_CLOCK / rate / 32.0 + 0.5 ) & 0x1fff );
  
 Index: rtems/c/src/lib/libbsp/m68k/mo376/startup/start_c.c
 ===================================================================
---- rtems.orig/c/src/lib/libbsp/m68k/mo376/startup/start_c.c
-+++ rtems/c/src/lib/libbsp/m68k/mo376/startup/start_c.c
+--- rtems.orig/c/src/lib/libbsp/m68k/mo376/startup/start_c.c	2007-08-14 17:20:30.000000000 +0200
++++ rtems/c/src/lib/libbsp/m68k/mo376/startup/start_c.c	2007-08-14 17:24:09.000000000 +0200
 @@ -2,7 +2,7 @@
   *  $Id
   */
@@ -157,8 +174,8 @@ Index: rtems/c/src/lib/libbsp/m68k/mo376/startup/start_c.c
  #include "bsp.h"
 Index: rtems/c/src/lib/libbsp/m68k/mo376/times
 ===================================================================
---- rtems.orig/c/src/lib/libbsp/m68k/mo376/times
-+++ rtems/c/src/lib/libbsp/m68k/mo376/times
+--- rtems.orig/c/src/lib/libbsp/m68k/mo376/times	2007-08-14 17:20:30.000000000 +0200
++++ rtems/c/src/lib/libbsp/m68k/mo376/times	2007-08-14 17:24:09.000000000 +0200
 @@ -1,5 +1,5 @@
  #
 -#  Timing Test Suite Results for the MRM332 BSP
@@ -166,7 +183,7 @@ Index: rtems/c/src/lib/libbsp/m68k/mo376/times
  #
  #  $Id: times,v 1.2 2004/01/07 21:13:50 joel Exp $
  #
-@@ -8,9 +8,9 @@ NOTE:  This BSP is user submitted and no
+@@ -8,9 +8,9 @@
  
  TBD: MATT - update this with real times!
  
@@ -180,8 +197,8 @@ Index: rtems/c/src/lib/libbsp/m68k/mo376/times
  
 Index: rtems/c/src/lib/libbsp/m68k/mo376/include/mo376.h
 ===================================================================
---- /dev/null
-+++ rtems/c/src/lib/libbsp/m68k/mo376/include/mo376.h
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ rtems/c/src/lib/libbsp/m68k/mo376/include/mo376.h	2007-08-14 17:24:09.000000000 +0200
 @@ -0,0 +1,70 @@
 +/*  mo376.h
 + *
@@ -255,8 +272,8 @@ Index: rtems/c/src/lib/libbsp/m68k/mo376/include/mo376.h
 +#endif /* _MRM_H_ */
 Index: rtems/c/src/lib/libbsp/m68k/mo376/include/mrm332.h
 ===================================================================
---- rtems.orig/c/src/lib/libbsp/m68k/mo376/include/mrm332.h
-+++ /dev/null
+--- rtems.orig/c/src/lib/libbsp/m68k/mo376/include/mrm332.h	2007-08-14 17:20:30.000000000 +0200
++++ /dev/null	1970-01-01 00:00:00.000000000 +0000
 @@ -1,70 +0,0 @@
 -/*  mrm332.h
 - *
@@ -330,19 +347,9 @@ Index: rtems/c/src/lib/libbsp/m68k/mo376/include/mrm332.h
 -#endif /* _MRM_H_ */
 Index: rtems/make/custom/mo376.cfg
 ===================================================================
---- rtems.orig/make/custom/mo376.cfg
-+++ rtems/make/custom/mo376.cfg
-@@ -1,7 +1,7 @@
- #
--#  Config file for the mrm332 BSP
-+#  Config file for the mo376 BSP
- #
--#  $Id: mrm332.cfg,v 1.8 2004/02/04 16:50:30 ralf Exp $
-+#  $Id: mo376.cfg,v 1.8 2004/02/04 16:50:30 ralf Exp $
- #
- 
- include $(RTEMS_ROOT)/make/custom/default.cfg
-@@ -10,7 +10,7 @@ RTEMS_CPU=m68k
+--- rtems.orig/make/custom/mo376.cfg	2007-08-14 17:20:30.000000000 +0200
++++ rtems/make/custom/mo376.cfg	2007-08-14 17:24:09.000000000 +0200
+@@ -10,7 +10,7 @@
  RTEMS_CPU_MODEL=m68332
  
  # This is the actual bsp directory used during the build process.
@@ -351,7 +358,7 @@ Index: rtems/make/custom/mo376.cfg
  
  #  This contains the compiler options necessary to select the CPU model
  #  and (hopefully) optimize for it. 
-@@ -26,7 +26,7 @@ CFLAGS_OPTIMIZE_V=-O4 -fomit-frame-point
+@@ -25,7 +25,7 @@
  ifeq ($(MRM_IN_ROM),yes)
  # Build a rommable image - move the .data section after the .text section
  # in the image.
@@ -362,9 +369,9 @@ Index: rtems/make/custom/mo376.cfg
  #  though and greatly slows the build process so only do this if needed.
 Index: rtems/c/src/lib/libbsp/m68k/mo376/preinstall.am
 ===================================================================
---- rtems.orig/c/src/lib/libbsp/m68k/mo376/preinstall.am
-+++ rtems/c/src/lib/libbsp/m68k/mo376/preinstall.am
-@@ -44,9 +44,9 @@ $(PROJECT_INCLUDE)/bspopts.h: include/bs
+--- rtems.orig/c/src/lib/libbsp/m68k/mo376/preinstall.am	2007-08-14 17:20:30.000000000 +0200
++++ rtems/c/src/lib/libbsp/m68k/mo376/preinstall.am	2007-08-14 17:24:09.000000000 +0200
+@@ -44,9 +44,9 @@
  	$(INSTALL_DATA) $< $(PROJECT_INCLUDE)/bspopts.h
  PREINSTALL_FILES += $(PROJECT_INCLUDE)/bspopts.h
  
