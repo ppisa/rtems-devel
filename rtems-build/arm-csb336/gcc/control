@@ -1,11 +1,11 @@
-Package: gcc-arm-rtems
-Version: 4.1.2-1
+Package: gcc-arm-rtems4.9
+Version: 4.3.4-1
 Architecture: amd64
-Source: gcc-4.1.2
+Source: gcc-4.3.4
 Section: cross-dev
 Priority: extra
 Maintainer: Pavel Pisa <pisa@cmp.felk.cvut.cz>
 Priority: extra
-Description: GCC for target arm-rtems
+Description: GCC for target arm-rtems4.9
  .
- GNU binutils targetting arm-rtems
+ GNU GCC targetting arm-rtems4.9

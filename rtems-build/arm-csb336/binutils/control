@@ -1,11 +1,11 @@
-Package: binutils-arm-rtems
-Version: 2.17-1
+Package: binutils-arm-rtems4.9
+Version: 2.20-1
 Architecture: amd64
-Source: binutils-2.17
+Source: binutils-2.20
 Section: cross-dev
 Priority: extra
 Maintainer: Pavel Pisa <pisa@cmp.felk.cvut.cz>
 Priority: extra
-Description: Binutils for target arm-rtems
+Description: binutils for target arm-rtems4.9
  .
- GNU binutils targetting arm-rtems
+ binutils targetting arm-rtems4.9
