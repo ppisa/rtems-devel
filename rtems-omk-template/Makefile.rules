@@ -4,7 +4,7 @@
 #  (C) Copyright 2006, 2007, 2008, 2009 by Michal Sojka - Czech Technical University, FEE, DCE
 #
 #  Homepage: http://rtime.felk.cvut.cz/omk/
-#  Version:  0.1-94-gf0515eb
+#  Version:  0.1-95-g0919d5c
 #
 # The OMK build system is distributed under the GNU General Public
 # License.  See file COPYING for details.
@@ -434,7 +434,8 @@ $(2):
 
 $(2).o: $(2)
 	@$(QUIET_CMD_ECHO) "  TARFILE $$@"
-	$(Q) $(OBJCOPY) -I binary -O elf32-littlearm  $$^ $$@
+	$(Q) $(LD) -r --accept-unknown-input-arch -b binary -o $$@.tmp $$^
+	$(Q) $(OBJCOPY) --rename-section .data=.rodata,alloc,load,readonly,data,contents $$@.tmp $$@
 
 endef
 
