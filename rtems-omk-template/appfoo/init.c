@@ -38,7 +38,7 @@
 #if RTEMS_VER_CODE < VER_CODE(4,7,99)
   #define rtems_shell_add_cmd shell_add_cmd
   #define rtems_shell_init(m_task_name,m_task_stacksize,m_task_priority,m_devname,m_forever,m_wait,m_login_check) \
-                shell_init(m_task_name,m_task_stacksize,m_task_priority,m_devname,shell_init,m_forever)
+                shell_init(m_task_name,m_task_stacksize,m_task_priority,m_devname,B19200 | CS8,m_forever)
 #elif RTEMS_VER_CODE < VER_CODE(4,9,99)
   #define rtems_shell_init(m_task_name,m_task_stacksize,m_task_priority,m_devname,m_forever,m_wait,m_login_check) \
           rtems_shell_init(m_task_name,m_task_stacksize,m_task_priority,m_devname,m_forever,m_wait)
