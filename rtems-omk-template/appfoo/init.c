@@ -33,6 +33,17 @@
 #define BUILD_VERSION_STRING(major,minor,patch) \
         __XSTRING(major) "." __XSTRING(minor) "." __XSTRING(patch)
 
+#define RTEMS_VER_CODE VER_CODE(__RTEMS_MAJOR__ ,__RTEMS_MINOR__ ,__RTEMS_REVISION__)
+
+#if RTEMS_VER_CODE < VER_CODE(4,7,99)
+  #define rtems_shell_add_cmd shell_add_cmd
+  #define rtems_shell_init(m_task_name,m_task_stacksize,m_task_priority,m_devname,m_forever,m_wait,m_login_check) \
+                shell_init(m_task_name,m_task_stacksize,m_task_priority,m_devname,shell_init,m_forever)
+#elif RTEMS_VER_CODE < VER_CODE(4,9,99)
+  #define rtems_shell_init(m_task_name,m_task_stacksize,m_task_priority,m_devname,m_forever,m_wait,m_login_check) \
+          rtems_shell_init(m_task_name,m_task_stacksize,m_task_priority,m_devname,m_forever,m_wait)
+#endif
+
 void 
 bad_rtems_status(rtems_status_code status, int fail_level, const char *text)
 {
@@ -83,10 +94,10 @@ rtems_task Init(
   status = rtems_task_start( Task_1_id, Task_1, 0 );
   check_rtems_status(status, 0, "rtems_task_start of Task_1\n");
 
-  shell_init("SHLL",RTEMS_MINIMUM_STACK_SIZE+0x1000,
-              SHELL_TASK_PRIORITY,"/dev/console",B19200 | CS8, 0);
+  rtems_shell_init("SHLL",RTEMS_MINIMUM_STACK_SIZE+0x1000,
+              SHELL_TASK_PRIORITY,"/dev/console",1,0, NULL);
 
-  shell_add_cmd("testcmd", "app",
+  rtems_shell_add_cmd("testcmd", "app",
                 "test command for shell",
                 testcmd_forshell);
 

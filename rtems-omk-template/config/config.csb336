@@ -1,0 +1,4 @@
+# CSB336 BSP for COGENT CSB336 and PiKRON PiMX1 boards
+# This file should be symlinked as config.target into project
+# Makefile.rules directory
+RTEMS_MAKEFILE_PATH=/opt/rtems4.9/arm-rtems4.9/csb336
