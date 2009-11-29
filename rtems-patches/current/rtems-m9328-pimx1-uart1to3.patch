@@ -1,7 +1,12 @@
-Index: rtems/c/src/lib/libbsp/arm/csb336/console/uart.c
+---
+ c/src/lib/libbsp/arm/csb336/console/uart.c         |   42 +++++++++++++++++++++
+ c/src/lib/libcpu/arm/mc9328mxl/include/mc9328mxl.h |   41 ++++++++++++++++++++
+ 2 files changed, 83 insertions(+)
+
+Index: rtems-4.9.3/c/src/lib/libbsp/arm/csb336/console/uart.c
 ===================================================================
---- rtems.orig/c/src/lib/libbsp/arm/csb336/console/uart.c
-+++ rtems/c/src/lib/libbsp/arm/csb336/console/uart.c
+--- rtems-4.9.3.orig/c/src/lib/libbsp/arm/csb336/console/uart.c	2009-11-29 01:11:05.632590072 +0100
++++ rtems-4.9.3/c/src/lib/libbsp/arm/csb336/console/uart.c	2009-11-29 01:55:20.304585047 +0100
 @@ -24,6 +24,13 @@
  /* Define this to use interrupt driver UART driver */
  #define USE_INTERRUPTS 1
@@ -16,7 +21,7 @@ Index: rtems/c/src/lib/libbsp/arm/csb336/console/uart.c
  /* How many serial ports? */
  #define NUM_DEVS       2
  #define poll_write(c)  imx_uart_poll_write_char(0, c)
-@@ -185,6 +192,41 @@ static void imx_uart_init(int minor)
+@@ -185,6 +192,41 @@
      imx_uart_data[minor].len   = 0;
      imx_uart_data[minor].idx   = 0;
  
@@ -58,10 +63,10 @@ Index: rtems/c/src/lib/libbsp/arm/csb336/console/uart.c
      if (minor == 0) {
  #if defined(USE_INTERRUPTS) 
          imx_uart_tx_isr_data[minor].name = BSP_INT_UART1_TX;
-Index: rtems/c/src/lib/libcpu/arm/mc9328mxl/include/mc9328mxl.h
+Index: rtems-4.9.3/c/src/lib/libcpu/arm/mc9328mxl/include/mc9328mxl.h
 ===================================================================
---- rtems.orig/c/src/lib/libcpu/arm/mc9328mxl/include/mc9328mxl.h
-+++ rtems/c/src/lib/libcpu/arm/mc9328mxl/include/mc9328mxl.h
+--- rtems-4.9.3.orig/c/src/lib/libcpu/arm/mc9328mxl/include/mc9328mxl.h	2007-03-12 12:17:07.000000000 +0100
++++ rtems-4.9.3/c/src/lib/libcpu/arm/mc9328mxl/include/mc9328mxl.h	2009-11-29 01:55:20.324565870 +0100
 @@ -31,6 +31,7 @@
  #define MC9328MXL_LCDC_BASE     0x00205000
  #define MC9328MXL_UART1_BASE    0x00206000
@@ -101,7 +106,7 @@ Index: rtems/c/src/lib/libcpu/arm/mc9328mxl/include/mc9328mxl.h
  typedef struct {
      volatile uint32_t rxd;
      volatile uint32_t _res0[15];
-@@ -274,6 +299,12 @@ typedef struct {
+@@ -274,6 +299,12 @@
  #define MC9328MXL_PLL_SPCTL1 (*((volatile uint32_t *)((MC9328MXL_PLL_BASE) + 0x10)))
  #define MC9328MXL_PLL_PCDR   (*((volatile uint32_t *)((MC9328MXL_PLL_BASE) + 0x20)))
  
@@ -114,7 +119,7 @@ Index: rtems/c/src/lib/libcpu/arm/mc9328mxl/include/mc9328mxl.h
  #define MC9328MXL_PLL_CSCR_CLKOSEL_PERCLK1 (0 << 29)
  #define MC9328MXL_PLL_CSCR_CLKOSEL_HCLK    (1 << 29)
  #define MC9328MXL_PLL_CSCR_CLKOSEL_CLK48M  (2 << 29)
-@@ -304,6 +335,16 @@ typedef struct {
+@@ -304,6 +335,16 @@
  #define MC9328MXL_PLL_PCDR_PCLK3_MASK      (0x007f0000)
  #define MC9328MXL_PLL_PCDR_PCLK3_SHIFT     (16)
  

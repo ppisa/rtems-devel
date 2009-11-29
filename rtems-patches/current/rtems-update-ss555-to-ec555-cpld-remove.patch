@@ -1,8 +1,14 @@
-Index: rtems/c/src/lib/libbsp/powerpc/ec555/include/bsp.h
+---
+ c/src/lib/libbsp/powerpc/ec555/include/bsp.h    |   31 ------------------------
+ c/src/lib/libbsp/powerpc/ec555/startup/iss555.c |    5 +++
+ c/src/lib/libbsp/powerpc/ec555/startup/linkcmds |    8 ------
+ 3 files changed, 5 insertions(+), 39 deletions(-)
+
+Index: rtems-4.9.3/c/src/lib/libbsp/powerpc/ec555/include/bsp.h
 ===================================================================
---- rtems/c/src/lib/libbsp/powerpc/ec555/include/bsp.h
-+++ rtems/c/src/lib/libbsp/powerpc/ec555/include/bsp.h
-@@ -44,37 +44,6 @@ extern "C" {
+--- rtems-4.9.3.orig/c/src/lib/libbsp/powerpc/ec555/include/bsp.h	2007-12-11 16:46:51.000000000 +0100
++++ rtems-4.9.3/c/src/lib/libbsp/powerpc/ec555/include/bsp.h	2009-11-29 01:52:21.559557050 +0100
+@@ -44,37 +44,6 @@
  #define BSP_CRYSTAL_HZ 	 4000000	/* crystal frequency, Hz */
  #define BSP_CLOCK_HZ	40000000	/* CPU clock frequency, Hz
  
@@ -39,12 +45,12 @@ Index: rtems/c/src/lib/libbsp/powerpc/ec555/include/bsp.h
 -
  /* miscellaneous stuff assumed to exist */
  
- extern rtems_configuration_table BSP_Configuration;
-Index: rtems/c/src/lib/libbsp/powerpc/ec555/startup/iss555.c
+ /*
+Index: rtems-4.9.3/c/src/lib/libbsp/powerpc/ec555/startup/iss555.c
 ===================================================================
---- rtems/c/src/lib/libbsp/powerpc/ec555/startup/iss555.c
-+++ rtems/c/src/lib/libbsp/powerpc/ec555/startup/iss555.c
-@@ -96,6 +96,8 @@ void _InitSS555 (void)
+--- rtems-4.9.3.orig/c/src/lib/libbsp/powerpc/ec555/startup/iss555.c	2009-11-29 01:38:37.616586852 +0100
++++ rtems-4.9.3/c/src/lib/libbsp/powerpc/ec555/startup/iss555.c	2009-11-29 01:52:21.559557050 +0100
+@@ -96,6 +96,8 @@
     */
    extern char int_ram_top[];		/* top of internal ram */
  
@@ -53,7 +59,7 @@ Index: rtems/c/src/lib/libbsp/powerpc/ec555/startup/iss555.c
    usiu.memc[0]._or =
        USIU_MEMC_OR_512K			/* bank size */
      | USIU_MEMC_OR_SCY(0)		/* wait states in first beat of burst */
-@@ -127,6 +129,9 @@ void _InitSS555 (void)
+@@ -127,6 +129,9 @@
      | USIU_MEMC_BR_BI			/* inhibit bursting */
      | USIU_MEMC_BR_V;			/* base register valid */
  
@@ -63,11 +69,11 @@ Index: rtems/c/src/lib/libbsp/powerpc/ec555/startup/iss555.c
    /*
     * Disable show cycles and serialization so that burst accesses will work
     * properly.  A different value, such as 0x0, may be more appropriate for
-Index: rtems/c/src/lib/libbsp/powerpc/ec555/startup/linkcmds
+Index: rtems-4.9.3/c/src/lib/libbsp/powerpc/ec555/startup/linkcmds
 ===================================================================
---- rtems/c/src/lib/libbsp/powerpc/ec555/startup/linkcmds
-+++ rtems/c/src/lib/libbsp/powerpc/ec555/startup/linkcmds
-@@ -268,14 +268,6 @@ SECTIONS
+--- rtems-4.9.3.orig/c/src/lib/libbsp/powerpc/ec555/startup/linkcmds	2008-03-04 00:07:19.000000000 +0100
++++ rtems-4.9.3/c/src/lib/libbsp/powerpc/ec555/startup/linkcmds	2009-11-29 01:52:21.559557050 +0100
+@@ -268,14 +268,6 @@
      sram = .;
    }
  

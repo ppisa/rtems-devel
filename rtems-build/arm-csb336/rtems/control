@@ -1,7 +1,7 @@
-Package: rtems-csb336
-Version: 4.7.1
+Package: rtems4.9-csb336
+Version: 4.9.3
 Architecture: all
-Source: rtems-4.7.1
+Source: rtems-4.9.3
 Section: cross-dev
 Priority: extra
 Maintainer: Pavel Pisa <pisa@cmp.felk.cvut.cz>

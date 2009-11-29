@@ -1,14 +1,14 @@
 ---
- c/src/lib/libbsp/m68k/mo376/ChangeLog                     |  455 +++
- c/src/lib/libbsp/m68k/mo376/Makefile.am                   |   68 
+ c/src/lib/libbsp/m68k/mo376/ChangeLog                     |  567 ++++
+ c/src/lib/libbsp/m68k/mo376/Makefile.am                   |   50 
  c/src/lib/libbsp/m68k/mo376/README                        |   24 
- c/src/lib/libbsp/m68k/mo376/bsp_specs                     |   16 
- c/src/lib/libbsp/m68k/mo376/clock/ckinit.c                |  128 +
+ c/src/lib/libbsp/m68k/mo376/bsp_specs                     |   13 
+ c/src/lib/libbsp/m68k/mo376/clock/ckinit.c                |   96 
  c/src/lib/libbsp/m68k/mo376/configure.ac                  |   20 
- c/src/lib/libbsp/m68k/mo376/console/console.c             |  174 +
+ c/src/lib/libbsp/m68k/mo376/console/console.c             |  171 +
  c/src/lib/libbsp/m68k/mo376/console/sci.c                 | 1596 ++++++++++++++
  c/src/lib/libbsp/m68k/mo376/console/sci.h                 |  234 ++
- c/src/lib/libbsp/m68k/mo376/include/bsp.h                 |  139 +
+ c/src/lib/libbsp/m68k/mo376/include/bsp.h                 |  131 +
  c/src/lib/libbsp/m68k/mo376/include/bspopts.h.in          |   16 
  c/src/lib/libbsp/m68k/mo376/include/mrm332.h              |   70 
  c/src/lib/libbsp/m68k/mo376/include/tm27.h                |   34 
@@ -19,25 +19,25 @@
  c/src/lib/libbsp/m68k/mo376/spurious/spinit.c             |  105 
  c/src/lib/libbsp/m68k/mo376/start/start.S                 |  150 +
  c/src/lib/libbsp/m68k/mo376/startup/bspclean.c            |   27 
- c/src/lib/libbsp/m68k/mo376/startup/bspstart.c            |   82 
+ c/src/lib/libbsp/m68k/mo376/startup/bspstart.c            |   59 
  c/src/lib/libbsp/m68k/mo376/startup/except_vect_332_ROM.S |  293 ++
  c/src/lib/libbsp/m68k/mo376/startup/linkcmds              |  164 +
  c/src/lib/libbsp/m68k/mo376/startup/linkcmds_ROM          |  200 +
  c/src/lib/libbsp/m68k/mo376/startup/start_c.c             |  125 +
- c/src/lib/libbsp/m68k/mo376/timer/timer.c                 |   81 
+ c/src/lib/libbsp/m68k/mo376/timer/timer.c                 |   61 
  c/src/lib/libbsp/m68k/mo376/times                         |  195 +
- make/custom/mo376.cfg                                     |   67 
- 28 files changed, 4659 insertions(+)
+ make/custom/mo376.cfg                                     |   55 
+ 28 files changed, 4652 insertions(+)
 
 Index: rtems/make/custom/mo376.cfg
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ rtems/make/custom/mo376.cfg	2007-08-14 17:20:30.000000000 +0200
-@@ -0,0 +1,67 @@
++++ rtems/make/custom/mo376.cfg	2009-11-29 01:21:43.173939736 +0100
+@@ -0,0 +1,55 @@
 +#
 +#  Config file for the mrm332 BSP
 +#
-+#  $Id: mrm332.cfg,v 1.9.2.3 2007/01/18 11:27:07 ralf Exp $
++#  $Id: mrm332.cfg,v 1.18 2008/06/11 08:17:27 ccj Exp $
 +#
 +
 +include $(RTEMS_ROOT)/make/custom/default.cfg
@@ -50,26 +50,19 @@ Index: rtems/make/custom/mo376.cfg
 +
 +#  This contains the compiler options necessary to select the CPU model
 +#  and (hopefully) optimize for it. 
-+CPU_CFLAGS = -mcpu32
++CPU_CFLAGS = -mcpu=cpu32
 +
 +# optimize flag: typically -O2
 +CFLAGS_OPTIMIZE_V = -O2 -g -fomit-frame-pointer
-+
-+# The following are definitions of make-exe which will work using ld as
-+# is currently required.
 +
 +ifeq ($(MRM_IN_ROM),yes)
 +# Build a rommable image - move the .data section after the .text section
 +# in the image.
 +CPU_CFLAGS += -qnolinkcmds -T $(exec_prefix)/mrm332/lib/linkcmds_ROM
++endif
 +
-+#  This is a good way to get debug information.  The output file is large
-+#  though and greatly slows the build process so only do this if needed.
-+#	$(OBJDUMP) -dxC $(basename $@).nxe > $(basename $@).dump
-+
-+define make-exe
-+	$(LINK.c) $(AM_CFLAGS) $(AM_LDFLAGS) -o $(basename $@).pxe \
-+	    $(LINK_OBJS) $(LINK_LIBS)
++ifeq ($(MRM_IN_ROM),yes)
++define bsp-post-link
 +	$(OBJCOPY) --adjust-section-vma \
 +	  .data=`m68k-rtems-objdump --section-headers $(basename $@).pxe | \
 +	  awk 'function h2d(x) { x=toupper(x); digits=length(x); s=0 ; \
@@ -79,32 +72,27 @@ Index: rtems/make/custom/mo376.cfg
 +	        return s } ;\
 +	        /\.text/ { base = $$4 ; size = $$3 };\
 +	        END { printf("0x%x", h2d(base) + h2d(size)) }'\
-+	       ` $(basename $@).pxe $(basename $@).nxe
-+	$(OBJCOPY) -O srec $(basename $@).nxe $(basename $@).srec
++	       ` $(basename $@).pxe $(basename $@).exe
++	$(OBJCOPY) -O srec $(basename $@).exe $(basename $@).srec
 +	sed -e 's/.$$//' -e '/^S0/d' $(basename $@).srec | \
-+	    $(PACKHEX) > $(basename $@).exe
++	    $(PACKHEX) > $(basename $@)$(DOWNEXT)
 +	$(NM) -g -n $(basename $@).pxe > $(basename $@).pnum
-+	$(NM) -g -n $(basename $@).nxe > $(basename $@).num
-+	$(SIZE) $(basename $@).nxe
++	rm -f $(basename $@).srec $(basename $@).srec
++	$(default-bsp-post-link)
 +endef
 +else
-+define make-exe
-+	$(LINK.c) $(AM_CFLAGS) $(AM_LDFLAGS) -o $(basename $@).nxe \
-+	    $(LINK_OBJS) $(LINK_LIBS)
-+	$(OBJCOPY) -O srec $(basename $@).nxe $(basename $@).srec
-+#	m68k-rtems-objdump -dxC $(basename $@).nxe > $(basename $@).dump
++define bsp-post-link
++	$(OBJCOPY) -O srec $(basename $@).exe $(basename $@).srec
 +	sed -e 's/.$$//' -e '/^S0/d' $(basename $@).srec | \
-+	    $(PACKHEX) > $(basename $@).exe
-+	$(NM) -g -n $(basename $@).nxe > $(basename $@).num
-+	$(SIZE) $(basename $@).nxe
++	    $(PACKHEX) > $(basename $@)$(DOWNEXT)
++	rm -f $(basename $@).srec
++	$(default-bsp-post-link)
 +endef
 +endif
-+
-+# Miscellaneous additions go here
 Index: rtems/c/src/lib/libbsp/m68k/mo376/console/sci.h
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ rtems/c/src/lib/libbsp/m68k/mo376/console/sci.h	2007-08-14 17:20:30.000000000 +0200
++++ rtems/c/src/lib/libbsp/m68k/mo376/console/sci.h	2006-09-11 23:43:55.000000000 +0200
 @@ -0,0 +1,234 @@
 +/****************************************************************************
 +* File:     sci.h
@@ -343,11 +331,11 @@ Index: rtems/c/src/lib/libbsp/m68k/mo376/console/sci.h
 Index: rtems/c/src/lib/libbsp/m68k/mo376/startup/linkcmds_ROM
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ rtems/c/src/lib/libbsp/m68k/mo376/startup/linkcmds_ROM	2007-08-14 17:20:30.000000000 +0200
++++ rtems/c/src/lib/libbsp/m68k/mo376/startup/linkcmds_ROM	2008-03-04 00:06:30.000000000 +0100
 @@ -0,0 +1,200 @@
 +/*  linkcmds
 + *
-+ *  $Id: linkcmds_ROM,v 1.4 2006/02/08 12:25:24 joel Exp $
++ *  $Id: linkcmds_ROM,v 1.5 2008/03/03 23:06:30 joel Exp $
 + */
 +
 +OUTPUT_ARCH(m68k)
@@ -508,7 +496,7 @@ Index: rtems/c/src/lib/libbsp/m68k/mo376/startup/linkcmds_ROM
 +    _sdata = . ;
 +    *(.data)
 +    *(.gnu.linkonce.d*)
-+    *(.gcc_except_table)
++    *(.gcc_except_table*)
 +    *(.jcr)
 +
 +    CONSTRUCTORS
@@ -548,7 +536,7 @@ Index: rtems/c/src/lib/libbsp/m68k/mo376/startup/linkcmds_ROM
 Index: rtems/c/src/lib/libbsp/m68k/mo376/startup/except_vect_332_ROM.S
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ rtems/c/src/lib/libbsp/m68k/mo376/startup/except_vect_332_ROM.S	2007-08-14 17:20:30.000000000 +0200
++++ rtems/c/src/lib/libbsp/m68k/mo376/startup/except_vect_332_ROM.S	2004-04-21 18:01:35.000000000 +0200
 @@ -0,0 +1,293 @@
 +/*
 + *  $Id: except_vect_332_ROM.S,v 1.3 2004/04/21 16:01:35 ralf Exp $
@@ -846,8 +834,8 @@ Index: rtems/c/src/lib/libbsp/m68k/mo376/startup/except_vect_332_ROM.S
 Index: rtems/c/src/lib/libbsp/m68k/mo376/console/console.c
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ rtems/c/src/lib/libbsp/m68k/mo376/console/console.c	2007-08-14 17:20:30.000000000 +0200
-@@ -0,0 +1,174 @@
++++ rtems/c/src/lib/libbsp/m68k/mo376/console/console.c	2008-05-12 20:43:28.000000000 +0200
+@@ -0,0 +1,171 @@
 +/*
 + *  This file contains the generic console driver shell used
 + *  by all console drivers using libchip.
@@ -861,7 +849,7 @@ Index: rtems/c/src/lib/libbsp/m68k/mo376/console/console.c
 + *  found in the file LICENSE in this distribution or at
 + *  http://www.rtems.com/license/LICENSE.
 + *
-+ *  $Id: console.c,v 1.8 2006/09/11 21:43:53 joel Exp $
++ *  $Id: console.c,v 1.9 2008/05/12 18:43:28 joel Exp $
 + */
 +
 +#include <bsp.h>
@@ -874,9 +862,6 @@ Index: rtems/c/src/lib/libbsp/m68k/mo376/console/console.c
 + *  console_open
 + *
 + *  open a port as a termios console.
-+ *
-+ *  the console is opened in bsp_postdriver_hook() in bsppost.c
-+ *
 + */
 +
 +rtems_device_driver console_open(
@@ -1025,7 +1010,7 @@ Index: rtems/c/src/lib/libbsp/m68k/mo376/console/console.c
 Index: rtems/c/src/lib/libbsp/m68k/mo376/start/start.S
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ rtems/c/src/lib/libbsp/m68k/mo376/start/start.S	2007-08-14 17:20:30.000000000 +0200
++++ rtems/c/src/lib/libbsp/m68k/mo376/start/start.S	2009-11-29 01:11:56.463558538 +0100
 @@ -0,0 +1,150 @@
 +/*
 + *  $Id
@@ -1180,7 +1165,7 @@ Index: rtems/c/src/lib/libbsp/m68k/mo376/start/start.S
 Index: rtems/c/src/lib/libbsp/m68k/mo376/misc/dotests
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ rtems/c/src/lib/libbsp/m68k/mo376/misc/dotests	2007-08-14 17:20:30.000000000 +0200
++++ rtems/c/src/lib/libbsp/m68k/mo376/misc/dotests	2009-11-29 01:11:56.463558538 +0100
 @@ -0,0 +1,15 @@
 +#! /bin/bash
 +#
@@ -1200,8 +1185,8 @@ Index: rtems/c/src/lib/libbsp/m68k/mo376/misc/dotests
 Index: rtems/c/src/lib/libbsp/m68k/mo376/include/bsp.h
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ rtems/c/src/lib/libbsp/m68k/mo376/include/bsp.h	2007-08-14 17:20:30.000000000 +0200
-@@ -0,0 +1,139 @@
++++ rtems/c/src/lib/libbsp/m68k/mo376/include/bsp.h	2007-12-11 16:49:20.000000000 +0100
+@@ -0,0 +1,131 @@
 +/*  bsp.h
 + *
 + *  This include file contains all mrm board IO definitions.
@@ -1213,7 +1198,7 @@ Index: rtems/c/src/lib/libbsp/m68k/mo376/include/bsp.h
 + *  found in the file LICENSE in this distribution or at
 + *  http://www.rtems.com/license/LICENSE.
 + *
-+ *  $Id: bsp.h,v 1.14 2006/03/17 10:11:36 ralf Exp $
++ *  $Id: bsp.h,v 1.17 2007/12/11 15:49:20 joel Exp $
 + */
 +
 +#ifndef _BSP_H
@@ -1242,7 +1227,6 @@ Index: rtems/c/src/lib/libbsp/m68k/mo376/include/bsp.h
 +
 +#define CONSOLE_SCI
 +/* #define CONFIGURE_NUMBER_OF_TERMIOS_PORTS 2 */
-+/* #define CONFIGURE_INTERRUPT_STACK_MEMORY  (TBD * 1024) */
 +
 +/*
 + *  Simple spin delay in microsecond units for device drivers.
@@ -1296,12 +1280,9 @@ Index: rtems/c/src/lib/libbsp/m68k/mo376/include/bsp.h
 +
 +/* miscellaneous stuff assumed to exist */
 +
-+extern rtems_configuration_table BSP_Configuration;
-+
 +extern m68k_isr_entry M68Kvec[];   /* vector table address */
 +
 +extern int stack_size;
-+
 +extern int stack_start;
 +
 +/*
@@ -1326,13 +1307,9 @@ Index: rtems/c/src/lib/libbsp/m68k/mo376/include/bsp.h
 +  int                 type
 +);
 +
-+void console_init(void);
-+
 +void Spurious_Initialize(void);
 +
 +void _UART_flush(void);
-+
-+void Clock_exit(void);
 +
 +void outbyte(char);
 +
@@ -1344,7 +1321,7 @@ Index: rtems/c/src/lib/libbsp/m68k/mo376/include/bsp.h
 Index: rtems/c/src/lib/libbsp/m68k/mo376/misc/interr.c
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ rtems/c/src/lib/libbsp/m68k/mo376/misc/interr.c	2007-08-14 17:20:30.000000000 +0200
++++ rtems/c/src/lib/libbsp/m68k/mo376/misc/interr.c	2008-09-06 19:09:08.000000000 +0200
 @@ -0,0 +1,99 @@
 +/*
 + *  Internal Error Handler
@@ -1356,7 +1333,7 @@ Index: rtems/c/src/lib/libbsp/m68k/mo376/misc/interr.c
 + *  found in the file LICENSE in this distribution or at
 + *  http://www.rtems.com/license/LICENSE.
 + *
-+ *  $Id: interr.c,v 1.3 2004/03/31 04:37:05 ralf Exp $
++ *  $Id: interr.c,v 1.5 2008/09/06 17:09:08 ralf Exp $
 + */
 +
 +#include <rtems/system.h>
@@ -1414,14 +1391,14 @@ Index: rtems/c/src/lib/libbsp/m68k/mo376/misc/interr.c
 +
 +void volatile _Internal_error_Occurred(
 +  Internal_errors_Source  the_source,
-+  boolean                 is_internal,
++  bool                    is_internal,
 +  uint32_t                the_error
 +)
 +{
 +
-+  Internal_errors_What_happened.the_source  = the_source;
-+  Internal_errors_What_happened.is_internal = is_internal;
-+  Internal_errors_What_happened.the_error   = the_error;
++  _Internal_errors_What_happened.the_source  = the_source;
++  _Internal_errors_What_happened.is_internal = is_internal;
++  _Internal_errors_What_happened.the_error   = the_error;
 +
 +  _User_extensions_Fatal( the_source, is_internal, the_error );
 +
@@ -1448,19 +1425,131 @@ Index: rtems/c/src/lib/libbsp/m68k/mo376/misc/interr.c
 Index: rtems/c/src/lib/libbsp/m68k/mo376/ChangeLog
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ rtems/c/src/lib/libbsp/m68k/mo376/ChangeLog	2007-08-14 17:20:30.000000000 +0200
-@@ -0,0 +1,455 @@
++++ rtems/c/src/lib/libbsp/m68k/mo376/ChangeLog	2008-12-08 06:15:06.000000000 +0100
+@@ -0,0 +1,567 @@
++2008-12-08	Ralf Corsépius <ralf.corsepius@rtems.org>
++
++	* bsp_specs: Backport from CVS-HEAD.
++
++2008-09-30	Joel Sherrill <joel.sherrill@oarcorp.com>
++
++	* timer/timer.c: Eliminate uses of old benchmark timer names.
++
++2008-09-29	Ralf Corsépius <ralf.corsepius@rtems.org>
++
++	* Makefile.am: Remove noinst_PROGRAMS (Unused).
++
++2008-09-06	Ralf Corsépius <ralf.corsepius@rtems.org>
++
++	* misc/interr.c: Convert to "bool".
++
++2008-09-05	Joel Sherrill <joel.sherrill@OARcorp.com>
++
++	* clock/ckinit.c: The Shared Memory Driver no longer requires the
++	special IOCTL in Clock_control. This was a hack which has existed
++	since before the Classic API Timer Manager was implemented. All
++	implementations of and references to Clock_control were removed.
++
++2008-09-05	Ralf Corsépius <ralf.corsepius@rtems.org>
++
++	* timer/timer.c: Convert to "bool".
++
++2008-08-31	Joel Sherrill <joel.sherrill@oarcorp.com>
++
++	* timer/timer.c: Eliminate empty function from every benchmark timer
++	driver. Fix spelling.
++
++2008-08-31	Joel Sherrill <joel.sherrill@oarcorp.com>
++
++	* timer/timer.c: Rename timer driver methods to follow RTEMS
++	programming conventions.
++
++2008-08-19	Ralf Corsépius <ralf.corsepius@rtems.org>
++
++	* console/sci.c, startup/bspstart.c, startup/start_c.c,
++	timer/timer.c: Add missing prototypes.
++
++2008-06-02	Joel Sherrill <joel.sherrill@oarcorp.com>
++
++	* misc/interr.c: Convention calls for leading underscore on private
++	RTEMS variables.
++
++2008-05-14	Joel Sherrill <joel.sherrill@OARcorp.com>
++
++	* Makefile.am: Rework to avoid .rel files.
++
++2008-05-12	Joel Sherrill <joel.sherrill@OARcorp.com>
++
++	* console/console.c, startup/bspstart.c: Refactored and renamed
++	initialization routines to rtems_initialize_data_structures,
++	rtems_initialize_before_drivers, rtems_initialize_device_drivers, and
++	rtems_initialize_start_multitasking. This opened the sequence up so
++	that bootcard() could provide a more robust and flexible framework
++	which is easier to explain and understand. This also lays the
++	groundwork for sharing the division of available memory between the
++	RTEMS workspace and heap and the C library initialization across all
++	BSPs.
++
++2008-03-03	Joel Sherrill <joel.sherrill@OARcorp.com>
++
++	* startup/linkcmds, startup/linkcmds_ROM: Add wildcard to
++	gcc_except_table section so programs compiled with gcc 4.3.x can
++	link.
++
++2007-12-11	Joel Sherrill <joel.sherrill@OARcorp.com>
++
++	* clock/ckinit.c, include/bsp.h, startup/bspstart.c: Eliminate copies
++	of the Configuration Table. Use the RTEMS provided accessor macros to
++	obtain configuration fields.
++
++2007-12-04	Joel Sherrill <joel.sherrill@OARcorp.com>
++
++	* include/bsp.h, startup/bspstart.c: Move interrupt_stack_size field
++	from CPU Table to Configuration Table. Eliminate CPU Table from all
++	ports. Delete references to CPU Table in all forms.
++
++2007-12-03	Joel Sherrill <joel.sherrill@OARcorp.com>
++
++	* startup/bspstart.c: Moved most of the remaining CPU Table fields to
++	the Configuration Table. This included pretasking_hook,
++	predriver_hook, postdriver_hook, idle_task, do_zero_of_workspace,
++	extra_mpci_receive_server_stack, stack_allocate_hook, and
++	stack_free_hook. As a side-effect of this effort some multiprocessing
++	code was made conditional and some style clean up occurred.
++
++2007-11-26	Joel Sherrill <joel.sherrill@oarcorp.com>
++
++	* startup/bspstart.c: Eliminate the interrupt_vector_table field in the
++	m68k CPU Table since it is never read.
++
++2007-05-03	Joel Sherrill <joel@OARcorp.com>
++
++	* startup/linkcmds: Handle .data.* sections
++
++2007-04-12	Ralf Corsépius <ralf.corsepius@rtems.org>
++
++	* bsp_specs: Remove qrtems_debug.
++
++2007-03-13	Joel Sherrill <joel@OARcorp.com>
++
++	* include/bsp.h: Remove redundant prototypes.
++
 +2006-12-02	Ralf Corsépius <ralf.corsepius@rtems.org>
 +
 +	* configure.ac: New BUG-REPORT address.
 +
-+2006-10-20	Ralf Corsépius <ralf.corsepius@rtems.org>
++2006-11-15	Joel Sherrill <joel@OARcorp.com>
++
++	* Makefile.am: Merge c_rtems_main() into boot_card(). This eliminated a
++	file and simplified initialization.
++
++2006-10-17	Ralf Corsépius <ralf.corsepius@rtems.org>
 +
 +	* Makefile.am: Remove superfluous -DASM.
 +
-+2006-10-19	Ralf Corsépius <ralf.corsepius@rtems.org>
++2006-10-17	Ralf Corsépius <ralf.corsepius@rtems.org>
 +
-+	* configure.ac: Require automake-1.10. Require autoconf-2.60.
++	* configure.ac: Require autoconf-2.60. Require automake-1.10.
 +
 +2006-09-11	Joel Sherrill <joel@OARcorp.com>
 +
@@ -1908,7 +1997,7 @@ Index: rtems/c/src/lib/libbsp/m68k/mo376/ChangeLog
 Index: rtems/c/src/lib/libbsp/m68k/mo376/startup/bspclean.c
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ rtems/c/src/lib/libbsp/m68k/mo376/startup/bspclean.c	2007-08-14 17:20:30.000000000 +0200
++++ rtems/c/src/lib/libbsp/m68k/mo376/startup/bspclean.c	2006-09-11 23:43:56.000000000 +0200
 @@ -0,0 +1,27 @@
 +/*  bsp_cleanup()
 + *
@@ -1940,19 +2029,9 @@ Index: rtems/c/src/lib/libbsp/m68k/mo376/startup/bspclean.c
 Index: rtems/c/src/lib/libbsp/m68k/mo376/timer/timer.c
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ rtems/c/src/lib/libbsp/m68k/mo376/timer/timer.c	2007-08-14 17:20:30.000000000 +0200
-@@ -0,0 +1,81 @@
-+/*  Timer_init()
-+ *
-+ *  This routine is not implemented for this BSP.
-+ *
-+ *  Input parameters:  NONE
-+ *
-+ *  Output parameters:  NONE
-+ *
-+ *  NOTE: It is important that the timer start/stop overhead be
-+ *        determined when porting or modifying this code.
-+ *
++++ rtems/c/src/lib/libbsp/m68k/mo376/timer/timer.c	2008-09-30 18:28:07.000000000 +0200
+@@ -0,0 +1,61 @@
++/*
 + *  COPYRIGHT (c) 1989-1999.
 + *  On-Line Applications Research Corporation (OAR).
 + *
@@ -1960,21 +2039,21 @@ Index: rtems/c/src/lib/libbsp/m68k/mo376/timer/timer.c
 + *  found in the file LICENSE in this distribution or at
 + *  http://www.rtems.com/license/LICENSE.
 + *
-+ *  $Id: timer.c,v 1.6 2004/04/21 16:01:35 ralf Exp $
++ *  $Id: timer.c,v 1.10.2.1 2008/09/30 16:28:07 joel Exp $
 + */
 +
 +#include <bsp.h>
 +
-+rtems_boolean Timer_driver_Find_average_overhead;
++bool benchmark_timer_find_average_overhead;
 +
-+extern rtems_isr Clock_isr();
++extern rtems_isr Clock_isr(void);
 +
-+void Timer_initialize( void )
++void benchmark_timer_initialize( void )
 +{
 +}
 +
 +/*
-+ *  The following controls the behavior of Read_timer().
++ *  The following controls the behavior of benchmark_timer_read().
 + *
 + *  FIND_AVG_OVERHEAD *  instructs the routine to return the "raw" count.
 + *
@@ -1993,12 +2072,12 @@ Index: rtems/c/src/lib/libbsp/m68k/mo376/timer/timer.c
 +/*
 + * Return timer value in 1/2-microsecond units
 + */
-+int Read_timer( void )
++int benchmark_timer_read( void )
 +{
 +  uint32_t         total;
 +  total = 0;
 +
-+  if ( Timer_driver_Find_average_overhead == 1 )
++  if ( benchmark_timer_find_average_overhead == true )
 +    return total;          /* in XXX microsecond units */
 +
 +  if ( total < LEAST_VALID )
@@ -2007,27 +2086,17 @@ Index: rtems/c/src/lib/libbsp/m68k/mo376/timer/timer.c
 +  return (total - AVG_OVERHEAD);
 +}
 +
-+/*
-+ *  Empty function call used in loops to measure basic cost of looping
-+ *  in Timing Test Suite.
-+ */
-+
-+rtems_status_code Empty_function(void)
-+{
-+    return RTEMS_SUCCESSFUL;
-+}
-+
-+void Set_find_average_overhead(
-+  rtems_boolean find_flag
++void benchmark_timer_disable_subtracting_average_overhead(
++  bool find_flag
 +)
 +{
-+  Timer_driver_Find_average_overhead = find_flag;
++  benchmark_timer_find_average_overhead = find_flag;
 +}
 Index: rtems/c/src/lib/libbsp/m68k/mo376/clock/ckinit.c
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ rtems/c/src/lib/libbsp/m68k/mo376/clock/ckinit.c	2007-08-14 17:20:30.000000000 +0200
-@@ -0,0 +1,128 @@
++++ rtems/c/src/lib/libbsp/m68k/mo376/clock/ckinit.c	2008-09-06 00:05:15.000000000 +0200
+@@ -0,0 +1,96 @@
 +/*  Clock_init()
 + *
 + *  This routine initailizes the periodic interrupt timer on
@@ -2044,7 +2113,7 @@ Index: rtems/c/src/lib/libbsp/m68k/mo376/clock/ckinit.c
 + *  found in the file LICENSE in this distribution or at
 + *  http://www.rtems.com/license/LICENSE.
 + *
-+ *  $Id: ckinit.c,v 1.5 2004/04/21 10:42:52 ralf Exp $
++ *  $Id: ckinit.c,v 1.7 2008/09/05 22:05:15 joel Exp $
 + */
 +
 +#include <stdlib.h>
@@ -2074,7 +2143,7 @@ Index: rtems/c/src/lib/libbsp/m68k/mo376/clock/ckinit.c
 +
 +  if ( Clock_isrs == 1 ) {
 +    rtems_clock_tick();
-+    Clock_isrs = BSP_Configuration.microseconds_per_tick / 1000;
++    Clock_isrs = rtems_configuration_get_microseconds_per_tick() / 1000;
 +  }
 +  else
 +    Clock_isrs -= 1;
@@ -2085,7 +2154,7 @@ Index: rtems/c/src/lib/libbsp/m68k/mo376/clock/ckinit.c
 +)
 +{
 +  Clock_driver_ticks = 0;
-+  Clock_isrs = BSP_Configuration.microseconds_per_tick / 1000;
++  Clock_isrs = rtems_configuration_get_microseconds_per_tick() / 1000;
 +
 +  Old_ticker = (rtems_isr_entry) set_vector( clock_isr, CLOCK_VECTOR, 1 );
 +
@@ -2124,42 +2193,10 @@ Index: rtems/c/src/lib/libbsp/m68k/mo376/clock/ckinit.c
 +
 +  return RTEMS_SUCCESSFUL;
 +}
-+
-+rtems_device_driver Clock_control(
-+  rtems_device_major_number major,
-+  rtems_device_minor_number minor,
-+  void *pargp
-+)
-+{
-+    uint32_t         isrlevel;
-+    rtems_libio_ioctl_args_t *args = pargp;
-+
-+    if (args == 0)
-+        goto done;
-+
-+    /*
-+     * This is hokey, but until we get a defined interface
-+     * to do this, it will just be this simple...
-+     */
-+
-+    if (args->command == rtems_build_name('I', 'S', 'R', ' '))
-+    {
-+        Clock_isr(CLOCK_VECTOR);
-+    }
-+    else if (args->command == rtems_build_name('N', 'E', 'W', ' '))
-+    {
-+      rtems_interrupt_disable( isrlevel );
-+       (void) set_vector( args->buffer, CLOCK_VECTOR, 1 );
-+      rtems_interrupt_enable( isrlevel );
-+    }
-+
-+done:
-+    return RTEMS_SUCCESSFUL;
-+}
 Index: rtems/c/src/lib/libbsp/m68k/mo376/misc/gdbinit68
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ rtems/c/src/lib/libbsp/m68k/mo376/misc/gdbinit68	2007-08-14 17:20:30.000000000 +0200
++++ rtems/c/src/lib/libbsp/m68k/mo376/misc/gdbinit68	2009-11-29 01:11:56.471556761 +0100
 @@ -0,0 +1,16 @@
 +#
 +#  $Id: gdbinit68,v 1.1 2001/05/25 16:28:46 joel Exp $
@@ -2180,11 +2217,11 @@ Index: rtems/c/src/lib/libbsp/m68k/mo376/misc/gdbinit68
 Index: rtems/c/src/lib/libbsp/m68k/mo376/configure.ac
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ rtems/c/src/lib/libbsp/m68k/mo376/configure.ac	2007-08-14 17:20:30.000000000 +0200
++++ rtems/c/src/lib/libbsp/m68k/mo376/configure.ac	2006-12-02 06:55:13.000000000 +0100
 @@ -0,0 +1,20 @@
 +## Process this file with autoconf to produce a configure script.
 +## 
-+## $Id: configure.ac,v 1.14.2.2 2006/12/02 06:04:46 ralf Exp $
++## $Id: configure.ac,v 1.16 2006/12/02 05:55:13 ralf Exp $
 +
 +AC_PREREQ(2.60)
 +AC_INIT([rtems-c-src-lib-libbsp-m68k-mrm332],[_RTEMS_VERSION],[http://www.rtems.org/bugzilla])
@@ -2205,7 +2242,7 @@ Index: rtems/c/src/lib/libbsp/m68k/mo376/configure.ac
 Index: rtems/c/src/lib/libbsp/m68k/mo376/README
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ rtems/c/src/lib/libbsp/m68k/mo376/README	2007-08-14 17:20:30.000000000 +0200
++++ rtems/c/src/lib/libbsp/m68k/mo376/README	2009-11-29 01:11:56.471556761 +0100
 @@ -0,0 +1,24 @@
 +#
 +#  $Id: README,v 1.1 2001/05/25 16:28:46 joel Exp $
@@ -2234,10 +2271,10 @@ Index: rtems/c/src/lib/libbsp/m68k/mo376/README
 Index: rtems/c/src/lib/libbsp/m68k/mo376/Makefile.am
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ rtems/c/src/lib/libbsp/m68k/mo376/Makefile.am	2007-08-14 17:20:30.000000000 +0200
-@@ -0,0 +1,68 @@
++++ rtems/c/src/lib/libbsp/m68k/mo376/Makefile.am	2008-09-29 03:47:41.000000000 +0200
+@@ -0,0 +1,50 @@
 +##
-+## $Id: Makefile.am,v 1.24.2.1 2006/10/20 11:54:57 ralf Exp $
++## $Id: Makefile.am,v 1.27.2.1 2008/09/29 01:47:41 ralf Exp $
 +##
 +
 +ACLOCAL_AMFLAGS = -I ../../../../aclocal
@@ -2252,7 +2289,6 @@ Index: rtems/c/src/lib/libbsp/m68k/mo376/Makefile.am
 +
 +nodist_include_HEADERS = include/bspopts.h
 +DISTCLEANFILES = include/bspopts.h
-+noinst_PROGRAMS =
 +
 +include_HEADERS += include/mrm332.h
 +nodist_include_HEADERS += ../../shared/include/coverhd.h
@@ -2267,39 +2303,22 @@ Index: rtems/c/src/lib/libbsp/m68k/mo376/Makefile.am
 +
 +dist_project_lib_DATA += startup/linkcmds startup/linkcmds_ROM
 +
-+noinst_PROGRAMS += startup.rel
-+startup_rel_SOURCES = startup/start_c.c ../../shared/bsplibc.c \
++startup_SOURCES = startup/start_c.c ../../shared/bsplibc.c \
 +    ../../shared/bsppost.c startup/bspstart.c startup/bspclean.c \
 +    ../../shared/bootcard.c ../../m68k/shared/m68kpretaskinghook.c \
-+    ../../shared/main.c ../../shared/sbrk.c ../../m68k/shared/setvec.c \
++    ../../shared/sbrk.c ../../m68k/shared/setvec.c \
 +    ../../shared/gnatinstallhandler.c startup/except_vect_332_ROM.S
-+startup_rel_CPPFLAGS = $(AM_CPPFLAGS)
-+startup_rel_LDFLAGS = $(RTEMS_RELLDFLAGS)
-+
-+noinst_PROGRAMS += clock.rel
-+clock_rel_SOURCES = clock/ckinit.c
-+clock_rel_CPPFLAGS = $(AM_CPPFLAGS)
-+clock_rel_LDFLAGS = $(RTEMS_RELLDFLAGS)
-+
-+noinst_PROGRAMS += console.rel
-+console_rel_SOURCES = console/console.c console/sci.c console/sci.h
-+console_rel_CPPFLAGS = $(AM_CPPFLAGS)
-+console_rel_LDFLAGS = $(RTEMS_RELLDFLAGS)
-+
-+noinst_PROGRAMS += spurious.rel
-+spurious_rel_SOURCES = spurious/spinit.c
-+spurious_rel_CPPFLAGS = $(AM_CPPFLAGS)
-+spurious_rel_LDFLAGS = $(RTEMS_RELLDFLAGS)
-+
-+noinst_PROGRAMS += timer.rel
-+timer_rel_SOURCES = timer/timer.c
-+timer_rel_CPPFLAGS = $(AM_CPPFLAGS)
-+timer_rel_LDFLAGS = $(RTEMS_RELLDFLAGS)
++clock_SOURCES = clock/ckinit.c
++console_SOURCES = console/console.c console/sci.c console/sci.h
++spurious_SOURCES = spurious/spinit.c
++timer_SOURCES = timer/timer.c
 +
 +noinst_LIBRARIES = libbsp.a
-+libbsp_a_SOURCES =
-+libbsp_a_LIBADD = startup.rel clock.rel console.rel spurious.rel timer.rel
-+libbsp_a_LIBADD += ../../../libcpu/@RTEMS_CPU@/shared/cache.rel \
++libbsp_a_SOURCES = $(startup_SOURCES) $(clock_SOURCES) $(console_SOURCES) \
++    $(spurious_SOURCES) $(timer_SOURCES)
++
++libbsp_a_LIBADD = \
++    ../../../libcpu/@RTEMS_CPU@/shared/cache.rel \
 +    ../../../libcpu/@RTEMS_CPU@/shared/misc.rel
 +
 +include $(srcdir)/preinstall.am
@@ -2307,7 +2326,7 @@ Index: rtems/c/src/lib/libbsp/m68k/mo376/Makefile.am
 Index: rtems/c/src/lib/libbsp/m68k/mo376/console/sci.c
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ rtems/c/src/lib/libbsp/m68k/mo376/console/sci.c	2007-08-14 17:20:30.000000000 +0200
++++ rtems/c/src/lib/libbsp/m68k/mo376/console/sci.c	2008-08-19 12:23:15.000000000 +0200
 @@ -0,0 +1,1596 @@
 +/*****************************************************************************
 +* File:     sci.c
@@ -2344,7 +2363,7 @@ Index: rtems/c/src/lib/libbsp/m68k/mo376/console/sci.c
 +*
 +* Note:     See bsp.h,confdefs.h,system.h for installing drivers into RTEMS.
 +*
-+* $Id: sci.c,v 1.11 2006/09/11 21:43:53 joel Exp $
++* $Id: sci.c,v 1.12 2008/08/19 10:23:15 ralf Exp $
 +*
 +*****************************************************************************/
 +
@@ -2502,14 +2521,14 @@ Index: rtems/c/src/lib/libbsp/m68k/mo376/console/sci.c
 +
 +void SciSendBreak( void );                              /* test routine */
 +
-+static int8_t   SciRcvBufGetChar();                     /* circular rcv buf */
++static int8_t   SciRcvBufGetChar(void);                 /* circular rcv buf */
 +static void    SciRcvBufPutChar( uint8_t);              /* circular rcv buf */
 +#if 0
 +static void    SciRcvBufFlush( void );                  /* unused routine */
 +#endif
 +
-+void SciUnitTest();                                     /* test routine */
-+void SciPrintStats();                                   /* test routine */
++void SciUnitTest(void);                                 /* test routine */
++void SciPrintStats(void);                               /* test routine */
 +
 +
 +/*****************************************************************************
@@ -2546,7 +2565,7 @@ Index: rtems/c/src/lib/libbsp/m68k/mo376/console/sci.c
 +/* cvs id string so you can use the unix ident command on the object */
 +
 +#ifdef ID_STRINGS
-+static const char SciIdent[]="$Id: sci.c,v 1.11 2006/09/11 21:43:53 joel Exp $";
++static const char SciIdent[]="$Id: sci.c,v 1.12 2008/08/19 10:23:15 ralf Exp $";
 +#endif
 +
 +
@@ -2727,7 +2746,7 @@ Index: rtems/c/src/lib/libbsp/m68k/mo376/console/sci.c
 +* Scope:    private
 +****************************************************************************/
 +
-+static int8_t   SciRcvBufGetChar()
++static int8_t   SciRcvBufGetChar(void)
 +{
 +    rtems_interrupt_level level;
 +    uint8_t   ch;
@@ -3908,8 +3927,8 @@ Index: rtems/c/src/lib/libbsp/m68k/mo376/console/sci.c
 Index: rtems/c/src/lib/libbsp/m68k/mo376/startup/bspstart.c
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ rtems/c/src/lib/libbsp/m68k/mo376/startup/bspstart.c	2007-08-14 17:20:30.000000000 +0200
-@@ -0,0 +1,82 @@
++++ rtems/c/src/lib/libbsp/m68k/mo376/startup/bspstart.c	2008-08-19 12:23:15.000000000 +0200
+@@ -0,0 +1,59 @@
 +/*
 + *  This routine starts the application.  It includes application,
 + *  board, and monitor specific initialization and configuration.
@@ -3923,7 +3942,7 @@ Index: rtems/c/src/lib/libbsp/m68k/mo376/startup/bspstart.c
 + *  found in the file LICENSE in this distribution or at
 + *  http://www.rtems.com/license/LICENSE.
 + *
-+ *  $Id: bspstart.c,v 1.7 2004/04/21 10:42:52 ralf Exp $
++ *  $Id: bspstart.c,v 1.13 2008/08/19 10:23:15 ralf Exp $
 + */
 +
 +#include <bsp.h>
@@ -3932,22 +3951,9 @@ Index: rtems/c/src/lib/libbsp/m68k/mo376/startup/bspstart.c
 +#include <string.h>
 +
 +/*
-+ *  The original table from the application and our copy of it with
-+ *  some changes.
-+ */
-+
-+extern rtems_configuration_table  Configuration;
-+rtems_configuration_table         BSP_Configuration;
-+
-+rtems_cpu_table Cpu_table;
-+
-+char *rtems_progname;
-+
-+/*
 + *  Use the shared implementations of the following routines
 + */
 +
-+void bsp_postdriver_hook(void);
 +void bsp_libc_init( void *, uint32_t, int );
 +void bsp_pretasking_hook(void);               /* m68k version */
 +
@@ -3958,7 +3964,7 @@ Index: rtems/c/src/lib/libbsp/m68k/mo376/startup/bspstart.c
 +
 +void bsp_predriver_hook(void)
 +{
-+  void Spurious_Initialize();
++  extern void Spurious_Initialize(void);
 +  Spurious_Initialize();
 +}
 +
@@ -3975,27 +3981,17 @@ Index: rtems/c/src/lib/libbsp/m68k/mo376/startup/bspstart.c
 +  extern void    *_RamSize;
 +  extern unsigned long _M68k_Ramsize;
 +
-+  _M68k_Ramsize = (unsigned long)&_RamSize;		/* RAM size set in linker script */
-+
-+  /*
-+   *  we only use a hook to get the C library initialized.
-+   */
-+
-+  Cpu_table.pretasking_hook = bsp_pretasking_hook;
-+  Cpu_table.predriver_hook  = bsp_predriver_hook;
-+  Cpu_table.postdriver_hook = bsp_postdriver_hook;
++  /* RAM size set in linker script */
++  _M68k_Ramsize = (unsigned long)&_RamSize;
 +
 +  m68k_get_vbr( vbr );
-+  Cpu_table.interrupt_vector_table = vbr;
 +
-+  BSP_Configuration.work_space_start = (void *) &_WorkspaceBase;
-+
-+  /* Clock_exit is done as an atexit() function */
++  Configuration.work_space_start = (void *) &_WorkspaceBase;
 +}
 Index: rtems/c/src/lib/libbsp/m68k/mo376/startup/start_c.c
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ rtems/c/src/lib/libbsp/m68k/mo376/startup/start_c.c	2007-08-14 17:20:30.000000000 +0200
++++ rtems/c/src/lib/libbsp/m68k/mo376/startup/start_c.c	2008-08-19 12:23:15.000000000 +0200
 @@ -0,0 +1,125 @@
 +/*
 + *  $Id
@@ -4017,9 +4013,9 @@ Index: rtems/c/src/lib/libbsp/m68k/mo376/startup/start_c.c
 + *  that causes a warning. Not sure how to fix that.
 + */
 +/* void dumby_start ()  __attribute__ ((noreturn)); */
-+void start_c ();
++void start_c(void);
 +
-+void  start_c() {
++void start_c(void) {
 +
 +  /* Synthesizer Control Register */
 +  /*    see section(s) 4.8 */
@@ -4125,7 +4121,7 @@ Index: rtems/c/src/lib/libbsp/m68k/mo376/startup/start_c.c
 Index: rtems/c/src/lib/libbsp/m68k/mo376/include/tm27.h
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ rtems/c/src/lib/libbsp/m68k/mo376/include/tm27.h	2007-08-14 17:20:30.000000000 +0200
++++ rtems/c/src/lib/libbsp/m68k/mo376/include/tm27.h	2009-11-29 01:11:56.475557339 +0100
 @@ -0,0 +1,34 @@
 +/*
 + *  tm27.h
@@ -4164,7 +4160,7 @@ Index: rtems/c/src/lib/libbsp/m68k/mo376/include/tm27.h
 Index: rtems/c/src/lib/libbsp/m68k/mo376/times
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ rtems/c/src/lib/libbsp/m68k/mo376/times	2007-08-14 17:20:30.000000000 +0200
++++ rtems/c/src/lib/libbsp/m68k/mo376/times	2009-11-29 01:11:56.479557220 +0100
 @@ -0,0 +1,195 @@
 +#
 +#  Timing Test Suite Results for the MRM332 BSP
@@ -4364,7 +4360,7 @@ Index: rtems/c/src/lib/libbsp/m68k/mo376/times
 Index: rtems/c/src/lib/libbsp/m68k/mo376/include/mrm332.h
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ rtems/c/src/lib/libbsp/m68k/mo376/include/mrm332.h	2007-08-14 17:20:30.000000000 +0200
++++ rtems/c/src/lib/libbsp/m68k/mo376/include/mrm332.h	2009-11-29 01:11:56.479557220 +0100
 @@ -0,0 +1,70 @@
 +/*  mrm332.h
 + *
@@ -4439,7 +4435,7 @@ Index: rtems/c/src/lib/libbsp/m68k/mo376/include/mrm332.h
 Index: rtems/c/src/lib/libbsp/m68k/mo376/include/bspopts.h.in
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ rtems/c/src/lib/libbsp/m68k/mo376/include/bspopts.h.in	2007-08-14 17:20:30.000000000 +0200
++++ rtems/c/src/lib/libbsp/m68k/mo376/include/bspopts.h.in	2009-11-29 01:11:56.479557220 +0100
 @@ -0,0 +1,16 @@
 +/* include/bspopts.h.in.  Generated from configure.ac by autoheader.  */
 +
@@ -4460,7 +4456,7 @@ Index: rtems/c/src/lib/libbsp/m68k/mo376/include/bspopts.h.in
 Index: rtems/c/src/lib/libbsp/m68k/mo376/spurious/spinit.c
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ rtems/c/src/lib/libbsp/m68k/mo376/spurious/spinit.c	2007-08-14 17:20:30.000000000 +0200
++++ rtems/c/src/lib/libbsp/m68k/mo376/spurious/spinit.c	2009-11-29 01:11:56.479557220 +0100
 @@ -0,0 +1,105 @@
 +/*  Spurious_driver
 + *
@@ -4570,11 +4566,11 @@ Index: rtems/c/src/lib/libbsp/m68k/mo376/spurious/spinit.c
 Index: rtems/c/src/lib/libbsp/m68k/mo376/startup/linkcmds
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ rtems/c/src/lib/libbsp/m68k/mo376/startup/linkcmds	2007-08-14 17:20:30.000000000 +0200
++++ rtems/c/src/lib/libbsp/m68k/mo376/startup/linkcmds	2008-03-04 00:06:30.000000000 +0100
 @@ -0,0 +1,164 @@
 +/*  linkcmds
 + *
-+ *  $Id: linkcmds,v 1.6 2006/02/08 12:25:24 joel Exp $
++ *  $Id: linkcmds,v 1.8 2008/03/03 23:06:30 joel Exp $
 + */
 +
 +OUTPUT_ARCH(m68k)
@@ -4713,9 +4709,9 @@ Index: rtems/c/src/lib/libbsp/m68k/mo376/startup/linkcmds
 +        } >ram
 +        .data : {
 +                PROVIDE (_copy_start = .);
-+                *(.data)
++                *(.data*)
 +		*(.gnu.linkonce.d*)
-+		*(.gcc_except_table)
++		*(.gcc_except_table*)
 +		*(.jcr)
 +                . = ALIGN (16);
 +                PROVIDE (_edata = .);
@@ -4739,28 +4735,25 @@ Index: rtems/c/src/lib/libbsp/m68k/mo376/startup/linkcmds
 Index: rtems/c/src/lib/libbsp/m68k/mo376/bsp_specs
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ rtems/c/src/lib/libbsp/m68k/mo376/bsp_specs	2007-08-14 17:20:30.000000000 +0200
-@@ -0,0 +1,16 @@
++++ rtems/c/src/lib/libbsp/m68k/mo376/bsp_specs	2008-12-08 06:15:06.000000000 +0100
+@@ -0,0 +1,13 @@
 +%rename endfile old_endfile
 +%rename startfile old_startfile
 +%rename link old_link
 +
 +*startfile:
-+%{!qrtems: %(old_startfile)} %{!nostdlib: %{qrtems: \
-+%{!qrtems_debug: start.o%s} \
-+%{qrtems_debug: start_g.o%s} \
-+crti.o%s crtbegin.o%s}}
++%{!qrtems: %(old_startfile)} \
++%{!nostdlib: %{qrtems: start.o%s crti.o%s crtbegin.o%s -e start}}
 +
 +*link:
-+%{!qrtems: %(old_link)} %{qrtems: -dc -dp -N -e start}
++%{!qrtems: %(old_link)} %{qrtems: -dc -dp -N}
 +
 +*endfile:
 +%{!qrtems: %(old_endfile)} %{qrtems: crtend.o%s crtn.o%s}
-+
 Index: rtems/c/src/lib/libbsp/m68k/mo376/preinstall.am
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ rtems/c/src/lib/libbsp/m68k/mo376/preinstall.am	2007-08-14 17:20:30.000000000 +0200
++++ rtems/c/src/lib/libbsp/m68k/mo376/preinstall.am	2009-11-29 01:11:56.483556820 +0100
 @@ -0,0 +1,66 @@
 +## Automatically generated by ampolish3 - Do not edit
 +

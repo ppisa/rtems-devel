@@ -1,4 +1,3 @@
-#rtems-inttypes-wcs-disable-fix.patch
 rtems-m9328-pimx1-mapping-change.patch
 rtems-m9328-pimx1-baud-19200.patch
 rtems-m9328-pimx1-syncmclk.patch
@@ -10,8 +9,5 @@ rtems-clone-ss555-to-ec555.patch
 rtems-ec555-add-to-configs.patch
 rtems-update-ss555-to-ec555.patch
 rtems-update-ss555-to-ec555-cpld-remove.patch
-rtems-usleep-type-fix.patch
-rtems-readlink-type-fix.patch
 rtems-m9328-pimx1-uart1to3.patch
 #rtems-m5235bcc-changes.patch
-rtems-m9328-pimx1-uart1to3.patch

@@ -1,30 +1,119 @@
 ---
- c/src/lib/libbsp/powerpc/ec555/ChangeLog          |  131 +++++++
- c/src/lib/libbsp/powerpc/ec555/Makefile.am        |   65 +++
+ c/src/lib/libbsp/powerpc/ec555/ChangeLog          |  225 ++++++++++++
+ c/src/lib/libbsp/powerpc/ec555/Makefile.am        |   50 ++
  c/src/lib/libbsp/powerpc/ec555/README             |  262 ++++++++++++++
  c/src/lib/libbsp/powerpc/ec555/bsp_specs          |   13 
  c/src/lib/libbsp/powerpc/ec555/clock/p_clock.c    |   69 +++
  c/src/lib/libbsp/powerpc/ec555/configure.ac       |   52 ++
  c/src/lib/libbsp/powerpc/ec555/console/console.c  |  368 +++++++++++++++++++
- c/src/lib/libbsp/powerpc/ec555/include/bsp.h      |  114 ++++++
+ c/src/lib/libbsp/powerpc/ec555/include/bsp.h      |  112 +++++
  c/src/lib/libbsp/powerpc/ec555/include/coverhd.h  |  116 ++++++
  c/src/lib/libbsp/powerpc/ec555/include/tm27.h     |   54 ++
  c/src/lib/libbsp/powerpc/ec555/irq/irq.h          |   55 ++
  c/src/lib/libbsp/powerpc/ec555/preinstall.am      |   58 +++
- c/src/lib/libbsp/powerpc/ec555/startup/bspstart.c |  201 ++++++++++
+ c/src/lib/libbsp/powerpc/ec555/startup/bspstart.c |  177 +++++++++
  c/src/lib/libbsp/powerpc/ec555/startup/iss555.c   |  148 +++++++
  c/src/lib/libbsp/powerpc/ec555/startup/linkcmds   |  319 +++++++++++++++++
  c/src/lib/libbsp/powerpc/ec555/startup/start.S    |  411 ++++++++++++++++++++++
  c/src/lib/libbsp/powerpc/ec555/startup/tm27supp.c |   29 +
  c/src/lib/libbsp/powerpc/ec555/times              |  189 ++++++++++
- make/custom/ec555.cfg                             |   41 ++
- 19 files changed, 2695 insertions(+)
+ make/custom/ec555.cfg                             |   38 ++
+ 19 files changed, 2745 insertions(+)
 
-Index: rtems/c/src/lib/libbsp/powerpc/ec555/ChangeLog
+Index: rtems-4.9.3/c/src/lib/libbsp/powerpc/ec555/ChangeLog
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ rtems/c/src/lib/libbsp/powerpc/ec555/ChangeLog	2007-08-14 17:51:38.000000000 +0200
-@@ -0,0 +1,131 @@
++++ rtems-4.9.3/c/src/lib/libbsp/powerpc/ec555/ChangeLog	2008-12-08 06:15:50.000000000 +0100
+@@ -0,0 +1,225 @@
++2008-12-08	Ralf Corsépius <ralf.corsepius@rtems.org>
++
++	* bsp_specs: Backport from CVS-HEAD.
++
++2008-09-29	Ralf Corsépius <ralf.corsepius@rtems.org>
++
++	* Makefile.am: Remove noinst_PROGRAMS (Unused).
++
++2008-05-15	Joel Sherrill <joel.sherrill@OARcorp.com>
++
++	* startup/bspstart.c: Add capability for bootcard.c BSP Initialization
++	Framework to ask the BSP where it has memory for the RTEMS Workspace
++	and C Program Heap. These collectively are referred to as work area.
++	If the BSP supports this, then it does not have to include code to
++	split the available memory between the two areas. This reduces the
++	amount of code in the BSP specific bspstart.c file. Additionally, the
++	shared framework can initialize the C Library, call
++	rtems_debug_enable(), and dirty the work area memory. Until most/all
++	BSPs support this new capability, if the BSP supports this, it should
++	call RTEMS_BSP_BOOTCARD_HANDLES_RAM_ALLOCATION from its configure.ac.
++	When the transition is complete, this autoconf macro can be removed.
++
++2008-05-14	Joel Sherrill <joel.sherrill@OARcorp.com>
++
++	* Makefile.am: Rework to avoid .rel files.
++
++2008-05-12	Joel Sherrill <joel.sherrill@OARcorp.com>
++
++	* startup/bspstart.c: Refactored and renamed initialization routines to
++	rtems_initialize_data_structures, rtems_initialize_before_drivers,
++	rtems_initialize_device_drivers, and
++	rtems_initialize_start_multitasking. This opened the sequence up so
++	that bootcard() could provide a more robust and flexible framework
++	which is easier to explain and understand. This also lays the
++	groundwork for sharing the division of available memory between the
++	RTEMS workspace and heap and the C library initialization across all
++	BSPs.
++
++2008-04-23	Joel Sherrill <joel.sherrill@OARcorp.com>
++
++	* startup/bspstart.c: Remove all references to
++	console_reserve_resources and termios_reserve_resources.
++
++2008-03-03	Joel Sherrill <joel.sherrill@OARcorp.com>
++
++	* startup/linkcmds: Add wildcard to gcc_except_table section so
++	programs compiled with gcc 4.3.x can link.
++
++2008-01-18	David Erickson <David.Erickson@drdc-rddc.gc.ca>
++
++	* startup/bspstart.c: Add semicolon.
++
++2008-01-11	Joel Sherrill <joel.sherrill@OARcorp.com>
++
++	* startup/bspstart.c: Add bsp_timer_least_valid and
++	bsp_timer_average_overhead so tmtests link.
++
++2007-12-11	Joel Sherrill <joel.sherrill@OARcorp.com>
++
++	* include/bsp.h, startup/bspstart.c: Eliminate copies of the
++	Configuration Table. Use the RTEMS provided accessor macros to obtain
++	configuration fields.
++
++2007-12-04	Joel Sherrill <joel.sherrill@OARcorp.com>
++
++	* startup/bspstart.c: Move interrupt_stack_size field from CPU Table to
++	Configuration Table. Eliminate CPU Table from all ports. Delete
++	references to CPU Table in all forms.
++
++2007-12-03	Joel Sherrill <joel.sherrill@OARcorp.com>
++
++	* Makefile.am, startup/bspstart.c: Moved most of the remaining CPU
++	Table fields to the Configuration Table. This included
++	pretasking_hook, predriver_hook, postdriver_hook, idle_task,
++	do_zero_of_workspace, extra_mpci_receive_server_stack,
++	stack_allocate_hook, and stack_free_hook. As a side-effect of this
++	effort some multiprocessing code was made conditional and some style
++	clean up occurred.
++
++2007-11-28	Joel Sherrill <joel.sherrill@OARcorp.com>
++
++	* startup/bspstart.c: Eliminate PowerPC specific elements from the CPU
++	Table. They have been replaced with variables named bsp_XXX as
++	needed.
++
++2007-04-12	Ralf Corsépius <ralf.corsepius@rtems.org>
++
++	* bsp_specs: Remove qrtems_debug.
++
 +2007-04-06	Ralf Corsépius	<ralf.corsepius@rtems.org>
 +
 +	* bsp_specs: Remove lib (Now expected to exist in GCC).
@@ -33,9 +122,14 @@ Index: rtems/c/src/lib/libbsp/powerpc/ec555/ChangeLog
 +
 +	* configure.ac: New BUG-REPORT address.
 +
-+2006-10-19	Ralf Corsépius <ralf.corsepius@rtems.org>
++2006-11-15	Joel Sherrill <joel@OARcorp.com>
 +
-+	* configure.ac: Require automake-1.10. Require autoconf-2.60.
++	* Makefile.am: Merge c_rtems_main() into boot_card(). This eliminated a
++	file and simplified initialization.
++
++2006-10-17	Ralf Corsépius <ralf.corsepius@rtems.org>
++
++	* configure.ac: Require autoconf-2.60. Require automake-1.10.
 +
 +2006-03-08	Joel Sherrill <joel@OARcorp.com>
 +
@@ -156,13 +250,13 @@ Index: rtems/c/src/lib/libbsp/powerpc/ec555/ChangeLog
 +	startup/iss555.c, startup/linkcmds, startup/start.S,
 +	wrapup/.cvsignore, wrapup/Makefile.am: New files.
 +
-Index: rtems/c/src/lib/libbsp/powerpc/ec555/Makefile.am
+Index: rtems-4.9.3/c/src/lib/libbsp/powerpc/ec555/Makefile.am
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ rtems/c/src/lib/libbsp/powerpc/ec555/Makefile.am	2007-08-14 17:51:38.000000000 +0200
-@@ -0,0 +1,65 @@
++++ rtems-4.9.3/c/src/lib/libbsp/powerpc/ec555/Makefile.am	2008-09-29 03:47:53.000000000 +0200
+@@ -0,0 +1,50 @@
 +##
-+## $Id: Makefile.am,v 1.10 2006/01/12 10:12:30 ralf Exp $
++## $Id: Makefile.am,v 1.13.2.1 2008/09/29 01:47:53 ralf Exp $
 +##
 +
 +ACLOCAL_AMFLAGS = -I ../../../../aclocal
@@ -178,8 +272,6 @@ Index: rtems/c/src/lib/libbsp/powerpc/ec555/Makefile.am
 +nodist_include_HEADERS = include/bspopts.h
 +DISTCLEANFILES = include/bspopts.h
 +
-+noinst_PROGRAMS =
-+
 +include_bspdir = $(includedir)/bsp
 +
 +include_HEADERS += include/coverhd.h
@@ -189,33 +281,20 @@ Index: rtems/c/src/lib/libbsp/powerpc/ec555/Makefile.am
 +
 +dist_project_lib_DATA += startup/linkcmds
 +
-+noinst_PROGRAMS += pclock.rel
-+pclock_rel_SOURCES = clock/p_clock.c
-+pclock_rel_CPPFLAGS = $(AM_CPPFLAGS)
-+pclock_rel_LDFLAGS = $(RTEMS_RELLDFLAGS)
-+
-+noinst_PROGRAMS += console.rel
-+console_rel_SOURCES = console/console.c
-+console_rel_CPPFLAGS = $(AM_CPPFLAGS)
-+console_rel_LDFLAGS = $(RTEMS_RELLDFLAGS)
-+
-+noinst_PROGRAMS += startup.rel
-+startup_rel_SOURCES = ../../shared/bspclean.c ../../shared/bsplibc.c \
-+    ../../shared/bsppost.c startup/bspstart.c ../../shared/bootcard.c \
-+    startup/iss555.c ../../shared/main.c ../../shared/sbrk.c \
-+    ../../shared/gnatinstallhandler.c startup/start.S
-+startup_rel_CPPFLAGS = $(AM_CPPFLAGS)
-+startup_rel_LDFLAGS = $(RTEMS_RELLDFLAGS)
-+
-+noinst_PROGRAMS += tm27supp.rel
-+tm27supp_rel_SOURCES = startup/tm27supp.c
-+tm27supp_rel_CPPFLAGS = $(AM_CPPFLAGS)
-+tm27supp_rel_LDFLAGS = $(RTEMS_RELLDFLAGS)
++pclock_SOURCES = clock/p_clock.c
++console_SOURCES = console/console.c
++startup_SOURCES = ../../shared/bspclean.c ../../shared/bsplibc.c \
++    ../../shared/bsppost.c ../../shared/bsppredriverhook.c \
++    startup/bspstart.c ../../shared/bootcard.c startup/iss555.c \
++    ../../shared/sbrk.c ../../shared/gnatinstallhandler.c startup/start.S
++tm27supp_SOURCES = startup/tm27supp.c
 +
 +noinst_LIBRARIES = libbsp.a
-+libbsp_a_SOURCES =
-+libbsp_a_LIBADD = pclock.rel console.rel startup.rel tm27supp.rel
-+libbsp_a_LIBADD += ../../../libcpu/@RTEMS_CPU@/shared/cpuIdent.rel \
++libbsp_a_SOURCES = $(pclock_SOURCES) $(console_SOURCES) $(startup_SOURCES) \
++    $(tm27supp_SOURCES)
++
++libbsp_a_LIBADD = \
++    ../../../libcpu/@RTEMS_CPU@/shared/cpuIdent.rel \
 +    ../../../libcpu/@RTEMS_CPU@/@exceptions@/rtems-cpu.rel \
 +    ../../../libcpu/@RTEMS_CPU@/mpc5xx/clock.rel \
 +    ../../../libcpu/@RTEMS_CPU@/mpc5xx/console-generic.rel \
@@ -226,10 +305,10 @@ Index: rtems/c/src/lib/libbsp/powerpc/ec555/Makefile.am
 +
 +include $(srcdir)/preinstall.am
 +include $(top_srcdir)/../../../../automake/local.am
-Index: rtems/c/src/lib/libbsp/powerpc/ec555/README
+Index: rtems-4.9.3/c/src/lib/libbsp/powerpc/ec555/README
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ rtems/c/src/lib/libbsp/powerpc/ec555/README	2007-08-14 17:51:38.000000000 +0200
++++ rtems-4.9.3/c/src/lib/libbsp/powerpc/ec555/README	2009-11-29 01:38:37.608590025 +0100
 @@ -0,0 +1,262 @@
 +#
 +#  $Id: README,v 1.1 2004/04/12 21:52:13 joel Exp $
@@ -493,28 +572,28 @@ Index: rtems/c/src/lib/libbsp/powerpc/ec555/README
 +    - The loopback, fileio, unilimited, and pppd tests fail due to memory
 +      limitations.
 +    - The paranoia program dies on a floating-point assist exception.
-Index: rtems/c/src/lib/libbsp/powerpc/ec555/bsp_specs
+Index: rtems-4.9.3/c/src/lib/libbsp/powerpc/ec555/bsp_specs
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ rtems/c/src/lib/libbsp/powerpc/ec555/bsp_specs	2007-08-14 17:51:38.000000000 +0200
++++ rtems-4.9.3/c/src/lib/libbsp/powerpc/ec555/bsp_specs	2008-12-08 06:15:50.000000000 +0100
 @@ -0,0 +1,13 @@
 +%rename endfile old_endfile
 +%rename startfile old_startfile
 +%rename link old_link
 +
 +*startfile:
-+%{!qrtems: %(old_startfile)} %{!nostdlib: %{qrtems: ecrti%O%s}}
++%{!qrtems: %(old_startfile)} \
++%{!nostdlib: %{qrtems: ecrti%O%s -u __vectors -N -u start -e start}}
 +
 +*endfile:
 +%{!qrtems: %(old_endfile)} %{qrtems: ecrtn%O%s}
 +
 +*link:
-+%{!qrtems: %(old_link)} %{qrtems: -dc -dp -u __vectors -N -u start -e start}
-+
-Index: rtems/c/src/lib/libbsp/powerpc/ec555/clock/p_clock.c
++%{!qrtems: %(old_link)} %{qrtems: -dc -dp}
+Index: rtems-4.9.3/c/src/lib/libbsp/powerpc/ec555/clock/p_clock.c
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ rtems/c/src/lib/libbsp/powerpc/ec555/clock/p_clock.c	2007-08-14 17:51:38.000000000 +0200
++++ rtems-4.9.3/c/src/lib/libbsp/powerpc/ec555/clock/p_clock.c	2009-11-29 01:38:37.612589905 +0100
 @@ -0,0 +1,69 @@
 +/*
 + *  Clock Tick interrupt conexion code.
@@ -585,14 +664,14 @@ Index: rtems/c/src/lib/libbsp/powerpc/ec555/clock/p_clock.c
 +
 +  return BSP_install_rtems_irq_handler (&clockIrqData);
 +}
-Index: rtems/c/src/lib/libbsp/powerpc/ec555/configure.ac
+Index: rtems-4.9.3/c/src/lib/libbsp/powerpc/ec555/configure.ac
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ rtems/c/src/lib/libbsp/powerpc/ec555/configure.ac	2007-08-14 17:51:38.000000000 +0200
++++ rtems-4.9.3/c/src/lib/libbsp/powerpc/ec555/configure.ac	2006-12-02 06:59:47.000000000 +0100
 @@ -0,0 +1,52 @@
 +## Process this file with autoconf to produce a configure script.
 +## 
-+## $Id: configure.ac,v 1.7.2.2 2006/12/02 06:06:51 ralf Exp $
++## $Id: configure.ac,v 1.9 2006/12/02 05:59:47 ralf Exp $
 +
 +AC_PREREQ(2.60)
 +AC_INIT([rtems-c-src-lib-libbsp-powerpc-mbx5xx],[_RTEMS_VERSION],[http://www.rtems.org/bugzilla])
@@ -642,10 +721,10 @@ Index: rtems/c/src/lib/libbsp/powerpc/ec555/configure.ac
 +RTEMS_PPC_EXCEPTIONS
 +
 +AC_OUTPUT
-Index: rtems/c/src/lib/libbsp/powerpc/ec555/console/console.c
+Index: rtems-4.9.3/c/src/lib/libbsp/powerpc/ec555/console/console.c
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ rtems/c/src/lib/libbsp/powerpc/ec555/console/console.c	2007-08-14 17:51:38.000000000 +0200
++++ rtems-4.9.3/c/src/lib/libbsp/powerpc/ec555/console/console.c	2009-11-29 01:38:37.612589905 +0100
 @@ -0,0 +1,368 @@
 +/*
 + *  console.c
@@ -1015,11 +1094,11 @@ Index: rtems/c/src/lib/libbsp/powerpc/ec555/console/console.c
 +    return RTEMS_SUCCESSFUL;
 +  #endif
 +}
-Index: rtems/c/src/lib/libbsp/powerpc/ec555/include/bsp.h
+Index: rtems-4.9.3/c/src/lib/libbsp/powerpc/ec555/include/bsp.h
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ rtems/c/src/lib/libbsp/powerpc/ec555/include/bsp.h	2007-08-14 17:51:38.000000000 +0200
-@@ -0,0 +1,114 @@
++++ rtems-4.9.3/c/src/lib/libbsp/powerpc/ec555/include/bsp.h	2007-12-11 16:46:51.000000000 +0100
+@@ -0,0 +1,112 @@
 +/*  bsp.h
 + *
 + *  This include file contains all board IO definitions.
@@ -1039,7 +1118,7 @@ Index: rtems/c/src/lib/libbsp/powerpc/ec555/include/bsp.h
 + *  found in the file LICENSE in this distribution or at
 + *  http://www.rtems.com/license/LICENSE.
 + *
-+ *  $Id: bsp.h,v 1.10 2006/03/17 10:11:37 ralf Exp $
++ *  $Id: bsp.h,v 1.11 2007/12/11 15:46:51 joel Exp $
 + */
 +
 +#ifndef _BSP_H
@@ -1099,8 +1178,6 @@ Index: rtems/c/src/lib/libbsp/powerpc/ec555/include/bsp.h
 +
 +/* miscellaneous stuff assumed to exist */
 +
-+extern rtems_configuration_table BSP_Configuration;
-+
 +/*
 + *  Device Driver Table Entries
 + */
@@ -1134,10 +1211,10 @@ Index: rtems/c/src/lib/libbsp/powerpc/ec555/include/bsp.h
 +#endif
 +
 +#endif
-Index: rtems/c/src/lib/libbsp/powerpc/ec555/include/coverhd.h
+Index: rtems-4.9.3/c/src/lib/libbsp/powerpc/ec555/include/coverhd.h
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ rtems/c/src/lib/libbsp/powerpc/ec555/include/coverhd.h	2007-08-14 17:51:38.000000000 +0200
++++ rtems-4.9.3/c/src/lib/libbsp/powerpc/ec555/include/coverhd.h	2009-11-29 01:38:37.612589905 +0100
 @@ -0,0 +1,116 @@
 +/*  coverhd.h
 + *
@@ -1255,10 +1332,10 @@ Index: rtems/c/src/lib/libbsp/powerpc/ec555/include/coverhd.h
 +#endif
 +
 +#endif
-Index: rtems/c/src/lib/libbsp/powerpc/ec555/include/tm27.h
+Index: rtems-4.9.3/c/src/lib/libbsp/powerpc/ec555/include/tm27.h
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ rtems/c/src/lib/libbsp/powerpc/ec555/include/tm27.h	2007-08-14 17:51:38.000000000 +0200
++++ rtems-4.9.3/c/src/lib/libbsp/powerpc/ec555/include/tm27.h	2009-11-29 01:38:37.616586852 +0100
 @@ -0,0 +1,54 @@
 +/*
 + *  tm27.h
@@ -1314,10 +1391,10 @@ Index: rtems/c/src/lib/libbsp/powerpc/ec555/include/tm27.h
 +}
 +
 +#endif
-Index: rtems/c/src/lib/libbsp/powerpc/ec555/irq/irq.h
+Index: rtems-4.9.3/c/src/lib/libbsp/powerpc/ec555/irq/irq.h
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ rtems/c/src/lib/libbsp/powerpc/ec555/irq/irq.h	2007-08-14 17:51:38.000000000 +0200
++++ rtems-4.9.3/c/src/lib/libbsp/powerpc/ec555/irq/irq.h	2009-11-29 01:38:37.616586852 +0100
 @@ -0,0 +1,55 @@
 +/* irq.h
 + *
@@ -1374,11 +1451,11 @@ Index: rtems/c/src/lib/libbsp/powerpc/ec555/irq/irq.h
 +#endif /* ASM */
 +
 +#endif /* LIBBSP_POWERPC_SS555_IRQ_IRQ_H */
-Index: rtems/c/src/lib/libbsp/powerpc/ec555/startup/bspstart.c
+Index: rtems-4.9.3/c/src/lib/libbsp/powerpc/ec555/startup/bspstart.c
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ rtems/c/src/lib/libbsp/powerpc/ec555/startup/bspstart.c	2007-08-14 17:51:38.000000000 +0200
-@@ -0,0 +1,201 @@
++++ rtems-4.9.3/c/src/lib/libbsp/powerpc/ec555/startup/bspstart.c	2008-07-11 12:01:37.000000000 +0200
+@@ -0,0 +1,177 @@
 +/*  bspstart.c
 + *
 + *  This set of routines starts the application.  It includes application,
@@ -1386,7 +1463,7 @@ Index: rtems/c/src/lib/libbsp/powerpc/ec555/startup/bspstart.c
 + *  The generic CPU dependent initialization has been performed
 + *  before this routine is invoked.
 + *
-+ *  COPYRIGHT (c) 1989-1998.
++ *  COPYRIGHT (c) 1989-2007.
 + *  On-Line Applications Research Corporation (OAR).
 + *
 + *  The license and distribution terms for this file may be
@@ -1401,8 +1478,10 @@ Index: rtems/c/src/lib/libbsp/powerpc/ec555/startup/bspstart.c
 + *  Modifications for MBX860:
 + *  Copyright (c) 1999, National Research Council of Canada
 + *
-+ *  $Id: bspstart.c,v 1.7 2005/04/26 23:16:21 joel Exp $
++ *  $Id: bspstart.c,v 1.17 2008/07/11 10:01:37 thomas Exp $
 + */
++
++#warning The interrupt disable mask is now stored in SPRG0, please verify that this is compatible to this BSP (see also bootcard.c).
 +
 +#include <string.h>
 +
@@ -1417,29 +1496,22 @@ Index: rtems/c/src/lib/libbsp/powerpc/ec555/startup/bspstart.c
 +#include <bsp/irq.h>
 +#include <bsp.h>
 +
-+SPR_RW(SPRG0)
 +SPR_RW(SPRG1)
 +
-+/*
-+ *  The original table from the application (in ROM) and our copy of it with
-+ *  some changes. Configuration is defined in <confdefs.h>. Make sure that
-+ *  our configuration tables are uninitialized so that they get allocated in
-+ *  the .bss section (RAM).
-+ */
-+extern rtems_configuration_table Configuration;
 +extern unsigned long intrStackPtr;
-+rtems_configuration_table  BSP_Configuration;
 +
-+rtems_cpu_table Cpu_table;
-+
-+char *rtems_progname;
++/*
++ *  Driver configuration parameters
++ */
++uint32_t   bsp_clicks_per_usec;
++uint32_t   bsp_clock_speed;	       /* Serial clocks per second */
++uint32_t   bsp_timer_least_valid;
++uint32_t   bsp_timer_average_overhead;
 +
 +/*
 + *  Use the shared implementations of the following routines.
-+ *  Look in rtems/c/src/lib/libbsp/shared/bsppost.c and
-+ *  rtems/c/src/lib/libbsp/shared/bsplibc.c.
++ *  Look in rtems/c/src/lib/libbsp/shared/bsplibc.c.
 + */
-+void bsp_postdriver_hook(void);
 +void bsp_libc_init( void *, uint32_t, int );
 +
 +void BSP_panic(char *s)
@@ -1463,11 +1535,6 @@ Index: rtems/c/src/lib/libbsp/powerpc/ec555/startup/bspstart.c
 + *  Must not use libc (to do io) from here, since drivers are not yet
 + *  initialized.
 + *
-+ *  Installed in the rtems_cpu_table defined in
-+ *  rtems/c/src/exec/score/cpu/powerpc/rtems/new-exceptions/cpu.h by main()
-+ *  below.  Called from rtems_initialize_executive() defined in
-+ *  rtems/c/src/exec/sapi/src/init.c
-+ *
 + *  Input parameters: NONE
 + *
 + *  Output parameters: NONE
@@ -1486,16 +1553,12 @@ Index: rtems/c/src/lib/libbsp/powerpc/ec555/startup/bspstart.c
 +   *  the kernel and the application can be linked and burned into ROM
 +   *  independently of each other.
 +   */
-+    uint8_t *_HeapStart =
-+      (uint8_t *)BSP_Configuration.work_space_start
-+           + BSP_Configuration.work_space_size;
-+    extern uint8_t _HeapEnd[];
++  uint8_t *_HeapStart =
++      (uint8_t *)Configuration.work_space_start
++           + rtems_configuration_get_work_space_size();
++  extern uint8_t _HeapEnd[];
 +
-+    bsp_libc_init( _HeapStart, _HeapEnd - _HeapStart, 0 );
-+
-+#ifdef RTEMS_DEBUG
-+  rtems_debug_enable( RTEMS_DEBUG_ALL_MASK );
-+#endif
++  bsp_libc_init( _HeapStart, _HeapEnd - _HeapStart, 0 );
 +}
 +
 +/*
@@ -1539,8 +1602,6 @@ Index: rtems/c/src/lib/libbsp/powerpc/ec555/startup/bspstart.c
 +   */
 +  intrStack = (((unsigned char*)&intrStackPtr) - PPC_MINIMUM_STACK_FRAME_SIZE);
 +  _write_SPRG1((unsigned int)intrStack);
-+  /* signal them that we have fixed PR288 - eventually, this should go away */
-+  _write_SPRG0(PPC_BSP_HAS_FIXED_PR288);
 +
 +  /*
 +   * Install our own set of exception vectors
@@ -1557,33 +1618,25 @@ Index: rtems/c/src/lib/libbsp/powerpc/ec555/startup/bspstart.c
 +   *  In this case, the memory is not malloc'ed.  It is just
 +   *  "pulled from the air".
 +   */
-+  BSP_Configuration.work_space_start = _WorkspaceBase;
++  Configuration.work_space_start = _WorkspaceBase;
 +
 +  /*
-+   *  initialize the CPU table for this BSP
++   *  initialize the device driver parameters
 +   */
-+  Cpu_table.pretasking_hook = bsp_pretasking_hook;  /* init libc, etc. */
-+  Cpu_table.postdriver_hook = bsp_postdriver_hook;
-+  if( Cpu_table.interrupt_stack_size < 4 * 1024 )
-+      Cpu_table.interrupt_stack_size = 4 * 1024;
-+
-+  Cpu_table.clicks_per_usec = BSP_CRYSTAL_HZ / 4 / 1000000;
-+  Cpu_table.clock_speed = BSP_CLOCK_HZ;	/* for SCI baud rate generator */
-+
-+  /*
-+   * Call this in case we use TERMIOS for console I/O
-+   */
-+  m5xx_uart_reserve_resources( &BSP_Configuration );
++  bsp_clicks_per_usec = BSP_CRYSTAL_HZ / 4 / 1000000;
++  bsp_clock_speed     = BSP_CLOCK_HZ;	/* for SCI baud rate generator */
++  bsp_timer_least_valid      = 0;
++  bsp_timer_average_overhead = 0;
 +
 +  /*
 +   * Initalize RTEMS IRQ system
 +   */
 +  BSP_rtems_irq_mng_init(0);
 +}
-Index: rtems/c/src/lib/libbsp/powerpc/ec555/startup/iss555.c
+Index: rtems-4.9.3/c/src/lib/libbsp/powerpc/ec555/startup/iss555.c
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ rtems/c/src/lib/libbsp/powerpc/ec555/startup/iss555.c	2007-08-14 17:51:38.000000000 +0200
++++ rtems-4.9.3/c/src/lib/libbsp/powerpc/ec555/startup/iss555.c	2009-11-29 01:38:37.616586852 +0100
 @@ -0,0 +1,148 @@
 +/*
 + *  iss555.c
@@ -1733,10 +1786,10 @@ Index: rtems/c/src/lib/libbsp/powerpc/ec555/startup/iss555.c
 +  msr |= MSR_IP;		/* set prefix for exception relocation */
 +  _CPU_MSR_SET(msr);
 +}
-Index: rtems/c/src/lib/libbsp/powerpc/ec555/startup/linkcmds
+Index: rtems-4.9.3/c/src/lib/libbsp/powerpc/ec555/startup/linkcmds
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ rtems/c/src/lib/libbsp/powerpc/ec555/startup/linkcmds	2007-08-14 17:51:38.000000000 +0200
++++ rtems-4.9.3/c/src/lib/libbsp/powerpc/ec555/startup/linkcmds	2008-03-04 00:07:19.000000000 +0100
 @@ -0,0 +1,319 @@
 +/*
 + * Linker command file for Intec SS555 board
@@ -1757,7 +1810,7 @@ Index: rtems/c/src/lib/libbsp/powerpc/ec555/startup/linkcmds
 + * RTEMS_DEBUG symbol is defined in the bsp_specs file whenever make(1) is
 + * invoked with VARIANT=DEBUG.
 + *
-+ *  $Id: linkcmds,v 1.3 2006/03/08 18:50:12 joel Exp $
++ *  $Id: linkcmds,v 1.4 2008/03/03 23:07:19 joel Exp $
 + */
 +
 +OUTPUT_FORMAT("elf32-powerpc", "elf32-powerpc", "elf32-powerpc")
@@ -1903,7 +1956,7 @@ Index: rtems/c/src/lib/libbsp/powerpc/ec555/startup/linkcmds
 +    PROVIDE (__SDATA_END__ = .);
 +    
 +    PROVIDE (__EXCEPT_START__ = .);
-+    *(.gcc_except_table)
++    *(.gcc_except_table*)
 +    PROVIDE (__EXCEPT_END__ = .);
 +    
 +    PROVIDE(__GOT_START__ = .);
@@ -2057,10 +2110,10 @@ Index: rtems/c/src/lib/libbsp/powerpc/ec555/startup/linkcmds
 +  .debug_varnames  0 : { *(.debug_varnames) }
 +  /* These must appear regardless of  .  */
 +}
-Index: rtems/c/src/lib/libbsp/powerpc/ec555/startup/start.S
+Index: rtems-4.9.3/c/src/lib/libbsp/powerpc/ec555/startup/start.S
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ rtems/c/src/lib/libbsp/powerpc/ec555/startup/start.S	2007-08-14 17:51:38.000000000 +0200
++++ rtems-4.9.3/c/src/lib/libbsp/powerpc/ec555/startup/start.S	2009-11-29 01:38:37.620589246 +0100
 @@ -0,0 +1,411 @@
 +/*  start.S
 + *
@@ -2473,10 +2526,10 @@ Index: rtems/c/src/lib/libbsp/powerpc/ec555/startup/start.S
 +	blr			/* return */
 +
 +.L_text_e:
-Index: rtems/c/src/lib/libbsp/powerpc/ec555/startup/tm27supp.c
+Index: rtems-4.9.3/c/src/lib/libbsp/powerpc/ec555/startup/tm27supp.c
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ rtems/c/src/lib/libbsp/powerpc/ec555/startup/tm27supp.c	2007-08-14 17:51:38.000000000 +0200
++++ rtems-4.9.3/c/src/lib/libbsp/powerpc/ec555/startup/tm27supp.c	2009-11-29 01:38:37.620589246 +0100
 @@ -0,0 +1,29 @@
 +/*
 + *  Support routines for TM27
@@ -2507,10 +2560,10 @@ Index: rtems/c/src/lib/libbsp/powerpc/ec555/startup/tm27supp.c
 +  (rtems_irq_is_enabled)tm27IsOn					
 +};
 +
-Index: rtems/c/src/lib/libbsp/powerpc/ec555/times
+Index: rtems-4.9.3/c/src/lib/libbsp/powerpc/ec555/times
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ rtems/c/src/lib/libbsp/powerpc/ec555/times	2007-08-14 17:51:38.000000000 +0200
++++ rtems-4.9.3/c/src/lib/libbsp/powerpc/ec555/times	2009-11-29 01:38:37.620589246 +0100
 @@ -0,0 +1,189 @@
 +#
 +#  Timing Test Suite Results for the Intec SS555
@@ -2701,11 +2754,11 @@ Index: rtems/c/src/lib/libbsp/powerpc/ec555/times
 +   rtems_rate_monotonic_delete: inactive                                18
 +   rtems_rate_monotonic_delete: active                                  20
 +   rtems_rate_monotonic_period: conclude periods -- caller blocks       36
-Index: rtems/make/custom/ec555.cfg
+Index: rtems-4.9.3/make/custom/ec555.cfg
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ rtems/make/custom/ec555.cfg	2007-08-14 17:51:38.000000000 +0200
-@@ -0,0 +1,41 @@
++++ rtems-4.9.3/make/custom/ec555.cfg	2009-11-29 01:43:49.127556601 +0100
+@@ -0,0 +1,38 @@
 +#
 +#  Config file for an Intec Automation SS555 MPC555-based card
 +#
@@ -2714,6 +2767,8 @@ Index: rtems/make/custom/ec555.cfg
 +#  Config file for a PowerPC MPC860-based MBX821-001 card.
 +#  Config file for a PowerPC 403 based helas403 card
 +#  Config file for MPC860 based Ethernet Comm Board
++#
++#  $Id: ss555.cfg,v 1.11 2008/03/11 20:50:58 joel Exp $
 +#
 +
 +include $(RTEMS_ROOT)/make/custom/default.cfg
@@ -2733,24 +2788,19 @@ Index: rtems/make/custom/ec555.cfg
 +# optimize flag: typically -O2
 +CFLAGS_OPTIMIZE_V = -O2 -g -fno-keep-inline-functions
 +
-+define make-exe
-+	$(LINK.c) $(AM_CFLAGS) $(AM_LDFLAGS) $(SS555_LDFLAGS) \
-+	    -o $(basename $@)_sym.exe $(LINK_OBJS) $(LINK_LIBS)
-+	$(NM) -g -n $(basename $@)_sym.exe > $(basename $@).nm
-+	cp $(basename $@)_sym.exe $(basename $@).exe 
-+	$(STRIP) $(basename $@).exe
-+	$(SIZE) $(basename $@)_sym.exe
++define bsp-post-link
++	$(default-bsp-post-link)
++	cp $(basename $@).exe $(basename $@)$(DOWNEXT) 
++	$(STRIP) $(basename $@)$(DOWNEXT)
 +endef
-+
-+# Miscellaneous additions go here
 +
 +# Override default start file
 +START_BASE=
 +
-Index: rtems/c/src/lib/libbsp/powerpc/ec555/preinstall.am
+Index: rtems-4.9.3/c/src/lib/libbsp/powerpc/ec555/preinstall.am
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ rtems/c/src/lib/libbsp/powerpc/ec555/preinstall.am	2007-08-14 17:51:38.000000000 +0200
++++ rtems-4.9.3/c/src/lib/libbsp/powerpc/ec555/preinstall.am	2009-11-29 01:38:37.620589246 +0100
 @@ -0,0 +1,58 @@
 +## Automatically generated by ampolish3 - Do not edit
 +
