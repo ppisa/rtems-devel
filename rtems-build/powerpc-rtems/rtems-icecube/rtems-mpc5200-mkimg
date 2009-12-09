@@ -1,0 +1,14 @@
+#!/bin/sh
+
+OBJCOPY_FOR_TARGET=powerpc-rtems4.9-objcopy
+OBJCOPY="$OBJCOPY_FOR_TARGET"
+
+EXE_NAME=$1
+
+START_ADDR=0x00010000
+
+${OBJCOPY} -R -S -O binary "$EXE_NAME" "$EXE_NAME.bin" || exit 1
+cat "$EXE_NAME.bin" | gzip -9 >"$EXE_NAME.gz"
+mkimage \
+  -A ppc -O rtems -T kernel -a $START_ADDR -e $START_ADDR -n "RTEMS" \
+  -d "$EXE_NAME.gz" "$EXE_NAME.img"

@@ -1,0 +1,5 @@
+mw f0000b00 ${psc_cfg}
+dhcp
+#set serverip 192.168.202.251
+tftp 1000000 appfoo.img
+bootm
