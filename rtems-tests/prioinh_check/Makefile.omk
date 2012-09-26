@@ -1,0 +1,15 @@
+default_CONFIG += CONFIG_OC_BUILD4RTEMS=y
+default_CONFIG += CONFIG_OC_GDBSTUB=n
+
+bin_PROGRAMS = prioinh_check
+
+#lib_LIBRARIES = 
+
+#include_HEADERS = 
+
+prioinh_check_SOURCES += init.c prio_inherit_test.c
+
+#appfoo_EMBEDTARFILES = rootfs
+
+#lib_LOADLIBES +=
+
