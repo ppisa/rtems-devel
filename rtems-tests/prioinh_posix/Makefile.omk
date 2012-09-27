@@ -1,0 +1,20 @@
+default_CONFIG += CONFIG_OC_BUILD4RTEMS=y
+default_CONFIG += CONFIG_OC_GDBSTUB=n
+
+bin_PROGRAMS = prioinh_posix
+
+#lib_LIBRARIES = 
+
+#include_HEADERS = 
+
+prioinh_posix_SOURCES += prio_inherit_test.c
+
+ifeq ($(strip $(OMK_RULES_TYPE)),rtems)
+prioinh_posix_SOURCES += init.c
+INCLUDES += -D COMPILE_FOR_RTEMS
+else
+lib_LOADLIBES += pthread
+endif
+
+#appfoo_EMBEDTARFILES = rootfs
+

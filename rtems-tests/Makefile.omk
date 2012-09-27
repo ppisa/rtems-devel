@@ -1,2 +1,2 @@
-SUBDIRS = prioinh_check libbar
+SUBDIRS = prioinh_check prioinh_posix libbar
 
