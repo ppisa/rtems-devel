@@ -1,4 +1,6 @@
-# ICECUBE BSP for MIDAM Shark MPC5200
+# NXP LPC17XX BSP which was tested on PiKRON's LX_CPU1 aka ROCON.
+# External SDRAM is used for RTEMS and application code and data
+# for this configuration.
 # This file should be symlinked as config.target into project
 # Makefile.rules directory
 RTEMS_MAKEFILE_PATH=/opt/rtems4.11/arm-rtems4.11/lpc17xx_ea_ram
