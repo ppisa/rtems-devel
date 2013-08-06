@@ -1,0 +1,4 @@
+# ICECUBE BSP for MIDAM Shark MPC5200
+# This file should be symlinked as config.target into project
+# Makefile.rules directory
+RTEMS_MAKEFILE_PATH=/opt/rtems4.11/arm-rtems4.11/lpc17xx_ea_ram
