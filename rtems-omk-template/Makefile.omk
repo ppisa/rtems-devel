@@ -1,2 +1,2 @@
-SUBDIRS = system_opt libbar appfoo 
+SUBDIRS = system_opt libbar appfoo appnet
 
