@@ -30,6 +30,12 @@
 #include <rtems/monitor.h>
 #include <rtems/shell.h>
 
+#define CONFIGURE_SHELL_COMMANDS_INIT
+#define CONFIGURE_SHELL_COMMANDS_ALL
+#define CONFIGURE_SHELL_MOUNT_MSDOS
+
+#include <rtems/shellconfig.h>
+
 #define BUILD_VERSION_STRING(major,minor,patch) \
         __XSTRING(major) "." __XSTRING(minor) "." __XSTRING(patch)
 
@@ -74,7 +80,7 @@ rtems_task Init(
   
   rtems_monitor_init(RTEMS_MONITOR_SUSPEND|RTEMS_MONITOR_GLOBAL);
   /*rtems_capture_cli_init (0);*/
-  
+
   printf( "Starting application " SW_VER_ID " v "
           BUILD_VERSION_STRING(SW_VER_MAJOR,SW_VER_MINOR,SW_VER_PATCH)
 	  "\n" );

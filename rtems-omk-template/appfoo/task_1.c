@@ -13,13 +13,16 @@ rtems_task Task_1(
   rtems_task_argument argument
 )
 {
+  int loops = 10;
   rtems_status_code status;
   printf("*** Starting up Task_1 ***\n");
 
-  while(1){
+  while(loops--){
     printf("Task_1 woken\n");
     status = rtems_task_wake_after( TICKS_PER_SECOND );
     check_rtems_status( status, 0, "rtems_task_wake_after" );
   }
+  printf("*** Suspend Task_1 ***\n");
+  rtems_task_suspend( RTEMS_SELF );
 }
 
