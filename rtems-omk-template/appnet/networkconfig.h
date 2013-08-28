@@ -2,6 +2,7 @@
 #define __NETWORKCONFIG_H__
 
 #include <rtems/rtems_bsdnet.h>
+#include <rtems/rtems_dhcp_failsafe.h>
 #include <bsp.h>
 
 static char ethernet_address[6] = {0x00, 0x04, 0x9F, 0x00, 0x27, 0x50 };
@@ -25,7 +26,9 @@ static struct rtems_bsdnet_ifconfig netdriver_config = {
 
 struct rtems_bsdnet_config rtems_bsdnet_config = {
 	.ifconfig = &netdriver_config,
-	.bootp = rtems_bsdnet_do_bootp,
+/*	.bootp = rtems_bsdnet_do_bootp,*/
+/*	.bootp = rtems_bsdnet_do_dhcp,*/
+	.bootp = rtems_bsdnet_do_dhcp_failsafe,
 	.network_task_priority = 0,		/* 100        */
 	.mbuf_bytecount = 256 * 1024,		/* 64 kbytes  */
 	.mbuf_cluster_bytecount = 256 * 1024,	/* 128 kbytes */
