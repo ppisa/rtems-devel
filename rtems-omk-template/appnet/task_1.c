@@ -19,7 +19,7 @@ rtems_task Task_1(
 
   while(loops--){
     printf("Task_1 woken\n");
-    status = rtems_task_wake_after( TICKS_PER_SECOND );
+    status = rtems_task_wake_after(rtems_clock_get_ticks_per_second());
     check_rtems_status( status, 0, "rtems_task_wake_after" );
   }
   printf("*** Suspend Task_1 ***\n");
