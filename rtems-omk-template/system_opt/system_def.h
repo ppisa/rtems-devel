@@ -3,7 +3,9 @@
 
 #include <inttypes.h>
 
+#ifndef VER_CODE
 #define VER_CODE(major,minor,patch) (major*0x10000+minor*0x100+patch)
+#endif
 /* Software version */
 #define SW_VER_ID	"APPFOO"
 #define SW_VER_MAJOR	0
