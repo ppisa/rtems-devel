@@ -1,8 +1,11 @@
 default_CONFIG += CONFIG_OC_BUILD4RTEMS=y
 default_CONFIG += CONFIG_OC_GDBSTUB=x
 default_CONFIG += CONFIG_OC_APP_APPNET=x
+default_CONFIG += CONFIG_OC_APP_APPNET_TELNETD=x
 
 ifeq ($(CONFIG_OC_APP_APPNET),y)
+
+LOCAL_CONFIG_H = appl_config.h
 
 bin_PROGRAMS = appnet
 
@@ -15,5 +18,9 @@ appnet_SOURCES += init.c task_1.c
 #appfoo_EMBEDTARFILES = rootfs
 
 lib_LOADLIBES += bar nfs
+
+ifeq ($(CONFIG_OC_APP_APPNET_TELNETD),y)
+lib_LOADLIBES += telnetd
+endif
 
 endif

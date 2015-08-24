@@ -24,6 +24,7 @@
 #include <system_def.h>
 #include "system.h"
 #include "app_def.h"
+#include "appl_config.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <rtems/error.h>
@@ -62,6 +63,22 @@
   #define rtems_shell_init(m_task_name,m_task_stacksize,m_task_priority,m_devname,m_forever,m_wait,m_login_check) \
           rtems_shell_init(m_task_name,m_task_stacksize,m_task_priority,m_devname,m_forever,m_wait)
 #endif
+
+#ifdef CONFIG_OC_APP_APPNET_TELNETD
+#include <rtems/telnetd.h>
+
+rtems_telnetd_config_table rtems_telnetd_config;
+
+void run_telnetd_command(char *device_name,  void *arg)
+{
+  rtems_shell_env_t shell_env;
+
+  rtems_shell_dup_current_env(&shell_env);
+  shell_env.taskname = NULL;
+  shell_env.devname = device_name;
+  rtems_shell_main_loop(&shell_env);
+}
+#endif /*CONFIG_OC_APP_APPNET_TELNETD*/
 
 void 
 bad_rtems_status(rtems_status_code status, int fail_level, const char *text)
@@ -105,7 +122,7 @@ rtems_task Init(
 	  "\n" );
 
   Task_1_name = rtems_build_name( 'T', 'S', 'K', '1' );
-    
+
   status = rtems_task_create(
      Task_1_name,
      TASK_1_PRIORITY,
@@ -128,8 +145,20 @@ rtems_task Init(
 
   //rtems_monitor_wakeup();
 
+ #ifdef CONFIG_OC_APP_APPNET_TELNETD
+  rtems_telnetd_config.command = run_telnetd_command;
+  rtems_telnetd_config.arg = NULL;
+  rtems_telnetd_config.priority = SHELL_TASK_PRIORITY;
+  rtems_telnetd_config.stack_size = RTEMS_MINIMUM_STACK_SIZE+0x1000;
+  rtems_telnetd_config.login_check = NULL;
+  rtems_telnetd_config.keep_stdio = 0;
+
+  status = rtems_telnetd_initialize();
+  check_rtems_status(status, 0, "rtems_telnetd_initialize\n");
+ #endif /*CONFIG_OC_APP_APPNET_TELNETD*/
+
   status = rtems_task_delete( RTEMS_SELF );
-  
+
   printf( "*** END OF TEST2 ***\n" );
   exit( 0 );
 }
