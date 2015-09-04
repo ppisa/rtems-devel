@@ -1,0 +1,1 @@
+file embedded into target application filesystem image

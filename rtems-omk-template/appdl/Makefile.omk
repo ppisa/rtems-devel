@@ -1,0 +1,27 @@
+default_CONFIG += CONFIG_OC_BUILD4RTEMS=y
+default_CONFIG += CONFIG_OC_GDBSTUB=x
+default_CONFIG += CONFIG_OC_APP_APPDL=x
+default_CONFIG += CONFIG_OC_APP_APPDL_NET=x
+default_CONFIG += CONFIG_OC_APP_APPDL_TELNETD=x
+
+ifeq ($(CONFIG_OC_APP_APPDL),y)
+
+LOCAL_CONFIG_H = appl_config.h
+
+bin_PROGRAMS = appdl
+
+#lib_LIBRARIES = 
+
+#include_HEADERS = 
+
+appdl_SOURCES += init.c task_1.c
+
+appdl_EMBEDTARFILES = rootfs
+
+lib_LOADLIBES += bar nfs
+
+ifeq ($(CONFIG_OC_APP_APPDL_TELNETD),y)
+lib_LOADLIBES += telnetd
+endif
+
+endif
