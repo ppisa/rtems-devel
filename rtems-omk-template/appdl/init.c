@@ -6,18 +6,11 @@
  *  clock is required for the test, it should also be set to a known
  *  value by this function.
  *
- *  Input parameters:  NONE
+ *  (C) 2015 Pavel Pisa <pisa@cmp.felk.cvut.cz>
  *
- *  Output parameters:  NONE
- *
- *  COPYRIGHT (c) 1989-1999.
+ *  Based on RTEMS example test by
  *  On-Line Applications Research Corporation (OAR).
  *
- *  The license and distribution terms for this file may be
- *  found in the file LICENSE in this distribution or at
- *  http://www.rtems.com/license/LICENSE.
- *
- *  $Id: init.c,v 1.12.4.1 2003/09/04 18:46:30 joel Exp $
  */
 
 #define CONFIGURE_INIT
@@ -27,6 +20,7 @@
 #include "appl_config.h"
 #include <stdio.h>
 #include <stdlib.h>
+#include <dlfcn.h>
 #include <rtems/error.h>
 #include <rtems/monitor.h>
 #include <rtems/shell.h>
@@ -110,6 +104,59 @@ int testcmd_forshell(int argc, char **argv)
   return 0;
 }
 
+typedef int (*call_t)(int argc, char* argv[]);
+
+int dlopen_forshell(int argc, char **argv)
+{
+  void * handle;
+  int    unresolved;
+  char * message = "loaded";
+  char   *call_file_name;
+  char   *call_symbol = NULL;
+  call_t call;
+  int    call_ret;
+
+  if (argc < 2) {
+    printf ("file to load not specified\n");
+    return 1;
+  }
+  call_file_name = argv[1];
+
+  if (argc >= 3)
+    call_symbol = argv[2];
+
+  argc -= 2;
+  argv += 2;
+
+  handle = dlopen (call_file_name, RTLD_NOW | RTLD_GLOBAL);
+  if (!handle)
+  {
+    printf("dlopen failed: %s\n", dlerror());
+    return 1;
+  }
+
+  if (dlinfo (handle, RTLD_DI_UNRESOLVED, &unresolved) < 0)
+    message = "dlinfo error checking unresolved status";
+  else if (unresolved)
+    message = "has unresolved externals";
+
+  if (call_symbol == NULL) {
+    printf ("handle: %p %s\n", handle, message);
+    return 1;
+  }
+
+  call = dlsym (handle, call_symbol);
+  if (call == NULL)
+  {
+    printf("dlsym failed: symbol %s not found\n", call_symbol);
+    return 1;
+  }
+
+  call_ret = call(argc, argv);
+
+  return call_ret;
+}
+
 rtems_task Init(
   rtems_task_argument ignored
 )
@@ -118,8 +165,8 @@ rtems_task Init(
 
   printf( "\n\nRTEMS v "
           BUILD_VERSION_STRING(__RTEMS_MAJOR__ ,__RTEMS_MINOR__ ,__RTEMS_REVISION__)
-	  "\n");
-  
+          "\n");
+
   rtems_monitor_init(RTEMS_MONITOR_SUSPEND|RTEMS_MONITOR_GLOBAL);
   /*rtems_capture_cli_init (0);*/
 
@@ -133,7 +180,7 @@ rtems_task Init(
 
   printf( "Starting application " SW_VER_ID " v "
           BUILD_VERSION_STRING(SW_VER_MAJOR,SW_VER_MINOR,SW_VER_PATCH)
-	  "\n" );
+          "\n" );
 
   status = Untar_FromMemory((unsigned char *)(&TARFILE_START), (long)&TARFILE_SIZE);
 
@@ -161,6 +208,10 @@ rtems_task Init(
                 "test command for shell",
                 testcmd_forshell);
 
+  rtems_shell_add_cmd("dlopen", "app",
+                "runtime load object and call contained function",
+                dlopen_forshell);
+
   //rtems_monitor_wakeup();
 
  #ifdef CONFIG_OC_APP_APPDL_TELNETD
@@ -177,6 +228,6 @@ rtems_task Init(
 
   status = rtems_task_delete( RTEMS_SELF );
 
-  printf( "*** END OF TEST2 ***\n" );
+  printf( "*** END OF APPDL ***\n" );
   exit( 0 );
 }

@@ -4,6 +4,8 @@ default_CONFIG += CONFIG_OC_APP_APPDL=x
 default_CONFIG += CONFIG_OC_APP_APPDL_NET=x
 default_CONFIG += CONFIG_OC_APP_APPDL_TELNETD=x
 
+SUBDIRS = examples
+
 ifeq ($(CONFIG_OC_APP_APPDL),y)
 
 LOCAL_CONFIG_H = appl_config.h
@@ -17,8 +19,10 @@ bin_PROGRAMS = appdl
 appdl_SOURCES += init.c task_1.c
 
 appdl_EMBEDTARFILES = rootfs
+appdl_EXPORTSYMBOLS = y
+#appdl_EXPORTSYMBOLS = COMPLETE
 
-lib_LOADLIBES += bar nfs
+lib_LOADLIBES += bar nfs m
 
 ifeq ($(CONFIG_OC_APP_APPDL_TELNETD),y)
 lib_LOADLIBES += telnetd
