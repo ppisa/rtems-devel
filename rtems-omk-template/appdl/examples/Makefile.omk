@@ -1,0 +1,13 @@
+default_CONFIG += CONFIG_OC_APP_DL_PRINT=x
+
+ifeq ($(CONFIG_OC_APP_DL_PRINT),y)
+
+test_PROGRAMS = appdl_print
+
+#lib_LIBRARIES = 
+
+#include_HEADERS = 
+
+appdl_print_SOURCES += appdl_print.c
+
+endif
