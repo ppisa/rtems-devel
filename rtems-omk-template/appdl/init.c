@@ -24,7 +24,14 @@
 #include <rtems/error.h>
 #include <rtems/monitor.h>
 #include <rtems/shell.h>
+
+#define USE_RTEMS_TARFS_LOAD
+
+#ifdef USE_RTEMS_TARFS_LOAD
+#include <rtems/imfs.h>
+#else /*USE_RTEMS_TARFS_LOAD*/
 #include <rtems/untar.h>
+#endif /*USE_RTEMS_TARFS_LOAD*/
 
 #ifdef CONFIG_OC_APP_APPDL_NET
 #include <rtems/rtems_bsdnet.h>
@@ -162,6 +169,9 @@ rtems_task Init(
 )
 {
   rtems_status_code status;
+ #ifdef USE_RTEMS_TARFS_LOAD
+  int res;
+ #endif /*USE_RTEMS_TARFS_LOAD*/
 
   printf( "\n\nRTEMS v "
           BUILD_VERSION_STRING(__RTEMS_MAJOR__ ,__RTEMS_MINOR__ ,__RTEMS_REVISION__)
@@ -182,9 +192,13 @@ rtems_task Init(
           BUILD_VERSION_STRING(SW_VER_MAJOR,SW_VER_MINOR,SW_VER_PATCH)
           "\n" );
 
+ #ifdef USE_RTEMS_TARFS_LOAD
+  res = rtems_tarfs_load("/", (void*)(&TARFILE_START), (long)&TARFILE_SIZE);
+  printf("rtems_tarfs_load returned %d\n", res);
+ #else /*USE_RTEMS_TARFS_LOAD*/
   status = Untar_FromMemory((unsigned char *)(&TARFILE_START), (long)&TARFILE_SIZE);
-
   printf("Untar_FromMemory returned %s\n",rtems_status_text(status));
+ #endif /*USE_RTEMS_TARFS_LOAD*/
 
   Task_1_name = rtems_build_name( 'T', 'S', 'K', '1' );
 
