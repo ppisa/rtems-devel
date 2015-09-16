@@ -1,6 +1,6 @@
 #!/bin/sh
 
-OBJCOPY_FOR_TARGET=powerpc-rtems4.9-objcopy
+OBJCOPY_FOR_TARGET=powerpc-rtems4.11-objcopy
 OBJCOPY="$OBJCOPY_FOR_TARGET"
 
 EXE_NAME=$1
