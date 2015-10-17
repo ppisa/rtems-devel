@@ -22,7 +22,11 @@ appdl_EMBEDTARFILES = rootfs
 appdl_EXPORTSYMBOLS = y
 #appdl_EXPORTSYMBOLS = COMPLETE
 
-lib_LOADLIBES += bar nfs m
+lib_LOADLIBES += bar m
+
+ifeq ($(CONFIG_OC_APP_APPDL_NET),y)
+lib_LOADLIBES += nfs
+endif
 
 ifeq ($(CONFIG_OC_APP_APPDL_TELNETD),y)
 lib_LOADLIBES += telnetd
