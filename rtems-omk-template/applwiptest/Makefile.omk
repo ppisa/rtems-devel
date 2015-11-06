@@ -1,0 +1,21 @@
+default_CONFIG += CONFIG_OC_BUILD4RTEMS=y
+default_CONFIG += CONFIG_OC_GDBSTUB=n
+default_CONFIG += CONFIG_OC_APP_APPLWIPTEST=x
+
+ifeq ($(CONFIG_OC_APP_APPLWIPTEST),y)
+
+bin_PROGRAMS = applwiptest
+
+#lib_LIBRARIES = 
+
+#include_HEADERS = 
+
+applwiptest_SOURCES += init.c task_1.c
+
+#appfoo_EMBEDTARFILES = rootfs
+
+lib_LOADLIBES += bar lwip
+
+endif
+
+
