@@ -1,1 +1,2 @@
-SUBDIRS = system_opt libbar appfoo appnet appdl
+SUBDIRS = system_opt libbar appfoo appnet appdl applwiptest
+SUBDIRS += $(wildcard lwip)
