@@ -1,0 +1,9 @@
+# Ti TMS570 HDK BSP for SDRAM located application variant
+# Flash startup code based on tms570ls3137-hdk-sdram is used
+# to setup basic peripherals and external memory interface.
+# More information about this BSP can be found at
+#   https://devel.rtems.org/wiki/TBR/BSP/Tms570
+#
+# This file should be symlinked as config.target into project
+# Makefile.rules directory
+RTEMS_MAKEFILE_PATH=/opt/rtems4.11/arm-rtems4.11/tms570ls3137_hdk_sdram
