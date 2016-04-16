@@ -1,10 +1,10 @@
-Package: binutils-arm-rtems4.12
+Package: binutils-i386-rtems4.12
 Version: 2.26-1
 Architecture: amd64
 Source: binutils-2.26
 Section: cross-dev
 Priority: extra
 Maintainer: Pavel Pisa <pisa@cmp.felk.cvut.cz>
-Description: binutils for target arm-rtems4.12
+Description: binutils for target i386-rtems4.12
  .
- binutils targetting arm-rtems4.12
+ binutils targetting i386-rtems4.12
