@@ -1,0 +1,36 @@
+From 16f2999ca37ec28c95f469beb095b0d794bab505 Mon Sep 17 00:00:00 2001
+Message-Id: <16f2999ca37ec28c95f469beb095b0d794bab505.1460800109.git.ppisa@pikron.com>
+In-Reply-To: <fa0cd7f188055c9ee2daac4f933cfa023e369dea.1460800109.git.ppisa@pikron.com>
+References: <fa0cd7f188055c9ee2daac4f933cfa023e369dea.1460800109.git.ppisa@pikron.com>
+From: ppisa <ppisa@pikron.com>
+Date: Sun, 9 Nov 2008 10:51:34 +0100
+Subject: [PATCH 3/4] rtems-m9328-pimx1-syncmclk
+To: rtems-devel@rtems.org
+
+---
+ c/src/lib/libbsp/arm/csb336/startup/bspstart.c | 2 ++
+ 1 file changed, 2 insertions(+)
+
+diff --git a/c/src/lib/libbsp/arm/csb336/startup/bspstart.c b/c/src/lib/libbsp/arm/csb336/startup/bspstart.c
+index 0a134ba..21f452b 100644
+--- a/c/src/lib/libbsp/arm/csb336/startup/bspstart.c
++++ b/c/src/lib/libbsp/arm/csb336/startup/bspstart.c
+@@ -31,6 +31,7 @@
+  */
+ static void bsp_start_default( void )
+ {
++#ifdef CONFIG_MC9328MX_ASYNCMCLK
+   int i;
+ 
+   /* Set the MCU prescaler to divide by 1 */
+@@ -46,6 +47,7 @@ static void bsp_start_default( void )
+ 
+   /* Set the CPU to asynchrous clock mode, so it uses its fastest clock */
+   mmu_set_cpu_async_mode();
++#endif /*CONFIG_MC9328MX_ASYNCMCLK*/
+ 
+   /* disable interrupts */
+   MC9328MXL_AITC_INTENABLEL = 0;
+-- 
+1.9.1
+

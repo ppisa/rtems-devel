@@ -1,0 +1,50 @@
+From fdfc36ebd12619343ec89c806b7899102c80b893 Mon Sep 17 00:00:00 2001
+Message-Id: <fdfc36ebd12619343ec89c806b7899102c80b893.1460800109.git.ppisa@pikron.com>
+In-Reply-To: <fa0cd7f188055c9ee2daac4f933cfa023e369dea.1460800109.git.ppisa@pikron.com>
+References: <fa0cd7f188055c9ee2daac4f933cfa023e369dea.1460800109.git.ppisa@pikron.com>
+From: Pavel Pisa <ppisa@pikron.com>
+Date: Thu, 8 Aug 2013 10:56:00 +0200
+Subject: [PATCH 2/4] rtems-m9328-pimx1-uart_poll-public
+To: rtems-devel@rtems.org
+
+Signed-off-by: Pavel Pisa <ppisa@pikron.com>
+---
+ c/src/lib/libbsp/arm/csb336/console/uart.c | 8 ++++----
+ 1 file changed, 4 insertions(+), 4 deletions(-)
+
+diff --git a/c/src/lib/libbsp/arm/csb336/console/uart.c b/c/src/lib/libbsp/arm/csb336/console/uart.c
+index 47914aa..841a00c 100644
+--- a/c/src/lib/libbsp/arm/csb336/console/uart.c
++++ b/c/src/lib/libbsp/arm/csb336/console/uart.c
+@@ -34,8 +34,8 @@ static int imx_uart_set_attrs(int, const struct termios *);
+ static void imx_uart_init(int minor);
+ static void imx_uart_set_baud(int, int);
+ static ssize_t imx_uart_poll_write(int, const char *, size_t);
+-static int imx_uart_poll_read_char(int minor);
+-static void imx_uart_poll_write_char(int minor, char c);
++int imx_uart_poll_read_char(int minor);
++void imx_uart_poll_write_char(int minor, char c);
+ static void _BSP_output_char(char c);
+ static int _BSP_poll_char(void);
+ 
+@@ -441,7 +441,7 @@ static void imx_uart_set_baud(int minor, int baud)
+ /*
+  * Polled, non-blocking read from UART
+  */
+-static int imx_uart_poll_read_char(int minor)
++int imx_uart_poll_read_char(int minor)
+ {
+     return imx_uart_poll_read(minor);
+ }
+@@ -449,7 +449,7 @@ static int imx_uart_poll_read_char(int minor)
+ /*
+  * Polled, blocking write from UART
+  */
+-static void  imx_uart_poll_write_char(int minor, char c)
++void  imx_uart_poll_write_char(int minor, char c)
+ {
+     imx_uart_poll_write(minor, &c, 1);
+ }
+-- 
+1.9.1
+

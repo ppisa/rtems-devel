@@ -1,7 +1,7 @@
-Package: rtems4.9-common
-Version: 4.9.3
+Package: rtems4.11-common
+Version: 4.11
 Architecture: amd64
-Source: rtems-4.9.3
+Source: rtems-4.11
 Section: cross-dev
 Priority: extra
 Maintainer: Pavel Pisa <pisa@cmp.felk.cvut.cz>

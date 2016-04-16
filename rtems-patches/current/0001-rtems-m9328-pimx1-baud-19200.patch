@@ -1,0 +1,41 @@
+From fa0cd7f188055c9ee2daac4f933cfa023e369dea Mon Sep 17 00:00:00 2001
+Message-Id: <fa0cd7f188055c9ee2daac4f933cfa023e369dea.1460800109.git.ppisa@pikron.com>
+From: ppisa <ppisa@pikron.com>
+Date: Sun, 9 Nov 2008 10:50:43 +0100
+Subject: [PATCH 1/4] rtems-m9328-pimx1-baud-19200
+To: rtems-devel@rtems.org
+
+---
+ c/src/lib/libbsp/arm/csb336/console/uart.c | 2 +-
+ cpukit/libcsupport/src/termios.c           | 2 +-
+ 2 files changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/c/src/lib/libbsp/arm/csb336/console/uart.c b/c/src/lib/libbsp/arm/csb336/console/uart.c
+index 9ac0b7a..47914aa 100644
+--- a/c/src/lib/libbsp/arm/csb336/console/uart.c
++++ b/c/src/lib/libbsp/arm/csb336/console/uart.c
+@@ -212,7 +212,7 @@ static void imx_uart_init(int minor)
+         MC9328MXL_UART_FCR_RFDIV_1 |
+         MC9328MXL_UART_FCR_RXTL(1));
+ 
+-    imx_uart_set_baud(minor, 38400);
++    imx_uart_set_baud(minor, 19200);
+ 
+ }
+ 
+diff --git a/cpukit/libcsupport/src/termios.c b/cpukit/libcsupport/src/termios.c
+index d12f9c4..90d911e 100644
+--- a/cpukit/libcsupport/src/termios.c
++++ b/cpukit/libcsupport/src/termios.c
+@@ -568,7 +568,7 @@ rtems_termios_open_tty(
+      */
+     tty->termios.c_iflag = BRKINT | ICRNL | IXON | IMAXBEL;
+     tty->termios.c_oflag = OPOST | ONLCR | XTABS;
+-    tty->termios.c_cflag = B9600 | CS8 | CREAD | CLOCAL;
++    tty->termios.c_cflag = B19200 | CS8 | CREAD | CLOCAL;
+     tty->termios.c_lflag =
+        ISIG | ICANON | IEXTEN | ECHO | ECHOK | ECHOE | ECHOCTL;
+ 
+-- 
+1.9.1
+
