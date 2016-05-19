@@ -15,9 +15,9 @@
 
 #define CONFIGURE_INIT
 #include <system_def.h>
+#include "appl_config.h"
 #include "system.h"
 #include "app_def.h"
-#include "appl_config.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <dlfcn.h>
@@ -54,7 +54,9 @@
 #define CONFIGURE_SHELL_COMMANDS_ALL
 #define CONFIGURE_SHELL_COMMANDS_ALL_NETWORKING
 #define CONFIGURE_SHELL_MOUNT_MSDOS
+#ifdef CONFIG_OC_APP_APPDL_NET
 #define CONFIGURE_SHELL_MOUNT_NFS
+#endif
 
 #include <rtems/shellconfig.h>
 
