@@ -12,7 +12,6 @@
 #include "lwip/err.h"
 #include "lwip/tcp.h"
 #include <netif/etharp.h>
-#include <lwip/tcp_impl.h>
 
 #include "lwip/tcpip.h"
 #include "arch/eth_lwip.h"
@@ -20,7 +19,6 @@
 #include "lwip/netbuf.h"
 #include "lwip/netdb.h"
 #include "lwip/netifapi.h"
-#include "lwip/pppapi.h"
 #include "lwip/sockets.h"
 #include "lwip/sys.h"
 

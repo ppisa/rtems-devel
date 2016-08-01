@@ -115,7 +115,7 @@ rtems_task Init(
                 eth_lwip_get_netif_status_cmd);
   rtems_shell_add_cmd("dhcpinfo", "app",
                 "show tms570 ethernet status",
-                eth_lwip_get_dhcp_info);                
+                eth_lwip_get_dhcp_info);
 
   //rtems_monitor_wakeup();
 
