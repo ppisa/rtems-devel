@@ -1,0 +1,17 @@
+default_CONFIG += CONFIG_OC_BUILD4RTEMS=y
+default_CONFIG += CONFIG_OC_GDBSTUB=x
+default_CONFIG += CONFIG_OC_APP_APPSMPTEST=x
+
+ifeq ($(CONFIG_OC_APP_APPSMPTEST),y)
+
+LOCAL_CONFIG_H = appl_config.h
+
+bin_PROGRAMS = appsmptest
+
+#lib_LIBRARIES = 
+
+#include_HEADERS = 
+
+appsmptest_SOURCES += init.c task_1.c
+
+endif
