@@ -106,8 +106,11 @@ rtems_task Init(
 
   printf( "\n\nRTEMS v "
           BUILD_VERSION_STRING(__RTEMS_MAJOR__ ,__RTEMS_MINOR__ ,__RTEMS_REVISION__)
-	  "\n");
-  
+          "\n");
+
+  printf("RTEMS_BSP_NETWORK_DRIVER_NAME   = %s\n", __XSTRING(RTEMS_BSP_NETWORK_DRIVER_NAME));
+  printf("RTEMS_BSP_NETWORK_DRIVER_ATTACH = %s\n", __XSTRING(RTEMS_BSP_NETWORK_DRIVER_ATTACH));
+
   rtems_monitor_init(RTEMS_MONITOR_SUSPEND|RTEMS_MONITOR_GLOBAL);
   /*rtems_capture_cli_init (0);*/
 
