@@ -13,6 +13,8 @@
 extern "C" {
 #endif
 
+#define APP_VER_ID  "applwiptest"
+
 COND_EXTERN rtems_id   Task_1_id;           /* Task 1 id */
 COND_EXTERN rtems_name Task_1_name;         /* Task 1 name */
 

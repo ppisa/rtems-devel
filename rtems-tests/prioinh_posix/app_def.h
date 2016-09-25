@@ -13,6 +13,7 @@
 extern "C" {
 #endif
 
+#define APP_VER_ID  "prioinh_posix"
 
 /* Posix style startup task */
 void *Task_1(void *argument);

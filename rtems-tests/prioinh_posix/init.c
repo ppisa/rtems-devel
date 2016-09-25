@@ -80,7 +80,7 @@ rtems_task Init(
   rtems_monitor_init(RTEMS_MONITOR_SUSPEND|RTEMS_MONITOR_GLOBAL);
   /*rtems_capture_cli_init (0);*/
   
-  printf( "Starting application prioinh_check\n" );
+  printf( "Starting application " APP_VER_ID "\n" );
 
   status = pthread_attr_init(&taskattr);
   if(status!=0) bad_status(status, 0, "pthread_attr_init 1" );

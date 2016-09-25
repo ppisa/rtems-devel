@@ -193,7 +193,7 @@ rtems_task Init(
  #endif /*CONFIG_OC_APP_APPDL_NET*/
 
 
-  printf( "Starting application " SW_VER_ID " v "
+  printf( "Starting application " APP_VER_ID " v "
           BUILD_VERSION_STRING(SW_VER_MAJOR,SW_VER_MINOR,SW_VER_PATCH)
           "\n" );
 

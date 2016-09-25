@@ -76,7 +76,7 @@ rtems_task Init(
   rtems_monitor_init(RTEMS_MONITOR_SUSPEND|RTEMS_MONITOR_GLOBAL);
   /*rtems_capture_cli_init (0);*/
   
-  printf( "Starting application prioinh_check\n" );
+  printf( "Starting application " APP_VER_ID "\n" );
 
   Task_1_name = rtems_build_name( 'T', 'S', 'K', '1' );
     
