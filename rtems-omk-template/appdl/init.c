@@ -24,6 +24,7 @@
 #include <rtems/error.h>
 #include <rtems/monitor.h>
 #include <rtems/shell.h>
+#include <rtems/rtl/dlfcn-shell.h>
 
 #define USE_RTEMS_TARFS_LOAD
 
@@ -115,7 +116,9 @@ int testcmd_forshell(int argc, char **argv)
 
 typedef int (*call_t)(int argc, char* argv[]);
 
-int dlopen_forshell(int argc, char **argv)
+volatile int continue_execution;
+
+int dlrun_forshell(int argc, char **argv)
 {
   void * handle;
   int    unresolved;
@@ -224,9 +227,25 @@ rtems_task Init(
                 "test command for shell",
                 testcmd_forshell);
 
-  rtems_shell_add_cmd("dlopen", "app",
-                "runtime load object and call contained function",
-                dlopen_forshell);
+  rtems_shell_add_cmd("dlrun", "rtl",
+                "runtime load object and run specified function",
+                dlrun_forshell);
+
+  rtems_shell_add_cmd("dlopen", "rtl",
+                "runtime load object",
+                shell_dlopen);
+
+  rtems_shell_add_cmd("dlclose", "rtl",
+                "close reference to loaded object",
+                shell_dlclose);
+
+  rtems_shell_add_cmd("dlsym", "rtl",
+                "obtain reference to symbol in loaded object",
+                shell_dlsym);
+
+  rtems_shell_add_cmd("dlcall", "rtl",
+                "call function in loaded object",
+                shell_dlcall);
 
   //rtems_monitor_wakeup();
 
