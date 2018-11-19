@@ -46,36 +46,31 @@
   __RTEMS_MINOR__, \
   __RTEMS_REVISION__ )
 
-#if RTEMS_VER_CODE < VER_CODE( 4, 7, 99 )
+#if RTEMS_VER_CODE < VER_CODE(4,7,99)
   #define rtems_shell_add_cmd shell_add_cmd
-  #define rtems_shell_init( m_task_name, \
-                            m_task_stacksize, \
-                            m_task_priority, \
-                            m_devname, \
-                            m_forever, \
-                            m_wait, \
-                            m_login_check ) \
-  shell_init( m_task_name, \
-  m_task_stacksize, \
-  m_task_priority, \
-  m_devname, \
-  B19200 | CS8, \
-  m_forever )
-#elif RTEMS_VER_CODE < VER_CODE( 4, 9, 99 )
-  #define rtems_shell_init( m_task_name, \
-                            m_task_stacksize, \
-                            m_task_priority, \
-                            m_devname, \
-                            m_forever, \
-                            m_wait, \
-                            m_login_check ) \
-  rtems_shell_init( m_task_name, \
-  m_task_stacksize, \
-  m_task_priority, \
-  m_devname, \
-  m_forever, \
-  m_wait )
+  #define rtems_shell_init(m_task_name,m_task_stacksize,m_task_priority,m_devname,m_forever,m_wait,m_login_check) \
+                shell_init(m_task_name,m_task_stacksize,m_task_priority,m_devname,B19200 | CS8,m_forever)
+#elif RTEMS_VER_CODE < VER_CODE(4,9,99)
+  #define rtems_shell_init(m_task_name,m_task_stacksize,m_task_priority,m_devname,m_forever,m_wait,m_login_check) \
+          rtems_shell_init(m_task_name,m_task_stacksize,m_task_priority,m_devname,m_forever,m_wait)
 #endif
+
+#ifdef CONFIG_OC_APP_APPLWIPTEST_TELNETD
+#include <rtems/telnetd.h>
+
+rtems_telnetd_config_table rtems_telnetd_config;
+
+void run_telnetd_command(char *device_name,  void *arg)
+{
+  rtems_shell_env_t shell_env;
+
+  rtems_shell_dup_current_env(&shell_env);
+  shell_env.taskname = NULL;
+  shell_env.devname = device_name;
+  rtems_shell_main_loop(&shell_env);
+}
+#endif /*CONFIG_OC_APP_APPLWIPTEST_TELNETD*/
+
 
 void bad_rtems_status(
   rtems_status_code status,
@@ -157,6 +152,17 @@ rtems_task Init( rtems_task_argument ignored )
   status = rtems_task_start( Task_2_id, Task_2, 0 );
   check_rtems_status( status, 0, "rtems_task_start of Task_2\n" );
 
+ #ifdef CONFIG_OC_APP_APPNET_TELNETD
+  rtems_telnetd_config.command = run_telnetd_command;
+  rtems_telnetd_config.arg = NULL;
+  rtems_telnetd_config.priority = SHELL_TASK_PRIORITY;
+  rtems_telnetd_config.stack_size = RTEMS_MINIMUM_STACK_SIZE+0x1000;
+  rtems_telnetd_config.login_check = NULL;
+  rtems_telnetd_config.keep_stdio = 0;
+
+  status = rtems_telnetd_initialize();
+  check_rtems_status(status, 0, "rtems_telnetd_initialize\n");
+ #endif /*CONFIG_OC_APP_APPNET_TELNETD*/
  #endif /*CONFIG_OC_APP_APPLWIPTEST_RTEMS_IO*/
 
   rtems_shell_init( "SHLL", RTEMS_MINIMUM_STACK_SIZE + 0x1000,
