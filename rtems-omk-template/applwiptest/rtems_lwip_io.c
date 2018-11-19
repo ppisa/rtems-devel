@@ -346,7 +346,10 @@ int accept(
   rtems_lwip_semaphore_obtain();
 
   if ( ( lwipfd = rtems_lwip_sysfd_to_lwipfd( s ) ) >= 0 ) {
+
+    rtems_lwip_semaphore_release();
     lwipfd = lwip_accept( lwipfd, lwipname, &lwipnamelen );
+    rtems_lwip_semaphore_obtain();
   }
 
   rtems_lwip_semaphore_release();
@@ -389,7 +392,9 @@ int accept(
   ret = rtems_lwip_make_sysfd_from_lwipfd( lwipfd );
 
   if ( ret < 0 ) {
+    rtems_lwip_semaphore_release();
     lwip_close( lwipfd );
+    rtems_lwip_semaphore_obtain();
   }
 
   rtems_lwip_semaphore_release();
@@ -414,7 +419,9 @@ int shutdown(
   rtems_lwip_semaphore_obtain();
 
   if ( ( lwipfd = rtems_lwip_sysfd_to_lwipfd( s ) ) >= 0 ) {
+    rtems_lwip_semaphore_release();
     ret = lwip_shutdown( lwipfd, how );
+    rtems_lwip_semaphore_obtain();
   }
 
   rtems_lwip_semaphore_release();
@@ -435,7 +442,9 @@ ssize_t recv(
   rtems_lwip_semaphore_obtain();
 
   if ( ( lwipfd = rtems_lwip_sysfd_to_lwipfd( s ) ) >= 0 ) {
+    rtems_lwip_semaphore_release();
     ret = lwip_recv( lwipfd, buf, len, flags );
+    rtems_lwip_semaphore_obtain();
   }
 
   rtems_lwip_semaphore_release();
@@ -456,7 +465,9 @@ ssize_t send(
   rtems_lwip_semaphore_obtain();
 
   if ( ( lwipfd = rtems_lwip_sysfd_to_lwipfd( s ) ) >= 0 ) {
+    rtems_lwip_semaphore_release();
     ret = lwip_send( lwipfd, buf, len, flags );
+    rtems_lwip_semaphore_obtain();
   }
 
   rtems_lwip_semaphore_release();
@@ -489,7 +500,9 @@ ssize_t recvfrom(
   rtems_lwip_semaphore_obtain();
 
   if ( ( lwipfd = rtems_lwip_sysfd_to_lwipfd( s ) ) >= 0 ) {
+    rtems_lwip_semaphore_release();
     lwipfd = lwip_recvfrom( lwipfd, buf, len, flags, lwipname, &lwipnamelen );
+    rtems_lwip_semaphore_obtain();
   }
 
   rtems_lwip_semaphore_release();
@@ -601,7 +614,9 @@ ssize_t sendto(
   rtems_lwip_semaphore_obtain();
 
   if ( ( lwipfd = rtems_lwip_sysfd_to_lwipfd( s ) ) >= 0 ) {
+    rtems_lwip_semaphore_release();
     ret = lwip_sendto( lwipfd, buf, len, flags, lwipname, lwipnamelen );
+    rtems_lwip_semaphore_obtain();
   }
 
   rtems_lwip_semaphore_release();
@@ -821,6 +836,8 @@ ssize_t recvmsg(
   return ( ret );
 }
 
+#endif
+
 int setsockopt(
   int         s,
   int         level,
@@ -829,6 +846,8 @@ int setsockopt(
   socklen_t   len
 )
 {
+
+#if 0
   int          lwipfd;
   struct mbuf *m = NULL;
   int          error;
@@ -869,9 +888,11 @@ int setsockopt(
   }
 
   rtems_lwip_semaphore_release();
-
+#endif
   return 0;
 }
+
+#if 0
 
 int getsockopt(
   int        s,
@@ -1054,7 +1075,9 @@ static int rtems_lwip_close( rtems_libio_t *iop )
   if ( lwipfd < 0 ) {
     ret = -1;
   } else {
+    rtems_lwip_semaphore_release();
     ret = lwip_close( lwipfd );
+    rtems_lwip_semaphore_obtain();
   }
 
   rtems_lwip_semaphore_release();
@@ -1077,7 +1100,9 @@ static ssize_t rtems_lwip_read(
   if ( lwipfd < 0 ) {
     ret = -1;
   } else {
+    rtems_lwip_semaphore_release();
     ret = lwip_read( lwipfd, buffer, count );
+    rtems_lwip_semaphore_obtain();
   }
 
   rtems_lwip_semaphore_release();
@@ -1100,7 +1125,9 @@ static ssize_t rtems_lwip_write(
   if ( lwipfd < 0 ) {
     ret = -1;
   } else {
+    rtems_lwip_semaphore_release();
     ret = lwip_write( lwipfd, buffer, count );
+    rtems_lwip_semaphore_obtain();
   }
 
   rtems_lwip_semaphore_release();
