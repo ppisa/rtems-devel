@@ -31,6 +31,8 @@
 #include <rtems/shell.h>
 #include "arch/eth_lwip.h"
 
+#include "appl_config.h"
+
 #define CONFIGURE_SHELL_COMMANDS_INIT
 #define CONFIGURE_SHELL_COMMANDS_ALL
 #define CONFIGURE_SHELL_MOUNT_MSDOS
@@ -103,6 +105,25 @@ rtems_task Init(
 
   status = rtems_task_start( Task_1_id, Task_1, 0 );
   check_rtems_status(status, 0, "rtems_task_start of Task_1\n");
+
+ #ifdef CONFIG_OC_APP_APPLWIPTEST_RTEMS_IO
+
+  Task_2_name = rtems_build_name( 'T', 'S', 'K', '2' );
+
+  status = rtems_task_create(
+     Task_2_name,
+     TASK_2_PRIORITY,
+     RTEMS_MINIMUM_STACK_SIZE+0x10000,
+     RTEMS_DEFAULT_MODES /*& ~(RTEMS_TIMESLICE_MASK) | RTEMS_TIMESLICE*/,
+     RTEMS_DEFAULT_ATTRIBUTES,
+     &Task_2_id
+  );
+  check_rtems_status(status, 0, "rtems_task_create of Task_2");
+
+  status = rtems_task_start( Task_2_id, Task_2, 0 );
+  check_rtems_status(status, 0, "rtems_task_start of Task_2\n");
+
+ #endif /*CONFIG_OC_APP_APPLWIPTEST_RTEMS_IO*/
 
   rtems_shell_init("SHLL",RTEMS_MINIMUM_STACK_SIZE+0x1000,
               SHELL_TASK_PRIORITY,"/dev/console",1,0, NULL);

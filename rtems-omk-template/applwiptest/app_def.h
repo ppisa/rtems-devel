@@ -22,6 +22,13 @@ rtems_task Task_1(
   rtems_task_argument argument
 );
 
+COND_EXTERN rtems_id   Task_2_id;           /* Task 2 id */
+COND_EXTERN rtems_name Task_2_name;         /* Task 2 name */
+
+rtems_task Task_2(
+  rtems_task_argument argument
+);
+
 void bad_rtems_status(rtems_status_code status, int fail_level, const char *text);
 
 static inline
@@ -32,6 +39,7 @@ void check_rtems_status(rtems_status_code status, int fail_level, const char *te
 }
 
 #define TASK_1_PRIORITY     30
+#define TASK_2_PRIORITY     30
 #define SHELL_TASK_PRIORITY 50
 
 #ifdef __cplusplus

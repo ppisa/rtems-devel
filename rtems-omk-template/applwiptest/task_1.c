@@ -6,6 +6,7 @@
 #include <rtems/untar.h>
 #include <rtems/error.h>
 #include <rtems/mw_uid.h>
+#include <rtems/endian.h>
 #include <errno.h>
 
 #include <lwip/init.h>
@@ -101,6 +102,7 @@ rtems_task Task_1(
   while(loops--){
     eth_lwip_get_dhcp_info();
     status = rtems_task_wake_after(rtems_clock_get_ticks_per_second()*5);
+    (void) status;
   }
   printf("*** Start Echo server ***\n");
   lwip_echo_server();

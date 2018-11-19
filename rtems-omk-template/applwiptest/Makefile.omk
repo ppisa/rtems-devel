@@ -1,9 +1,12 @@
 default_CONFIG += CONFIG_OC_BUILD4RTEMS=y
 default_CONFIG += CONFIG_OC_GDBSTUB=n
 default_CONFIG += CONFIG_OC_APP_APPLWIPTEST=x
+default_CONFIG += CONFIG_OC_APP_APPLWIPTEST_RTEMS_IO=x
 default_CONFIG += CONFIG_LWIP_OS_PORT=rtems
 
 ifeq ($(CONFIG_OC_APP_APPLWIPTEST),y)
+
+LOCAL_CONFIG_H = appl_config.h
 
 bin_PROGRAMS = applwiptest
 
@@ -12,6 +15,11 @@ bin_PROGRAMS = applwiptest
 #include_HEADERS = 
 
 applwiptest_SOURCES += init.c task_1.c
+
+ifeq ($(CONFIG_OC_APP_APPLWIPTEST_RTEMS_IO),y)
+applwiptest_SOURCES += rtems_lwip_sysdefs.c rtems_lwip_io.c
+applwiptest_SOURCES += task_2.c
+endif
 
 #appfoo_EMBEDTARFILES = rootfs
 
