@@ -220,15 +220,15 @@ int bind(
     so_in6.sin6_len = sizeof( so_in6 );
     so_in6.sin6_family = PF_INET6;
     so_in6.sin6_port = rtems_lwip_sysdefs_sockaddr_in6_get_sin6_port( name );
-    memcpy( so_in6.sin6_addr,
-      rtems_lwip_sysdefs_sockaddr_in6_get_sin6_addr_ptr( name ),
+    memcpy( &so_in6.sin6_addr,
+      rtems_lwip_sysdefs_sockaddr_in6_get_sin6_addr_ptr_const( name ),
       sizeof( so_in6.sin6_addr ) );
     so_in6.sin6_flowinfo = rtems_lwip_sysdefs_sockaddr_in6_get_sin6_flowinfo(
       name );
     so_in6.sin6_scope_id = rtems_lwip_sysdefs_sockaddr_in6_get_sin6_scope_id(
       name );
     lwipname = (struct sockaddr *) &so_in6;
-    lwipnamelen = so_in6.sin_len;
+    lwipnamelen = so_in6.sin6_len;
  #endif
   } else {
     errno = EINVAL;
@@ -281,15 +281,15 @@ int connect(
     so_in6.sin6_len = sizeof( so_in6 );
     so_in6.sin6_family = AF_INET6;
     so_in6.sin6_port = rtems_lwip_sysdefs_sockaddr_in6_get_sin6_port( name );
-    memcpy( so_in6.sin6_addr,
-      rtems_lwip_sysdefs_sockaddr_in6_get_sin6_addr_ptr( name ),
+    memcpy( &so_in6.sin6_addr,
+      rtems_lwip_sysdefs_sockaddr_in6_get_sin6_addr_ptr_const( name ),
       sizeof( so_in6.sin6_addr ) );
     so_in6.sin6_flowinfo = rtems_lwip_sysdefs_sockaddr_in6_get_sin6_flowinfo(
       name );
     so_in6.sin6_scope_id = rtems_lwip_sysdefs_sockaddr_in6_get_sin6_scope_id(
       name );
     lwipname = (struct sockaddr *) &so_in6;
-    lwipnamelen = so_in6.sin_len;
+    lwipnamelen = so_in6.sin6_len;
  #endif
   } else {
     errno = EINVAL;
@@ -372,9 +372,9 @@ int accept(
     rtems_lwip_sysdefs_sockaddr_set_family( name,
       rtems_lwip_sysdefs_AF_INET6 );
 
-    rtems_lwip_sysdefs_sockaddr_in6_set_set_port( name, so_in6.sin6_port );
+    rtems_lwip_sysdefs_sockaddr_in6_set_sin6_port( name, so_in6.sin6_port );
     memcpy( rtems_lwip_sysdefs_sockaddr_in6_get_sin6_addr_ptr( name ),
-      so_in6.sin6_addr,
+      &so_in6.sin6_addr,
       sizeof( so_in6.sin6_addr ) );
     rtems_lwip_sysdefs_sockaddr_in6_set_sin6_flowinfo( name,
       so_in6.sin6_flowinfo );
@@ -525,9 +525,9 @@ ssize_t recvfrom(
     rtems_lwip_sysdefs_sockaddr_set_family( name,
       rtems_lwip_sysdefs_AF_INET6 );
 
-    rtems_lwip_sysdefs_sockaddr_in6_set_set_port( name, so_in6.sin6_port );
+    rtems_lwip_sysdefs_sockaddr_in6_set_sin6_port( name, so_in6.sin6_port );
     memcpy( rtems_lwip_sysdefs_sockaddr_in6_get_sin6_addr_ptr( name ),
-      so_in6.sin6_addr,
+      &so_in6.sin6_addr,
       sizeof( so_in6.sin6_addr ) );
     rtems_lwip_sysdefs_sockaddr_in6_set_sin6_flowinfo( name,
       so_in6.sin6_flowinfo );
@@ -595,15 +595,15 @@ ssize_t sendto(
     so_in6.sin6_len = sizeof( so_in6 );
     so_in6.sin6_family = AF_INET6;
     so_in6.sin6_port = rtems_lwip_sysdefs_sockaddr_in6_get_sin6_port( name );
-    memcpy( so_in6.sin6_addr,
-      rtems_lwip_sysdefs_sockaddr_in6_get_sin6_addr_ptr( name ),
+    memcpy( &so_in6.sin6_addr,
+      rtems_lwip_sysdefs_sockaddr_in6_get_sin6_addr_ptr_const( name ),
       sizeof( so_in6.sin6_addr ) );
     so_in6.sin6_flowinfo = rtems_lwip_sysdefs_sockaddr_in6_get_sin6_flowinfo(
       name );
     so_in6.sin6_scope_id = rtems_lwip_sysdefs_sockaddr_in6_get_sin6_scope_id(
       name );
     lwipname = (struct sockaddr *) &so_in6;
-    lwipnamelen = so_in6.sin_len;
+    lwipnamelen = so_in6.sin6_len;
  #endif
   } else {
     errno = EINVAL;

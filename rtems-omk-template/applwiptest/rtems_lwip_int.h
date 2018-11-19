@@ -25,8 +25,10 @@ int rtems_lwip_sysdefs_sockaddr_get_family( const void *sockaddr );
 uint16_t rtems_lwip_sysdefs_sockaddr_in_get_sin_port( const void *sockaddr );
 uint32_t rtems_lwip_sysdefs_sockaddr_in_get_sin_addr( const void *sockaddr );
 uint16_t rtems_lwip_sysdefs_sockaddr_in6_get_sin6_port( const void *sockaddr );
-const uint8_t *rtems_lwip_sysdefs_sockaddr_in6_get_sin6_addr_ptr(
+const uint8_t *rtems_lwip_sysdefs_sockaddr_in6_get_sin6_addr_ptr_const(
   const void *sockaddr );
+uint8_t *rtems_lwip_sysdefs_sockaddr_in6_get_sin6_addr_ptr(
+  void *sockaddr );
 uint32_t rtems_lwip_sysdefs_sockaddr_in6_get_sin6_flowinfo(
   const void *sockaddr );
 uint32_t rtems_lwip_sysdefs_sockaddr_in6_get_sin6_scope_id(

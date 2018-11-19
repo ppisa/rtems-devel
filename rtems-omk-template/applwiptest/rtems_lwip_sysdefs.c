@@ -56,10 +56,18 @@ uint16_t rtems_lwip_sysdefs_sockaddr_in6_get_sin6_port( const void *sockaddr )
   return so->sin6_port;
 }
 
-const uint8_t *rtems_lwip_sysdefs_sockaddr_in6_get_sin6_addr_ptr(
+const uint8_t *rtems_lwip_sysdefs_sockaddr_in6_get_sin6_addr_ptr_const(
   const void *sockaddr )
 {
   const struct sockaddr_in6 *so = sockaddr;
+
+  return (uint8_t *) &so->sin6_addr;
+}
+
+uint8_t *rtems_lwip_sysdefs_sockaddr_in6_get_sin6_addr_ptr(
+  void *sockaddr )
+{
+  struct sockaddr_in6 *so = sockaddr;
 
   return (uint8_t *) &so->sin6_addr;
 }
