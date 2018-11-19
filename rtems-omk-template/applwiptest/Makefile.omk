@@ -20,6 +20,10 @@ applwiptest_SOURCES += init.c task_1.c
 ifeq ($(CONFIG_OC_APP_APPLWIPTEST_RTEMS_IO),y)
 applwiptest_SOURCES += rtems_lwip_sysdefs.c rtems_lwip_io.c
 applwiptest_SOURCES += task_2.c
+
+ifeq ($(CONFIG_OC_APP_APPLWIPTEST_TELNETD),y)
+lib_LOADLIBES += telnetd
+endif
 endif
 
 #appfoo_EMBEDTARFILES = rootfs

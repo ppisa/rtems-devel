@@ -8,6 +8,7 @@
 #include <rtems/mw_uid.h>
 #include <rtems/endian.h>
 #include <errno.h>
+#include <string.h>
 
 #include <lwip/init.h>
 #include "lwip/err.h"
@@ -57,7 +58,7 @@ void lwip_echo_server( void )
   sLocalAddr.sin_family = AF_INET;
   sLocalAddr.sin_len = sizeof( sLocalAddr );
   sLocalAddr.sin_addr.s_addr = htonl( INADDR_ANY );
-  sLocalAddr.sin_port = 23;
+  sLocalAddr.sin_port = 2023;
 
   if ( lwip_bind( lSocket, (struct sockaddr *) &sLocalAddr,
          sizeof( sLocalAddr ) ) < 0 ) {

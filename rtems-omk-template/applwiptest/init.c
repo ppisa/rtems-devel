@@ -71,7 +71,6 @@ void run_telnetd_command(char *device_name,  void *arg)
 }
 #endif /*CONFIG_OC_APP_APPLWIPTEST_TELNETD*/
 
-
 void bad_rtems_status(
   rtems_status_code status,
   int               fail_level,
@@ -152,17 +151,18 @@ rtems_task Init( rtems_task_argument ignored )
   status = rtems_task_start( Task_2_id, Task_2, 0 );
   check_rtems_status( status, 0, "rtems_task_start of Task_2\n" );
 
- #ifdef CONFIG_OC_APP_APPNET_TELNETD
+ #ifdef CONFIG_OC_APP_APPLWIPTEST_TELNETD
   rtems_telnetd_config.command = run_telnetd_command;
   rtems_telnetd_config.arg = NULL;
   rtems_telnetd_config.priority = SHELL_TASK_PRIORITY;
   rtems_telnetd_config.stack_size = RTEMS_MINIMUM_STACK_SIZE+0x1000;
   rtems_telnetd_config.login_check = NULL;
   rtems_telnetd_config.keep_stdio = 0;
+  rtems_telnetd_config.client_maximum = 2;
 
   status = rtems_telnetd_initialize();
   check_rtems_status(status, 0, "rtems_telnetd_initialize\n");
- #endif /*CONFIG_OC_APP_APPNET_TELNETD*/
+ #endif /*CONFIG_OC_APP_APPLWIPTEST_TELNETD*/
  #endif /*CONFIG_OC_APP_APPLWIPTEST_RTEMS_IO*/
 
   rtems_shell_init( "SHLL", RTEMS_MINIMUM_STACK_SIZE + 0x1000,

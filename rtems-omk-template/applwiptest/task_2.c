@@ -25,12 +25,11 @@ rtems_task Task_2( rtems_task_argument argument )
   struct sockaddr_in serv_addr;
   rtems_status_code  status;
   char               buffer[ BUFFER_SIZE ];
+  int                loops = 3;
 
   printf( "*** Starting up Task_2 ***\n" );
 
   status = rtems_task_wake_after( rtems_clock_get_ticks_per_second() * 15 );
-
-  int loops = 3;
 
   so = socket( PF_INET, SOCK_STREAM, 0 );
 
