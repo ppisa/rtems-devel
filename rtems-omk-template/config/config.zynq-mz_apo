@@ -1,0 +1,18 @@
+# Ti TMS570 HDK BSP for SDRAM located application variant
+# Flash startup code based on tms570ls3137-hdk-sdram is used
+# to setup basic peripherals and external memory interface.
+# More information about this BSP can be found at
+#   https://devel.rtems.org/wiki/TBR/BSP/Tms570
+#
+# This file should be symlinked as config.target into project
+# Makefile.rules directory
+RTEMS_MAKEFILE_PATH=/opt/rtems/6/arm-rtems6/xilinx_zynq_zedboard
+OUTPUT_FORMATS = img bin bin.gz
+
+START_ADDR=0x00104000
+
+%.bin.gz: %.bin
+	cat $< | gzip -9 > $@
+
+%.img: %.bin.gz
+	mkimage -A arm -O rtems -T kernel -a $(START_ADDR) -e $(START_ADDR) -n "RTEMS" -d $< $@
