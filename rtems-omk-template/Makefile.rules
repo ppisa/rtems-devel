@@ -1,10 +1,11 @@
 #  Makefile.rules - OCERA make framework common project rules -*- makefile-gmake -*- #OMK:base.omk
 #
 #  (C) Copyright 2003, 2006, 2007, 2008, 2009  by Pavel Pisa - OCERA team member
+#  (C) Copyright 2009, 2010, 2011, 2013, 2015, 2016, 2017, 2019 by Pavel Pisa - PiKRON.com
 #  (C) Copyright 2006, 2007, 2008, 2009, 2010, 2011, 2013, 2015 by Michal Sojka - Czech Technical University, FEE, DCE
 #
 #  Homepage: http://rtime.felk.cvut.cz/omk/
-#  Version:  0.2-177-g8b0dfa8
+#  Version:  0.2-196-g89918a2
 #
 # The OMK build system is distributed under the GNU General Public
 # License.  See file COPYING for details.
@@ -289,7 +290,7 @@ $(pass):
 $(pass)-submakes:
 	@true			# Do not emit "nothing to be done" messages
 
-ifneq ($(4)$($(pass)_HOOKS),)
+ifneq ($(4)$($(pass)_HOOKS)$($(pass)_REQUIRED),)
 $(pass)-submakes: $(pass)-this-dir
 $(pass)-this-dir: $(foreach subdir,$(SUBDIRS),$(pass)-$(subdir)-subdir)
 	+@echo "make[omk]: $(pass) in $(RELATIVE_DIR)"
@@ -582,7 +583,18 @@ $(2)/$(1): $$($(1)_OBJS)
 # FIXME: Why the map file was commented out?
 endef
 
+# Rules for other output formats (can be specified by OUTPUT_FORMATS)
+%.bin: %
+	@$(QUIET_CMD_ECHO) "  OBJCOPY $@"
+	$(Q) $(OBJCOPY)  --output-target=binary -S $< $@
 
+%.hex: %
+	@$(QUIET_CMD_ECHO) "  OBJCOPY $@"
+	$(Q) $(OBJCOPY)  --output-target=ihex -S $< $@
+
+%.srec: %
+	@$(QUIET_CMD_ECHO) "  OBJCOPY $@"
+	$(Q) $(OBJCOPY)  --output-target=srec -S $< $@
 
 # Syntax: $(call LIBRARY_template,<library-name>)
 define LIBRARY_template
@@ -644,7 +656,8 @@ endef
 
 library-pass-local: $(lib_LIBRARIES:%=$(USER_LIB_DIR)/lib%.a) $(shared_LIBRARIES:%=$(USER_LIB_DIR)/lib%.so)
 
-binary-pass-local: $(bin_PROGRAMS:%=$(USER_BIN_DIR)/%) $(utils_PROGRAMS:%=$(USER_UTILS_DIR)/%) $(test_PROGRAMS:%=$(USER_TESTS_DIR)/%)
+binary-pass-local: $(bin_PROGRAMS:%=$(USER_BIN_DIR)/%) $(utils_PROGRAMS:%=$(USER_UTILS_DIR)/%) $(test_PROGRAMS:%=$(USER_TESTS_DIR)/%) \
+                   $(foreach of,$(OUTPUT_FORMATS),$(bin_PROGRAMS:%=$(USER_BIN_DIR)/%.$(of)) $(test_PROGRAMS:%=$(USER_TESTS_DIR)/%.$(of)))
 
 GEN_HEADERS+=$(filter %.h,$(USER_IDLS:%.idl=%.h))
 
