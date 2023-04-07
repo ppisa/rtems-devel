@@ -5,7 +5,7 @@
 #  (C) Copyright 2006, 2007, 2008, 2009, 2010, 2011, 2013, 2015 by Michal Sojka - Czech Technical University, FEE, DCE
 #
 #  Homepage: http://rtime.felk.cvut.cz/omk/
-#  Version:  0.2-196-g89918a2
+#  Version:  0.2-210-g681b7ff
 #
 # The OMK build system is distributed under the GNU General Public
 # License.  See file COPYING for details.
@@ -378,6 +378,12 @@ include-pass-local-$(2): $$($(2)_GEN_HEADERS) $$(foreach f,$$(renamed_$(2)_GEN_H
 	@$$(if $$($(2)_HEADERS)$$($(2)_GEN_HEADERS)$$(nobase_$(2)_HEADERS)$$(renamed_$(2)_HEADERS)$$(renamed_$(2)_GEN_HEADERS),,true)
 endef
                                                                                  #OMK:rtems.omk@Makefile.rules.rtems
+# Output variables:
+# OBJ_EXT - extension of object files
+# LIB_EXT - extension of library files
+# LIB_PREF - prefix for library files
+# ASM_EXT - extension of assembler sources
+
 include $(RTEMS_MAKEFILE_PATH)/Makefile.inc
 include $(RTEMS_CUSTOM)
 include $(CONFIG.CC)
@@ -396,7 +402,6 @@ USER_BUILD_DIR   := $(MAKERULES_DIR)/$(BUILD_DIR_NAME)/user
 
 LOCAL_BUILD_DIR  = $(USER_OBJS_DIR)
 
-
 DEFAULT_INCLUDES = -I $(PROJECT_INCLUDE)
 
 CPPFLAGS  += -I $(USER_INCLUDE_DIR)
@@ -413,6 +418,11 @@ LOADLIBES += -L$(USER_LIB_DIR)
 LOADLIBES += $(lib_LOADLIBES:%=-l%)
 
 SOLIB_PICFLAGS += -shared -fpic
+
+OBJ_EXT = .o
+LIB_EXT = .a
+LIB_PREF = lib
+ASM_EXT = .S
 
 ifndef RELATIVE_DIR
 RELATIVE_DIR := $(SOURCES_DIR:$(MAKERULES_DIR)%=%)
@@ -575,12 +585,9 @@ $(2)/$(1): $$($(1)_OBJS)
 		-S $(1)-symbol-table.c -o $(1)-symbol-table.o $(1).prelink || exit 1 ; \
 	  $$($(1)_LDCOMMAND) $(1)-symbol-table.o $$(LOADLIBES) $$($(1)_LIBS:%=-l%) -o $(2)/$(1) || exit 1 ; \
 	fi
-
-#@echo "$(2)/$(1): \\" >$(USER_OBJS_DIR)/$(1).exe.d
-#@$(SED4OMK) -n -e 's/^LOAD \(.*\)$$$$/  \1  \\/p' $(USER_OBJS_DIR)/$(1).exe.map  >>$(USER_OBJS_DIR)/$(1).exe.d
-#@echo >>$(USER_OBJS_DIR)/$(1).exe.d
-#-Wl,-Map,$(USER_OBJS_DIR)/$(1).exe.map
-# FIXME: Why the map file was commented out?
+	@echo "$(2)/$(1): \\" >$(USER_OBJS_DIR)/$(1).exe.d
+	@$(SED4OMK) -n -e 's|^LOAD \(.*\)$$$$|  \1  \&|p' $(USER_OBJS_DIR)/$(1).exe.map|tr '&' '\134' | grep -v '^  linker [^ ]'  >>$(USER_OBJS_DIR)/$(1).exe.d
+	@echo >>$(USER_OBJS_DIR)/$(1).exe.d
 endef
 
 # Rules for other output formats (can be specified by OUTPUT_FORMATS)
@@ -797,9 +804,9 @@ library-pass-local: $(addprefix $(USER_INCLUDE_DIR)/,$(cmetric_include_HEADERS))
 
 $(foreach cmetrh,$(cmetric_include_HEADERS),$(eval $(call COMPILE_c_o_template,\
 		$(SOURCES_DIR)/$($(basename $(notdir $(cmetrh)))_CMETRIC_SOURCES),\
-		$($(basename $(notdir $(cmetrh)))_CMETRIC_SOURCES:%.c=%.o),)))
+		$($(basename $(notdir $(cmetrh)))_CMETRIC_SOURCES:%.c=%$(OBJ_EXT)),)))
 $(foreach cmetrh,$(cmetric_include_HEADERS),$(eval $(call CMETRIC_o_h_template,\
-		$($(basename $(notdir $(cmetrh)))_CMETRIC_SOURCES:%.c=%.o),\
+		$($(basename $(notdir $(cmetrh)))_CMETRIC_SOURCES:%.c=%$(OBJ_EXT)),\
 		$(addprefix $(USER_INCLUDE_DIR)/,$(cmetrh)))))
 
 GEN_HEADERS+=$(cmetric_include_HEADERS:%=$(USER_INCLUDE_DIR)/%)
@@ -920,7 +927,7 @@ sources-list-pass-local:
 	@$(foreach h,$(renamed_include_HEADERS),echo '$(h)'|$(SED4OMK) -e 's|\(.*\)->.*|$(addsuffix /,$(RELATIVE_DIR:$(SOURCES_LIST_DIR)/%=%))\1|' >> "$(SOURCES_LIST).tmp";)
 	@$(foreach bin,$(lib_LIBRARIES) $(shared_LIBRARIES) $(bin_PROGRAMS) $(test_PROGRAMS) $(utils_PROGRAMS) \
 	  $(kernel_LIBRARIES) $(rtlinux_LIBRARIES) $(kernel_MODULES),\
-	  $(foreach src,$(filter-out %.o,$($(bin)_SOURCES)),echo "$(addsuffix /,$(RELATIVE_DIR:$(SOURCES_LIST_DIR)/%=%))$(src)" >> "$(SOURCES_LIST).tmp";))
+	  $(foreach src,$(filter-out %$(OBJ_EXT),$($(bin)_SOURCES)),echo "$(addsuffix /,$(RELATIVE_DIR:$(SOURCES_LIST_DIR)/%=%))$(src)" >> "$(SOURCES_LIST).tmp";))
 
 ############ TAGS ###########
 
