@@ -1,0 +1,10 @@
+Package: gdb-arm-rtems6
+Version: 13.2-1
+Architecture: amd64
+Source: gdb-13.2
+Section: cross-dev
+Priority: extra
+Maintainer: Pavel Pisa <pisa@cmp.felk.cvut.cz>
+Description: gdb for target arm-rtems6
+ .
+ gdb targetting arm-rtems6
