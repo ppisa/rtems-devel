@@ -1,10 +1,10 @@
-Package: gcc-i386-rtems4.12
-Version: 6.0.1-1
+Package: gcc-i386-rtems6
+Version: 13.2.0-1
 Architecture: amd64
-Source: gcc-6.0.1
+Source: gcc-13.2.0
 Section: cross-dev
 Priority: extra
 Maintainer: Pavel Pisa <pisa@cmp.felk.cvut.cz>
-Description: GCC for target i386-rtems4.12
+Description: GCC for target i386-rtems6
  .
- GNU GCC targetting i386-rtems4.12
+ GNU GCC targetting arm-rtems6
