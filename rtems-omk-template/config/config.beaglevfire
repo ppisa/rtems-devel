@@ -1,0 +1,17 @@
+# Xilinx Xynq - target is Microzed Platform
+# This file should be symlinked as config.target into project
+# Makefile.rules directory
+RTEMS_MAKEFILE_PATH=/opt/rtems/6/riscv-rtems6/beaglevfire
+OUTPUT_FORMATS = img bin bin.gz
+
+START_ADDR=0x0000001000000000
+
+%.bin.gz: %.bin
+	cat $< | gzip -9 > $@
+
+# the uncompressed image is used for now because it has to be relocated manually
+# because the 64 bit load and entry addresses do not fit into old image
+# and attempt to use Flattened uImage Tree (FIT) fails with unaligned access
+# for M mode U-boot on BeagleV-Fire
+%.img: %.bin
+	mkimage -A riscv -O rtems -T kernel -a $(START_ADDR) -e $(START_ADDR) -n "RTEMS" -C none -d $< $@
